@@ -1,0 +1,187 @@
+package com.fooddelivery.marketingservice.entity;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * 自动发放规则实体
+ */
+@Data
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "auto_issuance_rules")
+public class AutoIssuanceRule {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /**
+     * 规则名称
+     */
+    @Column(nullable = false)
+    private String ruleName;
+
+    /**
+     * 规则描述
+     */
+    private String description;
+
+    /**
+     * 触发类型：NEW_USER(新用户), CREDIT_UPGRADE(信用升级), ORDER_MILESTONE(订单里程碑),
+     * BIRTHDAY(生日), etc.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TriggerType triggerType;
+
+    /**
+     * 关联的优惠券模板ID
+     */
+    @Column(nullable = false)
+    private Long couponTemplateId;
+
+    /**
+     * 是否启用
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean enabled = true;
+
+    /**
+     * 规则条件（JSON格式存储）
+     * 例如：{"minCreditLevel": 5, "maxCreditLevel": 10} 或 {"registrationDays": 1}
+     */
+    @Column(columnDefinition = "TEXT")
+    private String conditionJson;
+
+    /**
+     * 发放频率：ONCE(一次性), DAILY(每日), WEEKLY(每周), MONTHLY(每月)
+     */
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private IssuanceFrequency frequency = IssuanceFrequency.ONCE;
+
+    /**
+     * 规则优先级（数字越小优先级越高）
+     */
+    @Builder.Default
+    private Integer priority = 100;
+
+    /**
+     * 规则创建时间
+     */
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+
+    /**
+     * 规则更新时间
+     */
+    private LocalDateTime updatedAt;
+
+    /**
+     * 规则生效时间
+     */
+    private LocalDateTime effectiveFrom;
+
+    /**
+     * 规则失效时间
+     */
+    private LocalDateTime effectiveUntil;
+
+    /**
+     * 总发放次数限制
+     */
+    private Integer totalIssueLimit;
+
+    /**
+     * 已发放次数
+     */
+    @Builder.Default
+    private Integer issuedCount = 0;
+
+    /**
+     * 创建者ID（管理员ID）
+     */
+    private Long createdBy;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 检查规则是否有效
+     */
+    public boolean isValid() {
+        LocalDateTime now = LocalDateTime.now();
+        return enabled &&
+                (effectiveFrom == null || now.isAfter(effectiveFrom)) &&
+                (effectiveUntil == null || now.isBefore(effectiveUntil)) &&
+                (totalIssueLimit == null || issuedCount < totalIssueLimit);
+    }
+
+    /**
+     * 增加已发放计数
+     */
+    public void incrementIssuedCount() {
+        this.issuedCount = (this.issuedCount == null ? 0 : this.issuedCount) + 1;
+    }
+
+    /**
+     * 触发类型枚举
+     */
+    public enum TriggerType {
+        NEW_USER("新用户注册"),
+        CREDIT_UPGRADE("信用等级升级"),
+        ORDER_MILESTONE("订单里程碑"),
+        BIRTHDAY("生日"),
+        INACTIVE_USER("沉默用户召回"),
+        VIP_USER("VIP用户"),
+        MANUAL("手动触发");
+
+        private final String description;
+
+        TriggerType(String description) {
+            this.description = description;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+    }
+
+    /**
+     * 发放频率枚举
+     */
+    public enum IssuanceFrequency {
+        ONCE("一次性"),
+        DAILY("每日"),
+        WEEKLY("每周"),
+        MONTHLY("每月");
+
+        private final String description;
+
+        IssuanceFrequency(String description) {
+            this.description = description;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+    }
+}

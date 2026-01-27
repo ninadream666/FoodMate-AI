@@ -1,0 +1,50 @@
+# 智能推荐服务依赖包
+
+# Web框架
+fastapi>=0.109.0
+uvicorn>=0.24.0
+
+# HTTP客户端
+aiohttp>=3.9.1
+requests>=2.31.0
+
+# 数据验证
+pydantic>=2.5.2
+
+# 日期时间处理
+python-dateutil>=2.8.2
+
+# 数据处理
+pandas>=2.1.0
+numpy>=1.24.0
+
+# JWT支持
+PyJWT>=2.8.0
+cryptography>=41.0.0
+
+# AI/LLM支持
+openai>=1.10.0
+
+# LangChain / LangGraph 智能体框架
+langchain>=0.1.0
+langgraph>=0.0.40
+langchain-openai>=0.0.5
+langchain-community>=0.0.10
+
+# MCP协议支持
+mcp>=1.0.0
+fastmcp>=0.2.0
+
+# 环境变量管理
+python-dotenv>=1.0.0
+
+# JSON处理和数据验证
+pydantic-settings>=2.1.0
+
+# 日志
+structlog>=23.2.0
+
+# 开发和测试工具
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+httpx>=0.27.0

@@ -1,0 +1,41 @@
+# Spring Cloud Config Server - 全局配置
+# 这个文件会被所有服务读取作为默认配置
+
+spring:
+  profiles:
+    active: docker
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# JWT 全局配置
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  expiration: 86400000 # 1 day
+
+# 通用数据库配置
+spring.datasource:
+  hikari:
+    maximum-pool-size: 20
+    minimum-idle: 5
+    idle-timeout: 300000
+    connection-timeout: 20000
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.fooddelivery: DEBUG
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

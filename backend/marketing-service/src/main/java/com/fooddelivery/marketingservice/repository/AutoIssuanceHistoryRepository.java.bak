@@ -1,0 +1,87 @@
+package com.fooddelivery.marketingservice.repository;
+
+import com.fooddelivery.marketingservice.entity.AutoIssuanceHistory;
+import com.fooddelivery.marketingservice.entity.AutoIssuanceRule;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * 自动发放历史记录数据访问层
+ */
+@Repository
+public interface AutoIssuanceHistoryRepository extends JpaRepository<AutoIssuanceHistory, Long> {
+
+    /**
+     * 根据用户ID和规则ID查找历史记录
+     */
+    List<AutoIssuanceHistory> findByUserIdAndRuleId(Long userId, Long ruleId);
+
+    /**
+     * 检查用户是否已经通过某个规则获得过优惠券（用于防重复）
+     */
+    @Query("SELECT COUNT(h) > 0 FROM AutoIssuanceHistory h WHERE h.userId = :userId " +
+            "AND h.ruleId = :ruleId AND h.successful = true " +
+            "AND h.issuedAt >= :fromTime")
+    boolean existsByUserIdAndRuleIdAndSuccessfulTrueAndIssuedAtAfter(@Param("userId") Long userId,
+            @Param("ruleId") Long ruleId,
+            @Param("fromTime") LocalDateTime fromTime);
+
+    /**
+     * 根据用户ID查找发放历史
+     */
+    Page<AutoIssuanceHistory> findByUserIdOrderByIssuedAtDesc(Long userId, Pageable pageable);
+
+    /**
+     * 根据规则ID查找发放历史
+     */
+    Page<AutoIssuanceHistory> findByRuleIdOrderByIssuedAtDesc(Long ruleId, Pageable pageable);
+
+    /**
+     * 查找指定时间段内的发放记录
+     */
+    List<AutoIssuanceHistory> findByIssuedAtBetween(LocalDateTime startTime, LocalDateTime endTime);
+
+    /**
+     * 统计发放成功的记录数
+     */
+    @Query("SELECT COUNT(h) FROM AutoIssuanceHistory h WHERE h.successful = true " +
+            "AND h.issuedAt BETWEEN :startTime AND :endTime")
+    long countSuccessfulIssuancesBetween(@Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime);
+
+    /**
+     * 统计发放失败的记录数
+     */
+    @Query("SELECT COUNT(h) FROM AutoIssuanceHistory h WHERE h.successful = false " +
+            "AND h.issuedAt BETWEEN :startTime AND :endTime")
+    long countFailedIssuancesBetween(@Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime);
+
+    /**
+     * 根据触发类型统计发放记录
+     */
+    long countByTriggerTypeAndSuccessfulTrue(AutoIssuanceRule.TriggerType triggerType);
+
+    /**
+     * 查找最近的成功发放记录
+     */
+    Optional<AutoIssuanceHistory> findFirstByUserIdAndRuleIdAndSuccessfulTrueOrderByIssuedAtDesc(Long userId,
+            Long ruleId);
+
+    /**
+     * 查询规则的发放统计信息
+     */
+    @Query("SELECT new map(h.successful as successful, COUNT(h) as count, AVG(h.processingTimeMs) as avgProcessingTime) "
+            +
+            "FROM AutoIssuanceHistory h WHERE h.ruleId = :ruleId " +
+            "AND h.issuedAt >= :fromTime GROUP BY h.successful")
+    List<Object[]> findIssuanceStatsByRuleId(@Param("ruleId") Long ruleId, @Param("fromTime") LocalDateTime fromTime);
+}

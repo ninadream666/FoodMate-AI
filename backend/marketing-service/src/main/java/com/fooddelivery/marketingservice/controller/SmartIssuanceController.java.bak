@@ -1,0 +1,270 @@
+package com.fooddelivery.marketingservice.controller;
+
+import com.fooddelivery.marketingservice.dto.*;
+import com.fooddelivery.marketingservice.service.SmartIssuanceService;
+import com.fooddelivery.marketingservice.util.JwtUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 智能发放管理控制器
+ * 提供自动优惠券发放规则的管理和触发接口
+ */
+@RestController
+@RequestMapping("/coupons/smart")
+@RequiredArgsConstructor
+@Slf4j
+@Tag(name = "智能发放管理", description = "优惠券智能发放规则管理和事件触发")
+public class SmartIssuanceController {
+
+    private final SmartIssuanceService smartIssuanceService;
+    private final JwtUtil jwtUtil;
+
+    /**
+     * 创建自动发放规则
+     * POST /coupons/smart/rules
+     */
+    @PostMapping("/rules")
+    @Operation(summary = "创建自动发放规则", description = "管理员创建优惠券自动发放规则")
+    public ResponseEntity<Map<String, Object>> createRule(
+            @Valid @RequestBody CreateAutoIssuanceRuleRequest request,
+            HttpServletRequest httpRequest) {
+
+        Long userId = jwtUtil.getUserIdFromRequest(httpRequest);
+
+        AutoIssuanceRuleDTO rule = smartIssuanceService.createRule(request, userId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "自动发放规则创建成功");
+        response.put("data", rule);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 更新自动发放规则
+     * PUT /coupons/smart/rules/{ruleId}
+     */
+    @PutMapping("/rules/{ruleId}")
+    @Operation(summary = "更新自动发放规则", description = "管理员更新已有的自动发放规则")
+    public ResponseEntity<Map<String, Object>> updateRule(
+            @PathVariable Long ruleId,
+            @Valid @RequestBody CreateAutoIssuanceRuleRequest request) {
+
+        AutoIssuanceRuleDTO rule = smartIssuanceService.updateRule(ruleId, request);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "自动发放规则更新成功");
+        response.put("data", rule);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 启用/禁用规则
+     * PATCH /coupons/smart/rules/{ruleId}/status
+     */
+    @PatchMapping("/rules/{ruleId}/status")
+    @Operation(summary = "启用禁用规则", description = "启用或禁用指定的自动发放规则")
+    public ResponseEntity<Map<String, Object>> toggleRuleStatus(
+            @PathVariable Long ruleId,
+            @RequestParam Boolean enabled) {
+
+        smartIssuanceService.toggleRuleStatus(ruleId, enabled);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", enabled ? "规则已启用" : "规则已禁用");
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 删除规则（软删除）
+     * DELETE /coupons/smart/rules/{ruleId}
+     */
+    @DeleteMapping("/rules/{ruleId}")
+    @Operation(summary = "删除规则", description = "删除指定的自动发放规则（软删除）")
+    public ResponseEntity<Map<String, Object>> deleteRule(@PathVariable Long ruleId) {
+
+        smartIssuanceService.deleteRule(ruleId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "规则删除成功");
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 分页查询规则列表
+     * GET /coupons/smart/rules
+     */
+    @GetMapping("/rules")
+    @Operation(summary = "查询规则列表", description = "分页查询自动发放规则列表")
+    public ResponseEntity<Map<String, Object>> getRules(
+            @RequestParam(required = false) Boolean enabled,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        Page<AutoIssuanceRuleDTO> rules = smartIssuanceService.getRules(enabled, page, size);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", rules.getContent());
+        response.put("pagination", Map.of(
+                "totalElements", rules.getTotalElements(),
+                "totalPages", rules.getTotalPages(),
+                "currentPage", rules.getNumber(),
+                "pageSize", rules.getSize(),
+                "hasNext", rules.hasNext(),
+                "hasPrevious", rules.hasPrevious()));
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 获取规则详情
+     * GET /coupons/smart/rules/{ruleId}
+     */
+    @GetMapping("/rules/{ruleId}")
+    @Operation(summary = "查询规则详情", description = "获取指定自动发放规则的详细信息")
+    public ResponseEntity<Map<String, Object>> getRuleById(@PathVariable Long ruleId) {
+
+        AutoIssuanceRuleDTO rule = smartIssuanceService.getRuleById(ruleId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", rule);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 处理用户事件触发（内部接口）
+     * POST /coupons/smart/trigger
+     */
+    @PostMapping("/trigger")
+    @Operation(summary = "事件触发接口", description = "内部接口，处理用户事件并自动发放符合条件的优惠券")
+    public ResponseEntity<Map<String, Object>> processEventTrigger(
+            @Valid @RequestBody UserEventTriggerRequest request) {
+
+        List<UserCouponDTO> issuedCoupons = smartIssuanceService.processUserEventTrigger(request);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "事件处理完成");
+        response.put("issuedCoupons", issuedCoupons);
+        response.put("issuedCount", issuedCoupons.size());
+
+        log.info("用户事件处理完成，用户ID: {}, 事件类型: {}, 发放数量: {}",
+                request.getUserId(), request.getEventType(), issuedCoupons.size());
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 手动为新用户发放优惠券
+     * POST /coupons/smart/new-user/{userId}
+     */
+    @PostMapping("/new-user/{userId}")
+    @Operation(summary = "新用户发放", description = "手动为新用户触发优惠券发放")
+    public ResponseEntity<Map<String, Object>> triggerNewUserIssuance(@PathVariable Long userId) {
+
+        UserEventTriggerRequest eventRequest = UserEventTriggerRequest.builder()
+                .userId(userId)
+                .eventType(com.fooddelivery.marketingservice.entity.AutoIssuanceRule.TriggerType.NEW_USER)
+                .eventData("{\"registrationSource\": \"manual_trigger\"}")
+                .eventTime(LocalDateTime.now())
+                .sourceService("marketing-service")
+                .build();
+
+        List<UserCouponDTO> issuedCoupons = smartIssuanceService.processUserEventTrigger(eventRequest);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "新用户发放完成");
+        response.put("issuedCoupons", issuedCoupons);
+        response.put("issuedCount", issuedCoupons.size());
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 手动为高信用用户发放优惠券
+     * POST /coupons/smart/high-credit/{userId}
+     */
+    @PostMapping("/high-credit/{userId}")
+    @Operation(summary = "高信用用户发放", description = "手动为高信用用户触发优惠券发放")
+    public ResponseEntity<Map<String, Object>> triggerHighCreditUserIssuance(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "5") Integer creditLevel) {
+
+        UserEventTriggerRequest eventRequest = UserEventTriggerRequest.builder()
+                .userId(userId)
+                .eventType(com.fooddelivery.marketingservice.entity.AutoIssuanceRule.TriggerType.CREDIT_UPGRADE)
+                .eventData(String.format("{\"newLevel\": %d, \"upgradeReason\": \"manual_trigger\"}", creditLevel))
+                .eventTime(LocalDateTime.now())
+                .sourceService("marketing-service")
+                .build();
+
+        List<UserCouponDTO> issuedCoupons = smartIssuanceService.processUserEventTrigger(eventRequest);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "高信用用户发放完成");
+        response.put("issuedCoupons", issuedCoupons);
+        response.put("issuedCount", issuedCoupons.size());
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 获取发放统计信息
+     * GET /coupons/smart/stats
+     */
+    @GetMapping("/stats")
+    @Operation(summary = "发放统计", description = "获取智能发放的统计信息")
+    public ResponseEntity<Map<String, Object>> getIssuanceStats(
+            @RequestParam(required = false) Long ruleId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromTime) {
+
+        Map<String, Object> stats = smartIssuanceService.getIssuanceStats(ruleId, fromTime);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", stats);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 健康检查
+     * GET /coupons/smart/health
+     */
+    @GetMapping("/health")
+    @Operation(summary = "健康检查", description = "智能发放服务健康状态检查")
+    public ResponseEntity<Map<String, Object>> healthCheck() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "智能发放服务运行正常");
+        response.put("timestamp", LocalDateTime.now());
+
+        return ResponseEntity.ok(response);
+    }
+}

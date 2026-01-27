@@ -1,0 +1,46 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: profile-service
+    
+  # 可选的外部配置
+  config:
+    import: "optional:configserver:http://config-server:8888"
+    
+  data:
+    mongodb:
+      # 连接 docker-compose 中的 mongo-db 服务
+      uri: mongodb://dev:dev123@mongo-db:27017/food_delivery_profile?authSource=admin
+
+# 服务发现配置（可选）
+eureka:
+  client:
+    enabled: ${EUREKA_CLIENT_ENABLED:true}
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://eureka-server:8761/eureka}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    health-check-url-path: /actuator/health
+
+jwt:
+  # 必须与 User Service 一致
+  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+# 增强监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true

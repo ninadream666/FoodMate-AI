@@ -1,0 +1,118 @@
+package com.fooddelivery.marketingservice.entity;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+/**
+ * 自动发放历史记录实体
+ * 记录每次自动发放的详细信息，用于追踪和防重复
+ */
+@Data
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "auto_issuance_history")
+public class AutoIssuanceHistory {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /**
+     * 用户ID
+     */
+    @Column(nullable = false)
+    private Long userId;
+
+    /**
+     * 触发的规则ID
+     */
+    @Column(nullable = false)
+    private Long ruleId;
+
+    /**
+     * 发放的用户优惠券ID
+     */
+    private Long userCouponId;
+
+    /**
+     * 触发类型
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AutoIssuanceRule.TriggerType triggerType;
+
+    /**
+     * 触发事件的详细信息（JSON格式）
+     */
+    @Column(columnDefinition = "TEXT")
+    private String triggerEventJson;
+
+    /**
+     * 发放是否成功
+     */
+    @Column(nullable = false)
+    private Boolean successful;
+
+    /**
+     * 失败原因（如果发放失败）
+     */
+    private String failureReason;
+
+    /**
+     * 发放时间
+     */
+    @Column(nullable = false)
+    private LocalDateTime issuedAt;
+
+    /**
+     * 处理时间（毫秒）
+     */
+    private Long processingTimeMs;
+
+    @PrePersist
+    protected void onCreate() {
+        issuedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 创建成功记录
+     */
+    public static AutoIssuanceHistory createSuccessRecord(Long userId, Long ruleId, Long userCouponId,
+            AutoIssuanceRule.TriggerType triggerType,
+            String triggerEventJson, Long processingTimeMs) {
+        return AutoIssuanceHistory.builder()
+                .userId(userId)
+                .ruleId(ruleId)
+                .userCouponId(userCouponId)
+                .triggerType(triggerType)
+                .triggerEventJson(triggerEventJson)
+                .successful(true)
+                .processingTimeMs(processingTimeMs)
+                .build();
+    }
+
+    /**
+     * 创建失败记录
+     */
+    public static AutoIssuanceHistory createFailureRecord(Long userId, Long ruleId,
+            AutoIssuanceRule.TriggerType triggerType,
+            String triggerEventJson, String failureReason,
+            Long processingTimeMs) {
+        return AutoIssuanceHistory.builder()
+                .userId(userId)
+                .ruleId(ruleId)
+                .triggerType(triggerType)
+                .triggerEventJson(triggerEventJson)
+                .successful(false)
+                .failureReason(failureReason)
+                .processingTimeMs(processingTimeMs)
+                .build();
+    }
+}

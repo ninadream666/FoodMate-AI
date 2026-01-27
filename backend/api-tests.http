@@ -1,0 +1,1502 @@
+# Food Delivery Platform - API 测试文件 (Complete)
+# 包含所有微服务的完整业务流程
+# 顺序：Auth(认证) -> Merchant(商家) -> User(用户) -> Marketing(营销) -> Recommendation(推荐) -> Order(订单) -> Payment(支付) -> Refund(售后) -> Platform(平台)
+
+### 全局变量定义
+@baseUrl = http://localhost
+@aiAgentPort = 8000
+@userServicePort = 8083
+@orderServicePort = 8084
+@merchantServicePort = 8081
+@marketingServicePort = 8082
+@profileServicePort = 8086
+@recommendationServicePort = 8087
+@platformServicePort = 8088
+@aiPricingServicePort = 8089
+
+
+###############################################################################
+# 1. 认证初始化 (Authentication & Login)
+###############################################################################
+
+### 1.1 注册新用户（普通用户）
+
+POST {{baseUrl}}:{{userServicePort}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "happy",
+  "email": "happy@example.com",
+  "password": "happy",
+  "nickname": "happyday",
+  "phone": "13900000001"
+}
+
+### 1.2 注册新商家用户
+POST {{baseUrl}}:{{userServicePort}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "merchant_co",
+  "email": "co@example.com",
+  "password": "password123",
+  "nickname": "c老板",
+  "phone": "23900000091",
+  "role": "merchant"
+}
+
+### 1.3 注册新管理员用户
+POST {{baseUrl}}:{{userServicePort}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "newadmin",
+  "email": "admin@example.com",
+  "password": "password123",
+  "phone": "13900000091",
+  "role": "admin"
+}
+
+### 1.4 用户登录（普通用户）
+# @name loginCustomer
+POST {{baseUrl}}:{{userServicePort}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "happy",
+  "password": "happy",
+  "role": "customer"
+}
+
+### 1.5 商家登录 (使用有商家数据的bob用户)
+# @name loginMerchant
+POST {{baseUrl}}:{{userServicePort}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "bob",
+  "password": "password123",
+  "role": "merchant"
+}
+
+### 1.6 管理员登录
+# @name loginAdmin
+POST {{baseUrl}}:{{userServicePort}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "password123",
+  "role": "admin"
+}
+
+# 以下token会在执行1.4-1.6登录后自动更新
+@customerToken = {{loginCustomer.response.body.token}}
+@merchantToken = {{loginMerchant.response.body.token}} 
+@adminToken = {{loginAdmin.response.body.token}}
+@currentCustomerId = {{loginCustomer.response.body.id}}
+
+###############################################################################
+# 2. 商家服务 (Merchant) - 餐厅与菜单管理
+###############################################################################
+
+### 2.1 商家创建餐厅
+# @name createShop
+POST {{baseUrl}}:{{merchantServicePort}}/merchants
+Authorization: Bearer {{merchantToken}}
+Content-Type: application/json
+
+{
+  "name": "全流程测试餐厅",
+  "address": "测试大道888号"
+}
+
+### 变量：自动获取餐厅ID
+@merchantId = {{createShop.response.body.id}}
+
+### 2.1.1 更新商家自动审批设置 (Update Auto-Approval)
+PATCH {{baseUrl}}:{{merchantServicePort}}/merchants/{{merchantId}}/auto-approval?enable=true&threshold=0.03
+Authorization: Bearer {{merchantToken}}
+
+### 2.1.2 关闭商家自动审批 (Disable Auto-Approval)
+PATCH {{baseUrl}}:{{merchantServicePort}}/merchants/{{merchantId}}/auto-approval?enable=false
+Authorization: Bearer {{merchantToken}}
+
+### 2.2 查看我的餐厅信息
+GET {{baseUrl}}:{{merchantServicePort}}/merchants/my
+Authorization: Bearer {{merchantToken}}
+
+### 2.3 添加菜品 1 (主食)
+# @name addDish1
+POST {{baseUrl}}:{{merchantServicePort}}/merchants/{{merchantId}}/menu-items
+Authorization: Bearer {{merchantToken}}
+Content-Type: application/json
+
+{
+  "name": "招牌牛肉面",
+  "price": 28.00,
+  "description": "大块牛肉，劲道面条",
+  "category": "主食",
+  "imageUrl": "http://example.com/beef.jpg"
+}
+
+### 2.4 添加菜品 2 (小吃)
+# @name addDish2
+POST {{baseUrl}}:{{merchantServicePort}}/merchants/{{merchantId}}/menu-items
+Authorization: Bearer {{merchantToken}}
+Content-Type: application/json
+
+{
+  "name": "酥脆炸鸡排",
+  "price": 15.00,
+  "description": "外酥里嫩，黄金色泽",
+  "category": "小吃",
+  "imageUrl": "http://example.com/chicken.jpg"
+}
+
+### 变量：自动获取菜品ID
+@menuItem1 = {{addDish1.response.body.id}}
+@menuItem2 = {{addDish2.response.body.id}}
+
+### 2.5 修改菜品信息
+PUT {{baseUrl}}:{{merchantServicePort}}/merchants/{{merchantId}}/menu-items/{{menuItem1}}
+Authorization: Bearer {{merchantToken}}
+Content-Type: application/json
+
+{
+  "price": 30.00,
+  "description": "大块牛肉，价格微调"
+}
+
+### 2.6 商家查看自己的菜单 (含下架商品)
+GET {{baseUrl}}:{{merchantServicePort}}/merchants/{{merchantId}}/menu-items
+Authorization: Bearer {{merchantToken}}
+
+### 2.7 顾客/公开查看商家菜单 (仅上架商品)
+GET {{baseUrl}}:{{merchantServicePort}}/merchants/{{merchantId}}/menu-items/public
+
+### 2.8 商家查看销售数据 (TODO)
+GET {{baseUrl}}:{{merchantServicePort}}/merchants/{{merchantId}}/sales
+Authorization: Bearer {{merchantToken}}
+
+###############################################################################
+# 3. 用户服务 (User & Profile) - 用户信息与画像
+###############################################################################
+
+### 3.1 获取当前用户信息
+GET {{baseUrl}}:{{userServicePort}}/users/me
+Authorization: Bearer {{customerToken}}
+
+### 3.2 更新用户信息
+PUT {{baseUrl}}:{{userServicePort}}/users/me
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "nickname": "美食家小王",
+  "avatarUrl": "https://example.com/new_avatar.jpg",
+  "phone": "13911112222"
+}
+
+### 3.3 获取用户信用信息
+GET {{baseUrl}}:{{userServicePort}}/users/1/credit
+Authorization: Bearer {{customerToken}}
+
+### 3.4 尝试升级信用等级
+POST {{baseUrl}}:{{userServicePort}}/users/1/credit/upgrade
+Authorization: Bearer {{customerToken}}
+
+### 3.5 获取用户画像/资料
+GET {{baseUrl}}:{{profileServicePort}}/profile
+Authorization: Bearer {{customerToken}}
+
+### 3.6 完善用户画像 (用于推荐系统冷启动)
+POST {{baseUrl}}:{{profileServicePort}}/profile
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "username": "user_full_test",
+  "bio": "无辣不欢的美食家",
+  "preferences": {
+    "favoriteFood": "面食",
+    "spicyLevel": "high"
+  },
+  "favoriteCategories": ["面食", "炸物"]
+}
+
+###############################################################################
+# 4. 营销服务 (Marketing) - 优惠券管理
+###############################################################################
+
+### 4.1 创建优惠券模板 (运营)
+# @name createCouponTemplate
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/templates
+Content-Type: application/json
+
+{
+  "name": "新用户首单立减",
+  "type": "DISCOUNT",
+  "discountValue": 10,
+  "maxDiscount": 50,
+  "minOrderAmount": 30,
+  "totalQuantity": 1000,
+  "enabled": true,
+  "stackable": false,
+  "validFrom": "2025-01-01T00:00:00",
+  "validUntil": "2025-12-31T23:59:59",
+  "exclusiveIds": "[]",
+  "applicableMerchantIds": "[]"
+}
+
+@templateId = {{createCouponTemplate.response.body.data.id}}
+
+### 4.2 更新优惠券模板
+PUT {{baseUrl}}:{{marketingServicePort}}/coupons/templates/1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "新用户首单立减(已更新)",
+  "enabled": true,
+  "addQuantity": 100
+}
+
+### 4.3 发放优惠券给用户
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/issue
+Content-Type: application/json
+
+{
+  "couponTemplateId": 1,
+  "userId": 5
+}
+
+### 4.4 管理员发放优惠券
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/admin/issue
+Content-Type: application/json
+
+{
+  "couponTemplateId": 1,
+  "userId": 5,
+  "remark": "管理员补发"
+}
+
+### 4.5 管理员批量发放优惠券
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/admin/issue-batch
+Content-Type: application/json
+
+{
+  "couponTemplateId": 1,
+  "userIds": [1, 2, 3],
+  "remark": "节日活动批量发放"
+}
+
+### 4.6 用户主动领取优惠券
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/issue
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "couponTemplateId": {{templateId}}
+}
+
+### 4.7 获取用户可用优惠券
+GET {{baseUrl}}:{{marketingServicePort}}/coupons/user/1/available
+
+### 4.7.1 获取用户可用优惠券（按订单金额过滤）
+GET {{baseUrl}}:{{marketingServicePort}}/coupons/user/1/available?orderAmount=50.00
+
+### 4.7.2 获取用户可用优惠券（订单金额不满足条件）
+GET {{baseUrl}}:{{marketingServicePort}}/coupons/user/1/available?orderAmount=20.00
+
+### 4.8 获取用户所有优惠券
+GET {{baseUrl}}:{{marketingServicePort}}/coupons/user/1/all
+
+### 4.9 获取优惠券详情
+GET {{baseUrl}}:{{marketingServicePort}}/coupons/1
+
+### 4.9.1 检查优惠券使用条件（金额满足）
+GET {{baseUrl}}:{{marketingServicePort}}/coupons/1/check-amount?orderAmount=50.00
+
+### 4.9.2 检查优惠券使用条件（金额不满足）
+GET {{baseUrl}}:{{marketingServicePort}}/coupons/1/check-amount?orderAmount=20.00
+
+### 4.10 计算最优优惠券组合
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/calculate-best
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "merchantId": 1,
+  "orderTotal": 100.00,
+  "items": [
+    {
+      "itemId": 101,
+      "price": 50.00,
+      "quantity": 1,
+      "merchantId": 1
+    },
+    {
+      "itemId": 102,
+      "price": 50.00,
+      "quantity": 1,
+      "merchantId": 1
+    }
+  ]
+}
+
+### 4.11 验证优惠券组合
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/validate-combination
+Content-Type: application/json
+
+[1]
+
+### 4.12 营销服务健康检查
+GET {{baseUrl}}:{{marketingServicePort}}/coupons/health
+
+###############################################################################
+# 4.2. 智能发放管理 (Smart Issuance) - 自动化发放系统
+###############################################################################
+
+### 4.2.1 智能发放服务健康检查
+GET {{baseUrl}}:{{marketingServicePort}}/coupons/smart/health
+
+### 4.2.2 创建新用户注册自动发放规则
+# @name createNewUserRule
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/smart/rules
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "ruleName": "新用户首单优惠券",
+  "description": "用户注册后7天内自动发放首单优惠券",
+  "triggerType": "NEW_USER",
+  "couponTemplateId": 1,
+  "enabled": true,
+  "conditionJson": "{\"registrationDays\": 7, \"registrationSource\": \"mobile_app\"}",
+  "frequency": "ONCE",
+  "priority": 10,
+  "effectiveFrom": "2025-01-01T00:00:00",
+  "effectiveUntil": "2025-12-31T23:59:59",
+  "totalIssueLimit": 10000
+}
+
+### 4.2.3 创建高信用用户发放规则
+# @name createHighCreditRule
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/smart/rules
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "ruleName": "高信用用户专享优惠",
+  "description": "信用等级达到5级及以上用户自动发放专享优惠券",
+  "triggerType": "CREDIT_UPGRADE",
+  "couponTemplateId": 1,
+  "enabled": true,
+  "conditionJson": "{\"minCreditLevel\": 5, \"maxCreditLevel\": 10}",
+  "frequency": "ONCE",
+  "priority": 20,
+  "effectiveFrom": "2025-01-01T00:00:00",
+  "effectiveUntil": "2025-12-31T23:59:59",
+  "totalIssueLimit": 5000
+}
+
+### 4.2.4 创建订单里程碑发放规则
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/smart/rules
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "ruleName": "订单里程碑奖励",
+  "description": "用户累计订单满10单且消费满500元自动发放奖励优惠券",
+  "triggerType": "ORDER_MILESTONE",
+  "couponTemplateId": 1,
+  "enabled": true,
+  "conditionJson": "{\"minOrderCount\": 10, \"minTotalAmount\": 500.0}",
+  "frequency": "ONCE",
+  "priority": 30,
+  "totalIssueLimit": 1000
+}
+
+### 4.2.5 创建生日用户发放规则
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/smart/rules
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "ruleName": "生日专享优惠",
+  "description": "用户生日当天前后3天内自动发放生日专享优惠券",
+  "triggerType": "BIRTHDAY",
+  "couponTemplateId": 1,
+  "enabled": true,
+  "conditionJson": "{\"birthdayDaysRange\": 3}",
+  "frequency": "ONCE",
+  "priority": 15,
+  "totalIssueLimit": 2000
+}
+
+@newUserRuleId = {{createNewUserRule.response.body.data.id}}
+@highCreditRuleId = {{createHighCreditRule.response.body.data.id}}
+
+### 4.2.6 查询所有智能发放规则
+GET {{baseUrl}}:{{marketingServicePort}}/coupons/smart/rules?page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+### 4.2.7 查询启用的规则
+GET {{baseUrl}}:{{marketingServicePort}}/coupons/smart/rules?enabled=true&page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+### 4.2.8 获取规则详情
+GET {{baseUrl}}:{{marketingServicePort}}/coupons/smart/rules/{{newUserRuleId}}
+Authorization: Bearer {{adminToken}}
+
+### 4.2.9 更新自动发放规则
+PUT {{baseUrl}}:{{marketingServicePort}}/coupons/smart/rules/{{newUserRuleId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "ruleName": "新用户首单优惠券(已更新)",
+  "description": "用户注册后3天内自动发放首单优惠券",
+  "triggerType": "NEW_USER",
+  "couponTemplateId": 1,
+  "enabled": true,
+  "conditionJson": "{\"registrationDays\": 3}",
+  "frequency": "ONCE",
+  "priority": 5,
+  "totalIssueLimit": 15000
+}
+
+### 4.2.10 禁用规则
+PATCH {{baseUrl}}:{{marketingServicePort}}/coupons/smart/rules/{{newUserRuleId}}/status?enabled=false
+Authorization: Bearer {{adminToken}}
+
+### 4.2.11 重新启用规则
+PATCH {{baseUrl}}:{{marketingServicePort}}/coupons/smart/rules/{{newUserRuleId}}/status?enabled=true
+Authorization: Bearer {{adminToken}}
+
+### 4.2.12 手动触发新用户发放（测试接口）
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/smart/new-user/{{currentCustomerId}}
+Authorization: Bearer {{adminToken}}
+
+### 4.2.13 手动触发高信用用户发放（测试接口）
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/smart/high-credit/{{currentCustomerId}}?creditLevel=8
+Authorization: Bearer {{adminToken}}
+
+### 4.2.14 用户事件触发（内部接口）- 新用户注册
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/smart/trigger
+Content-Type: application/json
+
+{
+  "userId": {{currentCustomerId}},
+  "eventType": "NEW_USER",
+  "eventData": "{\"registeredAt\": \"2025-01-03T10:00:00\", \"registrationSource\": \"mobile_app\"}",
+  "eventTime": "2025-01-03T10:00:00",
+  "sourceService": "user-service"
+}
+
+### 4.2.15 用户事件触发（内部接口）- 信用升级
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/smart/trigger
+Content-Type: application/json
+
+{
+  "userId": {{currentCustomerId}},
+  "eventType": "CREDIT_UPGRADE",
+  "eventData": "{\"oldLevel\": 3, \"newLevel\": 6, \"upgradeReason\": \"good_payment_history\"}",
+  "eventTime": "2025-01-03T10:00:00",
+  "sourceService": "user-service"
+}
+
+### 4.2.16 用户事件触发（内部接口）- 订单里程碑
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/smart/trigger
+Content-Type: application/json
+
+{
+  "userId": {{currentCustomerId}},
+  "eventType": "ORDER_MILESTONE",
+  "eventData": "{\"orderCount\": 12, \"totalAmount\": 680.5, \"milestoneType\": \"order_count\"}",
+  "eventTime": "2025-01-03T10:00:00",
+  "sourceService": "order-service"
+}
+
+### 4.2.17 获取智能发放统计信息
+GET {{baseUrl}}:{{marketingServicePort}}/coupons/smart/stats
+Authorization: Bearer {{adminToken}}
+
+### 4.2.18 获取指定规则的统计信息（最近7天）
+GET {{baseUrl}}:{{marketingServicePort}}/coupons/smart/stats?ruleId={{newUserRuleId}}&fromTime=2025-01-01T00:00:00
+Authorization: Bearer {{adminToken}}
+
+### 4.2.19 软删除规则
+DELETE {{baseUrl}}:{{marketingServicePort}}/coupons/smart/rules/{{highCreditRuleId}}
+Authorization: Bearer {{adminToken}}
+
+###############################################################################
+# 5. 推荐服务 (Recommendation & AI) - 智能推荐系统
+# 基于LangGraph多智能体协作：ContextAgent → ProfilerAgent → DecisionAgent
+###############################################################################
+
+### 5.1 推荐服务健康检查
+GET {{baseUrl}}:{{recommendationServicePort}}/health
+
+### 5.2 V2 多智能体推荐（主要功能）
+POST {{baseUrl}}:{{recommendationServicePort}}/api/v2/agents/recommend
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "user_id": "5",
+  "location": {
+    "address": "北京市朝阳区建国门外大街",
+    "latitude": 31.2891,
+    "longitude": 121.2180
+  },
+  "preferences": {
+    "cuisine_types": ["川菜", "火锅"],
+    "spice_level": "中辣",
+    "price_sensitivity": "medium"
+  },
+  "query": "想吃辣的川菜或火锅",
+  "max_results": 10
+}
+
+### 5.3 V2 首页推荐（替代V1）
+# 上海同济大学嘉定校区坐标
+POST {{baseUrl}}:{{recommendationServicePort}}/api/v2/agents/recommend
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "user_id": "5",
+  "location": {
+    "address": "上海市嘉定区同济大学嘉定校区",
+    "latitude": 31.2847,
+    "longitude": 121.2180
+  },
+  "query": "为我推荐附近的美食",
+  "max_results": 10
+}
+
+### 5.4 MCP服务健康检查
+GET {{baseUrl}}:{{recommendationServicePort}}/api/v2/mcp/status
+
+# ### 5.5 MCP 工具调用测试 - 天气查询
+# POST {{baseUrl}}:{{recommendationServicePort}}/api/v2/mcp/tool/get_weather_analysis
+# Authorization: Bearer {{customerToken}}
+# Content-Type: application/json
+
+# {
+#   "city": "北京",
+#   "latitude": 39.9042,
+#   "longitude": 116.4074
+# }
+
+# ### 5.6 MCP 工具调用测试 - 交通状况
+# POST {{baseUrl}}:{{recommendationServicePort}}/api/v2/mcp/tool/get_traffic
+# Authorization: Bearer {{customerToken}}
+# Content-Type: application/json
+
+# {
+#   "city": "北京",
+#   "latitude": 39.9042,
+#   "longitude": 116.4074
+# }
+
+# ### 5.7 业务场景测试 - 恶劣天气推荐
+# POST {{baseUrl}}:{{recommendationServicePort}}/api/v2/agents/recommend
+# Authorization: Bearer {{customerToken}}
+# Content-Type: application/json
+
+# {
+#   "user_id": "1",
+#   "location": {
+#     "address": "北京市朝阳区建国门外大街",
+#     "latitude": 39.9042,
+#     "longitude": 116.4074
+#   },
+#   "preferences": {
+#     "cuisine_types": ["热食", "汤品"],
+#     "price_sensitivity": "medium"
+#   },
+#   "query": "天气不好，想吃点热乎乎的食物",
+#   "max_results": 8
+# }
+
+### 5.8 业务场景测试 - 节假日推荐
+POST {{baseUrl}}:{{recommendationServicePort}}/api/v2/agents/recommend
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "user_id": "1",
+  "location": {
+    "address": "北京市朝阳区建国门外大街",
+    "latitude": 39.9042,
+    "longitude": 116.4074
+  },
+  "preferences": {
+    "cuisine_types": ["聚餐", "特色菜"],
+    "price_sensitivity": "low"
+  },
+  "query": "节假日聚餐，想找有特色的餐厅",
+  "max_results": 8
+}
+
+### 5.9 MAB算法策略测试 - UCB1
+POST {{baseUrl}}:{{recommendationServicePort}}/api/v2/agents/recommend
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "user_id": "1",
+  "location": {
+    "address": "北京市朝阳区建国门外大街",
+    "latitude": 39.9042,
+    "longitude": 116.4074
+  },
+  "preferences": {
+    "cuisine_types": ["快餐", "简餐"],
+    "price_sensitivity": "high",
+    "max_price": 50
+  },
+  "query": "想要快速便宜的快餐",
+  "max_results": 5
+}
+
+### 5.10 MAB算法策略测试 - Thompson Sampling
+POST {{baseUrl}}:{{recommendationServicePort}}/api/v2/agents/recommend
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "user_id": "1",
+  "location": {
+    "address": "北京市朝阳区建国门外大街",
+    "latitude": 39.9042,
+    "longitude": 116.4074
+  },
+  "preferences": {
+    "cuisine_types": ["精品菜", "高档餐厅"],
+    "price_sensitivity": "low",
+    "max_price": 200
+  },
+  "query": "想要高端精品餐厅体验",
+  "max_results": 5
+}
+
+###############################################################################
+# 6. 订单服务 (Order) - 订单全流程
+###############################################################################
+
+### 6.1 创建订单
+# @name createOrder
+POST {{baseUrl}}:{{orderServicePort}}/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "merchantId": 1,
+  "items": [
+    {
+      "menuItemId": 1,
+      "price": 15.50,
+      "quantity": 1
+    },
+    {
+      "menuItemId": 10,
+      "price": 12.00,
+      "quantity": 2
+    }
+  ]
+}
+
+@orderId = {{createOrder.response.body.id}}
+
+### 6.2 查询我的订单列表
+GET {{baseUrl}}:{{orderServicePort}}/orders/my-orders
+Authorization: Bearer {{customerToken}}
+
+### 6.3 查询指定用户的订单（内部接口）
+GET {{baseUrl}}:{{orderServicePort}}/orders/user/1
+Authorization: Bearer {{customerToken}}
+
+### 6.4 获取订单详情（含价格信息）
+GET {{baseUrl}}:{{orderServicePort}}/orders/3/detail
+Authorization: Bearer {{customerToken}}
+
+###############################################################################
+# 7. 支付模拟 (Payment Simulation) - 模拟支付成功
+###############################################################################
+
+### 7.0 用户端支付接口（推荐使用）
+# 这是用户在前端点击"支付"按钮后应该调用的接口
+# 自动创建模拟支付信息并更新订单状态为PAID
+# @name userPayOrder
+POST {{baseUrl}}:{{orderServicePort}}/orders/11441/pay
+Authorization: Bearer {{customerToken}}
+
+### 7.1 模拟支付成功 - 完整版 (指定支付方式、交易号等)
+# 内部接口，用于测试或第三方支付回调
+# @name payOrder
+POST {{baseUrl}}:{{orderServicePort}}/orders/internal/{{orderId}}/payment/confirm
+Content-Type: application/json
+
+{
+  "paymentMethod": "WECHAT",
+  "paymentTransactionId": "WX20231222123456789012345678",
+  "paymentChannel": "APP",
+  "paidAmount": 45.00,
+  "remark": "模拟微信支付成功"
+}
+
+### 7.2 模拟支付成功 - 简化版 (自动生成交易号)
+# 内部接口，快速测试用，自动生成模拟交易号
+POST {{baseUrl}}:{{orderServicePort}}/orders/internal/{{orderId}}/payment/mock
+
+### 7.3 模拟支付宝支付
+POST {{baseUrl}}:{{orderServicePort}}/orders/internal/{{orderId}}/payment/confirm
+Content-Type: application/json
+
+{
+  "paymentMethod": "ALIPAY",
+  "paymentTransactionId": "ALI20231222987654321098765432",
+  "paymentChannel": "MINI_PROGRAM",
+  "paidAmount": 45.00,
+  "remark": "模拟支付宝小程序支付成功"
+}
+
+### 7.4 查看支付后的订单详情 (确认支付信息已同步)
+GET {{baseUrl}}:{{orderServicePort}}/orders/{{orderId}}/detail
+Authorization: Bearer {{customerToken}}
+
+###############################################################################
+# 8. 售后与退款 (Refund & Cancellation) - 订单取消与退款
+###############################################################################
+
+### 8.1 用户取消订单（未接单状态 - 直接退款）
+POST {{baseUrl}}:{{orderServicePort}}/orders/11438/cancel
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "cancelReason": "不想吃了"
+}
+
+### 8.2 用户取消订单（已接单状态 - 需要商家审批）
+POST {{baseUrl}}:{{orderServicePort}}/orders/11451/cancel
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "cancelReason": "不想要了"
+}
+
+### 8.3 创建订单用于测试拒绝退款
+POST {{baseUrl}}:{{orderServicePort}}/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "merchantId": 1,
+  "items": [
+    {
+      "menuItemId": 1,
+      "price": 15.50,
+      "quantity": 1
+    }
+  ]
+}
+
+### 8.4 申请取消订单（需要商家审批）
+POST {{baseUrl}}:{{orderServicePort}}/orders/11216/cancel
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "cancelReason": "测试拒绝退款"
+}
+
+### 8.5 商家批准退款申请
+PATCH {{baseUrl}}:{{merchantServicePort}}/merchants/1/orders/1/approve-cancel
+Authorization: Bearer {{merchantToken}}
+Content-Type: application/json
+
+{
+  "approved": true
+}
+
+### 8.6 商家拒绝退款申请
+PATCH {{baseUrl}}:{{merchantServicePort}}/merchants/1/orders/3/approve-cancel
+Authorization: Bearer {{merchantToken}}
+Content-Type: application/json
+
+{
+  "approved": false,
+  "rejectReason": "订单已出餐，无法取消"
+}
+
+### 8.7 查询商家的待审批退款订单列表
+GET {{baseUrl}}:{{orderServicePort}}/orders/merchant/1/pending-refunds
+Authorization: Bearer {{merchantToken}}
+
+### 8.8 商家查看待审批退款列表
+GET {{baseUrl}}:{{merchantServicePort}}/merchants/1/pending-refunds
+Authorization: Bearer {{merchantToken}}
+
+### 8.9 核销优惠券 (支付成功后调用)
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/1/use
+Content-Type: application/json
+
+{
+  "couponId": 1,
+  "orderId": 1001,
+  "remark": "订单支付核销"
+}
+
+### 8.10 回滚优惠券 (订单取消后)
+POST {{baseUrl}}:{{marketingServicePort}}/coupons/1/rollback
+Content-Type: application/json
+
+{
+  "couponId": 1,
+  "orderId": 1001,
+  "reason": "用户取消订单"
+}
+
+###############################################################################
+# 9. 订单内部接口 (Internal API) - 供其他微服务调用
+###############################################################################
+
+### 9.1 获取订单详情（内部接口）
+GET {{baseUrl}}:{{orderServicePort}}/orders/internal/1
+
+### 9.2 更新订单取消状态为已批准（内部接口）
+POST {{baseUrl}}:{{orderServicePort}}/orders/internal/1/cancel-status/approve?refundAmount=43.00
+
+### 9.3 更新订单取消状态为已拒绝（内部接口）
+POST {{baseUrl}}:{{orderServicePort}}/orders/internal/2/cancel-status/reject
+
+### 9.4 获取商家的待审批订单列表（内部接口）
+GET {{baseUrl}}:{{orderServicePort}}/orders/internal/merchant/1/pending-refunds
+
+### 9.5 记录用户取消订单并更新信用
+POST {{baseUrl}}:{{userServicePort}}/users/1/cancellations/record?orderId=1&cancelReason=不想要了
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+###############################################################################
+# 10. 平台服务 (Platform) - 平台服务与结算管理
+###############################################################################
+
+### ⚠️  【重要】10.0 初始化商家强制订阅（结算单前置条件）
+### 说明：订阅所有【强制服务】（isMandatory=true）
+### 当前只有【平台技术服务费】设为强制，其余都是可选的
+### 必须先执行此步骤，才能在创建订单后生成分成记录，进而生成结算单
+
+
+# 使用实际的商家ID替代硬编码的1
+POST {{baseUrl}}:{{platformServicePort}}/api/admin/platform-services/merchants/1/init-mandatory
+Authorization: Bearer {{adminToken}}
+
+# 先检查当前商家ID
+# @name getCurrentMerchant
+GET {{baseUrl}}:{{userServicePort}}/users/me
+Authorization: Bearer {{merchantToken}}
+
+### 10.0.1 调试：检查当前用户对应的商家信息
+GET {{baseUrl}}:{{merchantServicePort}}/merchants/my
+Authorization: Bearer {{merchantToken}}
+
+### 10.0.2 调试：查看所有平台服务 
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/platform-services
+Authorization: Bearer {{merchantToken}}
+
+
+### ==================== 商家端 - 平台服务 ====================
+
+### 10.1 获取所有可用服务
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/platform-services
+Authorization: Bearer {{merchantToken}}
+
+### 10.2 按类别分组获取服务
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/platform-services/grouped
+Authorization: Bearer {{merchantToken}}
+
+### 10.3 获取可选服务
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/platform-services/optional
+Authorization: Bearer {{merchantToken}}
+
+### 10.4 获取配送类服务
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/platform-services/category/DELIVERY
+Authorization: Bearer {{merchantToken}}
+
+### 10.5 获取服务详情
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/platform-services/1
+Authorization: Bearer {{merchantToken}}
+
+### ==================== 商家端 - 订阅管理 ====================
+
+### 10.6 获取我的订阅
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/platform-services/subscriptions
+Authorization: Bearer {{merchantToken}}
+
+### 10.7 获取全部订阅历史
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/platform-services/subscriptions/all
+Authorization: Bearer {{merchantToken}}
+
+### 10.8 订阅服务
+POST {{baseUrl}}:{{platformServicePort}}/api/merchant/platform-services/subscriptions
+Authorization: Bearer {{merchantToken}}
+Content-Type: application/json
+
+{
+  "serviceId": 8
+}
+
+### 10.9 取消订阅
+DELETE {{baseUrl}}:{{platformServicePort}}/api/merchant/platform-services/subscriptions/6
+Authorization: Bearer {{merchantToken}}
+Content-Type: application/json
+
+{
+  "reason": "暂时不需要此服务"
+}
+
+### ==================== 商家端 - 分成查询 ====================
+
+### 10.10 获取分成记录列表
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/commissions?page=0&size=10
+Authorization: Bearer {{merchantToken}}
+
+### 10.11 获取分成记录详细信息（诊断）
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/commissions?page=0&size=100
+Authorization: Bearer {{merchantToken}}
+
+### 10.11.1 调试：检查当前商家的认证信息
+GET {{baseUrl}}:{{userServicePort}}/users/me
+Authorization: Bearer {{merchantToken}}
+
+### 10.12 获取待结算分成记录
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/commissions?status=PENDING&page=0&size=10
+Authorization: Bearer {{merchantToken}}
+
+### 10.13 获取今日分成汇总
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/commissions/summary/today
+Authorization: Bearer {{merchantToken}}
+
+### 10.14 获取本月分成汇总
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/commissions/summary/this-month
+Authorization: Bearer {{merchantToken}}
+
+### 10.15 获取指定时间范围分成汇总
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/commissions/summary?startTime=2025-01-01T00:00:00&endTime=2025-12-31T23:59:59
+Authorization: Bearer {{merchantToken}}
+
+### 10.16 获取订单分成详情
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/commissions/order/1
+Authorization: Bearer {{merchantToken}}
+
+### ==================== 管理员端 - 平台服务 ====================
+
+### 10.17 获取所有服务（含下线的）
+GET {{baseUrl}}:{{platformServicePort}}/api/admin/platform-services
+Authorization: Bearer {{adminToken}}
+
+### 10.18 创建新服务
+POST {{baseUrl}}:{{platformServicePort}}/api/admin/platform-services
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "serviceCode": "NEW_SERVICE",
+  "serviceName": "新服务",
+  "category": "OPERATION",
+  "description": "这是一个新服务",
+  "feeType": "FIXED_MONTHLY",
+  "feeValue": 30.00,
+  "billingCycle": "MONTHLY",
+  "isMandatory": false,
+  "sortOrder": 40
+}
+
+### 10.19 更新服务
+PUT {{baseUrl}}:{{platformServicePort}}/api/admin/platform-services/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "serviceName": "平台技术服务费（更新）",
+  "feeValue": 0.035
+}
+
+### 10.20 上线/下线服务
+PATCH {{baseUrl}}:{{platformServicePort}}/api/admin/platform-services/1/toggle-status
+Authorization: Bearer {{adminToken}}
+
+### 10.21 获取服务订阅数量
+GET {{baseUrl}}:{{platformServicePort}}/api/admin/platform-services/1/subscriptions/count
+Authorization: Bearer {{adminToken}}
+
+### 10.22 为商家初始化强制订阅
+POST {{baseUrl}}:{{platformServicePort}}/api/admin/platform-services/merchants/1/init-mandatory
+Authorization: Bearer {{adminToken}}
+
+### 10.23 手动触发分成计算
+POST {{baseUrl}}:{{platformServicePort}}/api/admin/platform-services/commission/trigger
+Authorization: Bearer {{adminToken}}
+
+### ==================== 内部接口 ====================
+
+### 10.24 计算订单分成
+POST {{baseUrl}}:{{platformServicePort}}/api/internal/commissions/calculate
+Content-Type: application/json
+
+{
+  "orderId": 100,
+  "merchantId": 1,
+  "orderAmount": 88.00
+}
+
+### 10.25 退款回滚分成
+POST {{baseUrl}}:{{platformServicePort}}/api/internal/commissions/refund/100
+
+### 10.26 获取订单分成详情
+GET {{baseUrl}}:{{platformServicePort}}/api/internal/commissions/order/1
+
+### ==================== 管理员端 - 结算单 ====================
+
+### 10.27 生成结算单 (月度)
+POST {{baseUrl}}:{{platformServicePort}}/api/admin/settlements/generate
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "settlementType": "MONTHLY",
+  "periodStart": "2025-12-01",
+  "periodEnd": "2025-12-31"
+}
+
+### 10.28 生成周结算单
+POST {{baseUrl}}:{{platformServicePort}}/api/admin/settlements/generate
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "settlementType": "WEEKLY"
+}
+
+### 10.29 为指定商家生成结算单
+POST {{baseUrl}}:{{platformServicePort}}/api/admin/settlements/generate
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "settlementType": "MONTHLY",
+  "merchantId": 1
+}
+
+### 10.30 获取所有结算单
+GET {{baseUrl}}:{{platformServicePort}}/api/admin/settlements?page=0&size=20
+Authorization: Bearer {{adminToken}}
+
+### 10.31 按状态筛选结算单
+GET {{baseUrl}}:{{platformServicePort}}/api/admin/settlements?status=PENDING_CONFIRM&page=0&size=20
+Authorization: Bearer {{adminToken}}
+
+### 10.32 获取结算单详情
+GET {{baseUrl}}:{{platformServicePort}}/api/admin/settlements/1
+Authorization: Bearer {{adminToken}}
+
+### 10.33 获取结算单分成记录
+GET {{baseUrl}}:{{platformServicePort}}/api/admin/settlements/1/commissions?page=0&size=20
+Authorization: Bearer {{adminToken}}
+
+### 10.34 调整结算单金额
+POST {{baseUrl}}:{{platformServicePort}}/api/admin/settlements/1/adjust
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "adjustmentAmount": -10.00,
+  "reason": "系统计算错误，扣减10元"
+}
+
+### 10.35 批量标记已打款
+POST {{baseUrl}}:{{platformServicePort}}/api/admin/settlements/batch-pay
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "settlementIds": [1, 2, 3]
+}
+
+### 10.36 作废结算单
+POST {{baseUrl}}:{{platformServicePort}}/api/admin/settlements/1/cancel
+Authorization: Bearer {{adminToken}}
+
+### 10.37 获取结算统计
+GET {{baseUrl}}:{{platformServicePort}}/api/admin/settlements/stats
+Authorization: Bearer {{adminToken}}
+
+### 10.38 手动触发月结算
+POST {{baseUrl}}:{{platformServicePort}}/api/admin/settlements/trigger/monthly
+Authorization: Bearer {{adminToken}}
+
+### 10.39 手动触发周结算
+POST {{baseUrl}}:{{platformServicePort}}/api/admin/settlements/trigger/weekly
+Authorization: Bearer {{adminToken}}
+
+### 10.40 手动触发自动确认
+POST {{baseUrl}}:{{platformServicePort}}/api/admin/settlements/trigger/auto-confirm
+Authorization: Bearer {{adminToken}}
+
+### ==================== 商家端 - 结算单 ====================
+
+### 10.41 获取结算单列表
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/settlements?page=0&size=10
+Authorization: Bearer {{merchantToken}}
+
+### 10.42 获取待确认结算单
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/settlements?status=PENDING_CONFIRM&page=0&size=10
+Authorization: Bearer {{merchantToken}}
+
+### 10.43 获取结算单详情
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/settlements/1
+Authorization: Bearer {{merchantToken}}
+
+### 10.44 获取结算单内的分成记录
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/settlements/1/commissions?page=0&size=20
+Authorization: Bearer {{merchantToken}}
+
+### 10.45 确认结算单
+POST {{baseUrl}}:{{platformServicePort}}/api/merchant/settlements/1/confirm
+Authorization: Bearer {{merchantToken}}
+
+### 10.46 提交异议
+POST {{baseUrl}}:{{platformServicePort}}/api/merchant/settlements/1/dispute
+Authorization: Bearer {{merchantToken}}
+Content-Type: application/json
+
+{
+  "reason": "订单金额有误，实际应为100元"
+}
+
+### 10.47 获取待确认结算单数量
+GET {{baseUrl}}:{{platformServicePort}}/api/merchant/settlements/pending-count
+Authorization: Bearer {{merchantToken}}
+
+###############################################################################
+# 11. 权限验证与异常测试 (Permission & Error Testing)
+###############################################################################
+
+### 11.1 用户尝试访问商家接口（应返回403）
+GET {{baseUrl}}:{{merchantServicePort}}/merchants/1/pending-refunds
+Authorization: Bearer {{customerToken}}
+
+### 11.2 未登录访问需要认证的接口（应返回401e）
+GET {{baseUrl}}:{{orderServicePort}}/orders/my-orders
+
+### 11.3 用户尝试查看其他商家的订单（应返回403）
+GET {{baseUrl}}:{{merchantServicePort}}/merchants/999/pending-refunds
+Authorization: Bearer {{merchantToken}}
+
+### 11.4 获取指定用户的订单 (内部接口)
+GET {{baseUrl}}:{{orderServicePort}}/orders/user/5
+Authorization: Bearer {{customerToken}}
+
+### 11.5 权限测试：未登录访问 (应返回 401/403)
+GET {{baseUrl}}:{{orderServicePort}}/orders/my-orders
+
+### 11.6 营销服务健康检查
+GET {{baseUrl}}:{{marketingServicePort}}/coupons/health
+
+###############################################################################
+# 12. AI 定价与商家审批 (AI Pricing & Approval)
+# 依赖：scripts/07_init_ai_pricing_data.sql 预置的数据 (生成于 Order Service)
+# 重要提示：
+# 1. 请确保已执行 "1.5 商家登录" 获取 merchantToken (账号: bob)
+# 2. 只有 bob (merchantId=1) 拥有 ID=1 的菜品数据
+###############################################################################
+
+### 12.0 [商家端] 开启自动审批
+PATCH {{baseUrl}}:{{merchantServicePort}}/merchants/1/auto-approval/status?enable=true
+Authorization: Bearer {{merchantToken}}
+
+### 12.0.1 [商家端] 调整自动审批阈值 (需先开启)
+# 设置阈值为 5% (0.05)
+PATCH {{baseUrl}}:{{merchantServicePort}}/merchants/1/auto-approval/threshold?threshold=0.05
+Authorization: Bearer {{merchantToken}}
+
+### 12.0.2 [商家端] 关闭自动审批
+PATCH {{baseUrl}}:{{merchantServicePort}}/merchants/1/auto-approval/status?enable=false
+Authorization: Bearer {{merchantToken}}
+
+### 12.1 手动触发 AI 定价分析
+# 模拟定时任务触发，AI 会拉取 Order Service 的聚合销量数据 + Merchant Service 的最新菜单
+# 分析后生成提案并发送到 MQ
+# 预期结果：返回 "Pricing cycle triggered"
+POST {{baseUrl}}:{{aiPricingServicePort}}/trigger-cycle
+Content-Type: application/json
+
+{}
+
+### 12.2 [商家端] 查看待审批的价格提案
+# 如果 AI 建议降价幅度较大，会生成 PENDING 状态的提案
+# Merchant ID 为 1 (bob)
+GET {{baseUrl}}:{{merchantServicePort}}/merchants/1/price-proposals/pending
+Authorization: Bearer {{merchantToken}}
+
+### 12.2.1 [商家端] 查看所有历史提案 (含自动审批)
+# 可以看到所有状态的提案：PENDING, APPROVED, REJECTED, AUTO_APPROVED
+GET {{baseUrl}}:{{merchantServicePort}}/merchants/1/price-proposals/history
+Authorization: Bearer {{merchantToken}}
+
+### 变量：获取提案ID (从 12.2 的响应中获取)
+# 这里的 @proposalId 需要你根据上一条请求的实际响应结果手动修改
+@proposalId = 1 
+
+### 12.3 [商家端] 批准调价建议
+# 路径已更新：包含 merchantId
+POST {{baseUrl}}:{{merchantServicePort}}/merchants/1/price-proposals/{{proposalId}}/approve
+Authorization: Bearer {{merchantToken}}
+
+### 12.4 [商家端] 拒绝调价建议
+POST {{baseUrl}}:{{merchantServicePort}}/merchants/1/price-proposals/{{proposalId}}/reject
+Authorization: Bearer {{merchantToken}}
+
+### 12.5 [验证] 查看菜单价格是否已更新
+# 检查菜品 ID 1 (红烧牛肉面) 的价格是否已变更为 AI 建议的价格
+# 原价为 15.50
+GET {{baseUrl}}:{{merchantServicePort}}/merchants/1/menu-items
+Authorization: Bearer {{merchantToken}}
+
+### 12.6 [验证] 查看商户通知 (新增)
+# 验证是否收到了价格自动调整/审批通过的通知
+GET {{baseUrl}}:{{merchantServicePort}}/merchants/1/notifications
+Authorization: Bearer {{merchantToken}}
+
+
+###############################################################################
+# 13. 平台管理端 API (Admin Dashboard) - 供前端平台管理端使用
+###############################################################################
+
+### ==================== 13.1 仪表盘 Dashboard API ====================
+
+### 13.1.1 获取仪表盘概览数据
+GET {{baseUrl}}:{{platformServicePort}}/api/admin/dashboard/overview
+Authorization: Bearer {{adminToken}}
+
+### 13.1.2 获取系统通知
+GET {{baseUrl}}:{{platformServicePort}}/api/admin/notifications?page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+### 13.1.3 获取平台统计数据
+GET {{baseUrl}}:{{platformServicePort}}/api/admin/platform/stats
+Authorization: Bearer {{adminToken}}
+
+### 13.1.4 系统健康检查
+GET {{baseUrl}}:{{platformServicePort}}/api/admin/system/health
+Authorization: Bearer {{adminToken}}
+
+### 13.1.5 获取系统指标
+GET {{baseUrl}}:{{platformServicePort}}/api/admin/system/metrics
+Authorization: Bearer {{adminToken}}
+
+### ==================== 13.2 用户管理 API ====================
+
+### 13.2.1 获取用户列表（分页）
+GET {{baseUrl}}:{{userServicePort}}/admin/users?page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+### 13.2.2 按角色筛选用户
+GET {{baseUrl}}:{{userServicePort}}/admin/users?page=0&size=10&role=customer
+Authorization: Bearer {{adminToken}}
+
+### 13.2.3 搜索用户
+GET {{baseUrl}}:{{userServicePort}}/admin/users?page=0&size=10&search=test
+Authorization: Bearer {{adminToken}}
+
+### 13.2.4 获取用户统计数据
+GET {{baseUrl}}:{{userServicePort}}/admin/users/stats
+Authorization: Bearer {{adminToken}}
+
+### 13.2.5 获取用户总数
+GET {{baseUrl}}:{{userServicePort}}/admin/users/count
+Authorization: Bearer {{adminToken}}
+
+### 13.2.6 获取用户详情
+GET {{baseUrl}}:{{userServicePort}}/admin/users/1
+Authorization: Bearer {{adminToken}}
+
+### 13.2.7 修改用户状态
+PATCH {{baseUrl}}:{{userServicePort}}/admin/users/1/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "ACTIVE",
+  "reason": "恢复正常状态"
+}
+
+### 13.2.8 调整用户信用等级
+PATCH {{baseUrl}}:{{userServicePort}}/admin/users/1/credit
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "creditLevel": 5
+}
+
+### 13.2.9 获取用户活动日志
+GET {{baseUrl}}:{{userServicePort}}/admin/users/1/activity
+Authorization: Bearer {{adminToken}}
+
+### ==================== 13.3 商家管理 API ====================
+
+### 13.3.1 获取商家统计数据
+GET {{baseUrl}}:{{merchantServicePort}}/api/admin/merchants/stats
+Authorization: Bearer {{adminToken}}
+
+### 13.3.2 获取活跃商家数
+GET {{baseUrl}}:{{merchantServicePort}}/api/admin/merchants/active-count
+Authorization: Bearer {{adminToken}}
+
+### 13.3.3 获取最新注册商家
+GET {{baseUrl}}:{{merchantServicePort}}/api/admin/merchants/latest?limit=5
+Authorization: Bearer {{adminToken}}
+
+### 13.3.4 获取商家列表（分页）
+GET {{baseUrl}}:{{merchantServicePort}}/api/admin/merchants?page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+### 13.3.5 获取商家详情
+GET {{baseUrl}}:{{merchantServicePort}}/api/admin/merchants/1
+Authorization: Bearer {{adminToken}}
+
+### 13.3.6 修改商家状态
+PATCH {{baseUrl}}:{{merchantServicePort}}/api/admin/merchants/1/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "ACTIVE"
+}
+
+### 13.3.7 审批商家
+PATCH {{baseUrl}}:{{merchantServicePort}}/api/admin/merchants/1/approve
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "approved": true,
+  "reason": "资质审核通过"
+}
+
+### ==================== 13.4 订单管理 API ====================
+
+### 13.4.1 获取订单统计数据
+GET {{baseUrl}}:{{orderServicePort}}/api/admin/orders/stats
+Authorization: Bearer {{adminToken}}
+
+### 13.4.2 获取总销售额
+GET {{baseUrl}}:{{orderServicePort}}/api/admin/orders/total-sales
+Authorization: Bearer {{adminToken}}
+
+### 13.4.3 获取今日订单数
+GET {{baseUrl}}:{{orderServicePort}}/api/admin/orders/today-count
+Authorization: Bearer {{adminToken}}
+
+### 13.4.4 获取订单趋势（最近7天）
+GET {{baseUrl}}:{{orderServicePort}}/api/admin/orders/trends
+Authorization: Bearer {{adminToken}}
+
+### 13.4.5 获取所有订单（分页）
+GET {{baseUrl}}:{{orderServicePort}}/api/admin/orders/all?page=0&size=10
+Authorization: Bearer {{adminToken}}
+
+### 13.4.6 按状态筛选订单
+GET {{baseUrl}}:{{orderServicePort}}/api/admin/orders/all?page=0&size=10&status=COMPLETED
+Authorization: Bearer {{adminToken}}
+
+### 13.4.7 获取订单详情
+GET {{baseUrl}}:{{orderServicePort}}/api/admin/orders/1
+Authorization: Bearer {{adminToken}}
+
+### 13.4.8 修改订单状态
+PATCH {{baseUrl}}:{{orderServicePort}}/api/admin/orders/1/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "COMPLETED"
+}
+
+###############################################################################
+# 使用说明
+###############################################################################
+# 【快速开始】
+# 1. 首先运行 docker-compose -f docker-compose.dev.yml up -d 启动所有服务
+# 2. 按顺序执行各个部分的测试接口：
+#    - 第1部分：认证初始化（获取token）
+#    - 第2部分：商家服务（创建店铺和菜单）
+#    - 第3部分：用户服务（更新用户信息）
+#    - 第4部分：营销服务（创建和发放优惠券）
+#      - 4.1节：基础优惠券管理
+#      - 4.2节：智能发放系统（新功能）
+#    - 第5部分：推荐服务（获取智能推荐）
+#    - 第6部分：订单服务（创建订单）
+#    - 第7部分：支付模拟（模拟支付）*** 重要：必须使用 7.0 用户端支付接口 ***
+#    - 第8部分：售后退款（订单取消和退款）
+#    - 第9部分：内部接口（供微服务调用）
+#    - 第10部分：平台服务（结算管理）
+#    - 第11部分：权限验证（测试权限控制）
+#    - 第12部分：管理端接口（平台管理员功能）
+#
+# 【订单支付完整流程】*** 重要 ***
+# 正确的流程：
+#   1. 执行 6.1 创建订单（订单状态为 PENDING 待支付）
+#   2. 执行 7.0 用户端支付接口（推荐）- 将订单状态更新为 PAID
+#   3. 执行 12.4.5 查看平台端订单列表，验证状态显示为"已支付"
+# 
+# 常见错误：
+#   ❌ 只创建订单（6.1）就去查看订单列表 -> 订单会显示"待支付"
+#   ❌ 使用内部支付接口（7.1/7.2）-> 这些是给系统内部或第三方回调用的
+#   ✅ 正确做法：创建订单后调用 7.0 用户端支付接口
+#
+# 【优惠券最低金额判断功能】
+# 新增功能：根据订单金额过滤可用优惠券
+#   1. 执行 4.7.1 测试金额满足条件的优惠券获取
+#   2. 执行 4.7.2 测试金额不满足条件的优惠券过滤
+#   3. 执行 4.9.1-4.9.2 测试单个优惠券使用条件检查
+# 
+# 【智能发放完整流程】
+# 前置条件：
+#   1. 执行 1.6 管理员登录获取adminToken
+#   2. 执行 4.2.2-4.2.5 创建智能发放规则
+# 测试智能发放：
+#   3. 执行 4.2.12 手动触发新用户发放测试
+#   4. 执行 4.2.13 手动触发高信用用户发放测试  
+#   5. 执行 4.2.14-4.2.16 内部事件触发接口测试
+#   6. 执行 4.2.17-4.2.18 查看发放统计信息
+# 规则管理：
+#   7. 执行 4.2.6-4.2.8 查看和管理规则
+#   8. 执行 4.2.10-4.2.11 测试规则启用/禁用
+#   9. 执行 4.2.19 软删除规则测试
+#
+# 【结算单完整流程】
+# 前置条件：
+#   1. 执行 10.0 初始化商家强制订阅
+#   2. 执行 6.1 创建订单
+#   3. 执行 10.11 验证分成记录存在
+# 生成结算单：
+#   4. 执行 10.27 生成月结算单
+#   5. 执行 10.30 查询结算单列表
+#   6. 执行 10.41 商家查询结算单列表
+#   7. 执行 10.43 查看结算单详情
+#   8. 执行 10.45 确认结算单
+#
+# 【注意事项】
+# - 所有用户的初始密码都是：password123
+# - JWT token有过期时间，如果接口返回401需要重新登录
+# - 订单ID等资源ID需要根据实际创建的数据调整
+# - 建议按顺序执行测试，因为后续测试依赖前面的数据
