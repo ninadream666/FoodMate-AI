@@ -13,15 +13,15 @@ import java.util.List;
 
 /**
  * CORS跨域配置
- * 允许前端应用访问后端API
  */
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
+    // 这个方法其实在 Spring Security 启用后作用不大了，主要靠下面的 Bean
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOriginPatterns("*") // 允许所有域名访问
+                .allowedOriginPatterns("*")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
@@ -32,12 +32,9 @@ public class CorsConfig implements WebMvcConfigurer {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 允许的前端域名
-        configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:*", // 本地开发环境
-                "http://127.0.0.1:*", // 本地开发环境
-                "https://*.yourdomain.com" // 生产环境域名
-        ));
+        // 【关键修改】为了支持 Android 模拟器 (10.0.2.2) 和局域网真机调试
+        // 开发环境建议直接允许所有 (*)，或者显式添加 http://10.0.2.2:*
+        configuration.setAllowedOriginPatterns(List.of("*"));
 
         // 允许的HTTP方法
         configuration.setAllowedMethods(Arrays.asList(
@@ -46,7 +43,7 @@ public class CorsConfig implements WebMvcConfigurer {
         // 允许的请求头
         configuration.setAllowedHeaders(List.of("*"));
 
-        // 是否允许发送Cookie
+        // 是否允许发送Cookie (Token)
         configuration.setAllowCredentials(true);
 
         // 预检请求的缓存时间

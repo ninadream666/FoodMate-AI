@@ -6,14 +6,14 @@ import { useNavigate } from 'react-router-dom';
 export default function Profile() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  
+
   // 用户状态
   const [user, setUser] = useState({
     username: '',
     nickname: '',
     phone: '',
     email: '',
-    avatarUrl: '' 
+    avatarUrl: ''
   });
 
   // 编辑模式状态
@@ -78,7 +78,7 @@ export default function Profile() {
   const handleSave = async () => {
     // 保存前先校验
     if (!validateInputs()) {
-      return; 
+      return;
     }
 
     try {
@@ -89,10 +89,10 @@ export default function Profile() {
         email: user.email ? user.email.trim() : '',
         avatarUrl: user.avatarUrl
       };
-      
+
       const updatedUser = await userService.updateUserProfile(updateDto);
       setUser(updatedUser);
-      
+
       setEditMode({ phone: false, email: false, nickname: false });
       alert("修改保存成功！");
     } catch (error) {
@@ -111,7 +111,7 @@ export default function Profile() {
   return (
     <div className="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark overflow-x-hidden font-sans text-[#1c130d]">
       <div className="layout-container flex h-full grow flex-col">
-        
+
         {/* --- Header --- */}
         <header className="flex items-center justify-between border-b border-solid border-[#f4ece7] px-6 lg:px-10 py-4 bg-white shadow-sm">
           <div className="flex items-center gap-4 cursor-pointer" onClick={() => navigate('/home')}>
@@ -121,7 +121,7 @@ export default function Profile() {
             <h2 className="text-lg font-bold">美食外卖平台</h2>
           </div>
           <div className="flex flex-1 justify-end gap-4 items-center">
-            <button 
+            <button
               onClick={() => navigate('/home')}
               className="hidden md:flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-orange-500 transition-colors mr-2"
             >
@@ -130,8 +130,8 @@ export default function Profile() {
             </button>
 
             <span className="text-sm font-medium hidden sm:inline">{user.nickname || user.username}</span>
-            <div 
-              className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-gray-200" 
+            <div
+              className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-gray-200"
               style={{ backgroundImage: `url("${user.avatarUrl}")` }}
             ></div>
             <button onClick={handleLogout} className="text-sm font-bold text-orange-500 px-4 py-2 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">退出</button>
@@ -152,16 +152,16 @@ export default function Profile() {
           {/* --- Main Content --- */}
           <main className="flex-1 p-6 lg:p-8 bg-[#f8f7f5]">
             <div className="flex flex-col gap-8 max-w-5xl mx-auto">
-              
+
               <div className="bg-white rounded-xl shadow-sm p-6 lg:p-8">
                 <h3 className="text-xl font-bold mb-6">个人资料</h3>
-                
+
                 <div className="flex flex-col lg:flex-row gap-8 items-start">
                   {/* 头像区域 */}
                   <div className="flex-shrink-0 w-full lg:w-auto flex flex-col items-center gap-2 cursor-pointer group">
                     <div className="relative">
-                      <div 
-                        className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-32 border-4 border-white shadow-md" 
+                      <div
+                        className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-32 border-4 border-white shadow-md"
                         style={{ backgroundImage: `url("${user.avatarUrl}")` }}
                       ></div>
                       <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -174,14 +174,14 @@ export default function Profile() {
                   {/* 表单区域 */}
                   <div className="flex-1 w-full">
                     <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      
+
                       {/* 用户名 (只读) */}
                       <div className="flex flex-col">
                         <p className="text-sm font-medium pb-2 text-gray-700">用户名</p>
-                        <input 
-                          className="form-input w-full rounded-lg border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed h-12 px-4" 
-                          value={user.username} 
-                          disabled 
+                        <input
+                          className="form-input w-full rounded-lg border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed h-12 px-4"
+                          value={user.username}
+                          disabled
                         />
                       </div>
 
@@ -193,17 +193,16 @@ export default function Profile() {
                             {editMode.nickname ? '锁定' : '修改'}
                           </button>
                         </div>
-                        <input 
+                        <input
                           name="nickname"
-                          className={`form-input w-full rounded-lg h-12 px-4 transition-colors ${
-                            editMode.nickname ? 'border-orange-500 ring-2 ring-orange-500/20 bg-white' : 'border-gray-200 bg-gray-50 cursor-pointer'
-                          }`}
-                          value={user.nickname || ''} 
+                          className={`form-input w-full rounded-lg h-12 px-4 transition-colors ${editMode.nickname ? 'border-orange-500 ring-2 ring-orange-500/20 bg-white' : 'border-gray-200 bg-gray-50 cursor-pointer'
+                            }`}
+                          value={user.nickname || ''}
                           onChange={handleChange}
                           readOnly={!editMode.nickname}
                           onDoubleClick={() => handleDoubleClick('nickname')} // 双击事件
                           title="双击可修改"
-                          placeholder="未设置昵称" 
+                          placeholder="未设置昵称"
                         />
                       </div>
 
@@ -215,11 +214,10 @@ export default function Profile() {
                             {editMode.phone ? '锁定' : '修改'}
                           </button>
                         </div>
-                        <input 
+                        <input
                           name="phone"
-                          className={`form-input w-full rounded-lg h-12 px-4 transition-colors ${
-                            editMode.phone ? 'border-orange-500 ring-2 ring-orange-500/20 bg-white' : 'border-gray-200 bg-gray-50 cursor-pointer'
-                          }`}
+                          className={`form-input w-full rounded-lg h-12 px-4 transition-colors ${editMode.phone ? 'border-orange-500 ring-2 ring-orange-500/20 bg-white' : 'border-gray-200 bg-gray-50 cursor-pointer'
+                            }`}
                           value={user.phone || ''}
                           onChange={handleChange}
                           readOnly={!editMode.phone}
@@ -232,17 +230,16 @@ export default function Profile() {
 
                       {/* 邮箱 */}
                       <div className="flex flex-col relative">
-                         <div className="flex justify-between items-center pb-2">
+                        <div className="flex justify-between items-center pb-2">
                           <p className="text-sm font-medium text-gray-700">邮箱</p>
                           <button type="button" onClick={() => toggleEdit('email')} className="text-xs text-orange-500 hover:underline">
                             {editMode.email ? '锁定' : '修改'}
                           </button>
                         </div>
-                        <input 
+                        <input
                           name="email"
-                          className={`form-input w-full rounded-lg h-12 px-4 transition-colors ${
-                            editMode.email ? 'border-orange-500 ring-2 ring-orange-500/20 bg-white' : 'border-gray-200 bg-gray-50 cursor-pointer'
-                          }`}
+                          className={`form-input w-full rounded-lg h-12 px-4 transition-colors ${editMode.email ? 'border-orange-500 ring-2 ring-orange-500/20 bg-white' : 'border-gray-200 bg-gray-50 cursor-pointer'
+                            }`}
                           value={user.email || ''}
                           onChange={handleChange}
                           readOnly={!editMode.email}
@@ -252,8 +249,8 @@ export default function Profile() {
                       </div>
 
                       <div className="md:col-span-2 flex justify-end mt-4">
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={handleSave}
                           className="rounded-lg h-12 px-8 bg-orange-500 text-white font-bold hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/30"
                         >
@@ -281,13 +278,12 @@ export default function Profile() {
 
 function SidebarItem({ icon, label, active, onClick }) {
   return (
-    <div 
+    <div
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors ${
-        active 
-          ? 'bg-orange-50 text-orange-500' 
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors ${active
+          ? 'bg-orange-50 text-orange-500'
           : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-      }`}
+        }`}
     >
       <span className={`material-symbols-outlined ${active ? 'fill' : ''}`}>{icon}</span>
       <p className="text-sm font-medium">{label}</p>

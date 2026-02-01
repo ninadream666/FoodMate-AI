@@ -1,0 +1,65 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: user-service
+  
+  # 可选的外部配置
+  config:
+    import: "optional:configserver:http://config-server:8888"
+    
+  datasource:
+    # host 'postgres-db'对应docker-compose中的service name
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres-db:5432/food_delivery_db}
+    username: ${SPRING_DATASOURCE_USERNAME:dev}
+    password: ${SPRING_DATASOURCE_PASSWORD:dev123}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      # validate: 验证Entity是否与DB表结构匹配
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        
+  # Flyway 数据库迁移配置
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+    clean-disabled: true
+
+# 服务发现配置（可选）
+eureka:
+  client:
+    enabled: ${EUREKA_CLIENT_ENABLED:true}
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://eureka-server:8761/eureka}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    health-check-url-path: /actuator/health
+
+# 监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# JWT 配置
+jwt:
+  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+  expiration: ${JWT_EXPIRATION:86400000} # 1 day
+

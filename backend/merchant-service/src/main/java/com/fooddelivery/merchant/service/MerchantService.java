@@ -105,6 +105,49 @@ public class MerchantService {
     }
 
     /**
+     * 认领商家（将外部导入的无主商家关联到当前用户）
+     */
+    @Transactional
+    public MerchantDto claimMerchant(String merchantId, Long userId) {
+        // 检查用户是否已有商家
+        List<Merchant> existingMerchants = merchantRepository.findByOwnerUserId(userId);
+        if (!existingMerchants.isEmpty()) {
+            throw new RuntimeException("您已有关联的商家，不能再认领其他商家");
+        }
+
+        // 查找商家
+        Merchant merchant = findEntityByAnyId(merchantId)
+                .orElseThrow(() -> new RuntimeException("商家不存在: " + merchantId));
+
+        // 检查商家是否已被认领
+        if (merchant.getOwnerUserId() != null) {
+            throw new RuntimeException("该商家已被其他用户认领");
+        }
+
+        // 认领商家
+        merchant.setOwnerUserId(userId);
+        Merchant saved = merchantRepository.save(merchant);
+        log.info("用户 {} 成功认领商家 {} (ID: {})", userId, merchant.getName(), merchant.getId());
+
+        return mapToDto(saved);
+    }
+
+    /**
+     * 获取未被认领的商家列表
+     */
+    public List<MerchantDto> getUnclaimedMerchants(String keyword) {
+        List<Merchant> merchants;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            merchants = merchantRepository.findByOwnerUserIdIsNullAndNameContainingIgnoreCase(keyword.trim());
+        } else {
+            merchants = merchantRepository.findByOwnerUserIdIsNull();
+        }
+        return merchants.stream()
+                .map(this::mapToDto)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
      * 导入真实餐厅（来自智能体/地图 API）
      * 自动根据菜系类型生成默认菜品
      */
@@ -301,11 +344,11 @@ public class MerchantService {
     public MerchantDto updateAutoApprovalSettings(Long merchantId, Boolean enable, Double threshold) {
         Merchant merchant = merchantRepository.findById(merchantId)
                 .orElseThrow(() -> new RuntimeException("Merchant not found: " + merchantId));
-        
+
         if (enable != null) {
             merchant.setEnableAutoApproval(enable);
         }
-        
+
         if (threshold != null) {
             if (!Boolean.TRUE.equals(merchant.getEnableAutoApproval()) && !Boolean.TRUE.equals(enable)) {
                 throw new RuntimeException("Cannot set threshold when auto approval is disabled");
@@ -315,7 +358,7 @@ public class MerchantService {
             }
             merchant.setAutoApprovalThreshold(threshold);
         }
-        
+
         return mapToDto(merchantRepository.save(merchant));
     }
 }

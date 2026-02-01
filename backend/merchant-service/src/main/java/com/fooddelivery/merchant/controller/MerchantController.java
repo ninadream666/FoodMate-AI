@@ -121,6 +121,37 @@ public class MerchantController {
         }
     }
 
+    /**
+     * 认领商家（将外部导入的无主商家关联到当前用户）
+     * POST /merchants/{id}/claim
+     */
+    @PostMapping("/{id}/claim")
+    public ResponseEntity<?> claimMerchant(@PathVariable String id) {
+        Long userId = getCurrentUserId();
+        try {
+            MerchantDto merchant = merchantService.claimMerchant(id, userId);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "商家认领成功",
+                    "merchant", merchant));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", e.getMessage()));
+        }
+    }
+
+    /**
+     * 获取未被认领的商家列表（用于商家入驻时选择认领）
+     * GET /merchants/unclaimed
+     */
+    @GetMapping("/unclaimed")
+    public ResponseEntity<List<MerchantDto>> getUnclaimedMerchants(
+            @RequestParam(required = false) String keyword) {
+        List<MerchantDto> merchants = merchantService.getUnclaimedMerchants(keyword);
+        return ResponseEntity.ok(merchants);
+    }
+
     @PatchMapping("/{id}/auto-approval/status")
     public ResponseEntity<MerchantDto> updateAutoApprovalStatus(
             @PathVariable Long id,

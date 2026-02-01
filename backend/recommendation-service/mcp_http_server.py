@@ -473,7 +473,9 @@ async def execute_smart_recommendations(args: Dict[str, Any]) -> Dict[str, Any]:
                 "phone": r.get('tel', ''),
                 "estimated_delivery_time": r.get('estimated_delivery_time', 30),
                 "is_hot_food": r.get('is_hot_food', True),
-                "location": r.get('location', f"{longitude},{latitude}")
+                "location": r.get('location', f"{longitude},{latitude}"),
+                # 🆕 添加图片字段，用于前端展示
+                "image": (r.get('photos', [{}])[0].get('url') if r.get('photos') else None) or r.get('image'),
             }
             for i, r in enumerate(restaurants_raw)
         ]
