@@ -1,0 +1,70 @@
+package com.fooddelivery.marketingservice.repository;
+
+import com.fooddelivery.marketingservice.entity.AutoIssuanceRule;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * 自动发放规则数据访问层
+ */
+@Repository
+public interface AutoIssuanceRuleRepository extends JpaRepository<AutoIssuanceRule, Long> {
+
+    /**
+     * 根据触发类型查找启用的规则
+     */
+    List<AutoIssuanceRule> findByTriggerTypeAndEnabledTrue(AutoIssuanceRule.TriggerType triggerType);
+
+    /**
+     * 查找所有启用且有效的规则
+     */
+    @Query("SELECT r FROM AutoIssuanceRule r WHERE r.enabled = true " +
+            "AND (r.effectiveFrom IS NULL OR r.effectiveFrom <= :now) " +
+            "AND (r.effectiveUntil IS NULL OR r.effectiveUntil > :now) " +
+            "AND (r.totalIssueLimit IS NULL OR r.issuedCount < r.totalIssueLimit)")
+    List<AutoIssuanceRule> findValidRules(@Param("now") LocalDateTime now);
+
+    /**
+     * 根据触发类型查找有效的规则，按优先级排序
+     */
+    @Query("SELECT r FROM AutoIssuanceRule r WHERE r.enabled = true " +
+            "AND r.triggerType = :triggerType " +
+            "AND (r.effectiveFrom IS NULL OR r.effectiveFrom <= :now) " +
+            "AND (r.effectiveUntil IS NULL OR r.effectiveUntil > :now) " +
+            "AND (r.totalIssueLimit IS NULL OR r.issuedCount < r.totalIssueLimit) " +
+            "ORDER BY r.priority ASC, r.id ASC")
+    List<AutoIssuanceRule> findValidRulesByTriggerTypeOrderByPriority(
+            @Param("triggerType") AutoIssuanceRule.TriggerType triggerType,
+            @Param("now") LocalDateTime now);
+
+    /**
+     * 分页查询规则
+     */
+    Page<AutoIssuanceRule> findByEnabledOrderByPriorityAscIdAsc(Boolean enabled, Pageable pageable);
+
+    /**
+     * 根据优惠券模板ID查找规则
+     */
+    List<AutoIssuanceRule> findByCouponTemplateId(Long couponTemplateId);
+
+    /**
+     * 统计启用的规则数量
+     */
+    long countByEnabledTrue();
+
+    /**
+     * 查找即将到期的规则（用于提醒）
+     */
+    @Query("SELECT r FROM AutoIssuanceRule r WHERE r.enabled = true " +
+            "AND r.effectiveUntil IS NOT NULL " +
+            "AND r.effectiveUntil BETWEEN :now AND :endTime")
+    List<AutoIssuanceRule> findRulesExpiringBetween(@Param("now") LocalDateTime now,
+            @Param("endTime") LocalDateTime endTime);
+}

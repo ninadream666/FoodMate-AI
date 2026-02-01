@@ -285,23 +285,48 @@ class ProfileServiceAdapter:
     async def get_user_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
         """
         获取用户画像（供 ProfilerAgent 调用）
-        
-        Args:
-            user_id: 用户ID或用户名
-            
-        Returns:
-            用户画像字典，与 ProfilerAgent 预期格式一致
+        【修复版】支持冷启动：当无Token或无数据时返回默认空画像，防止NoneType报错
         """
         token = self.get_token(user_id)
-        if not token:
-            logger.warning(f"未找到用户 {user_id} 的Token，无法获取真实画像")
-            return None
         
-        context = await self.client.get_user_context(token)
+        # 初始化上下文为None
+        context = None
+        
+        # 只有当Token存在时才去调用远程服务
+        if token:
+            try:
+                context = await self.client.get_user_context(token)
+            except Exception as e:
+                logger.warning(f"调用用户画像服务异常: {e}")
+        
+        # === 核心修复：如果没有拿到 context（新用户/无Token/服务挂了），使用默认空数据 ===
         if not context:
-            return None
+            logger.info(f"用户 {user_id} 处于冷启动状态(无Token或无历史)，返回默认画像")
+            return {
+                "user_id": user_id,
+                "username": "Guest",
+                "preferred_cuisines": [], # 空偏好
+                "price_sensitivity": "中等",
+                "taste_profile": {
+                    "spicy_tolerance": "中",
+                    "preferences": [],
+                    "allergies": []
+                },
+                "behavioral_patterns": {
+                    "order_frequency": 0,
+                    "avg_order_amount": 0,
+                    "favorite_merchants": [],
+                    "browse_history_count": 0
+                },
+                # 使用空列表调用分析函数，获取标准的空结构
+                "order_history_analysis": self._analyze_order_patterns([]),
+                "browse_history_analysis": self._analyze_browse_history([]),
+                "tags": ["新用户"],
+                "stats": {},
+                "data_source": "default_fallback" # 标记为默认数据
+            }
         
-        # 转换为 ProfilerAgent 预期的格式
+        # 如果拿到了真实数据，走原有逻辑
         profile = context.profile
         
         # 从订单历史分析偏好菜系
@@ -323,13 +348,11 @@ class ProfileServiceAdapter:
                 "favorite_merchants": profile.favorite_merchant_ids,
                 "browse_history_count": len(profile.browse_history)
             },
-            # 🆕 深度订单历史分析
             "order_history_analysis": self._analyze_order_patterns(context.recent_orders),
-            # 🆕 浏览历史分析
             "browse_history_analysis": self._analyze_browse_history(profile.browse_history),
             "tags": profile.tags,
             "stats": profile.stats,
-            "data_source": "profile-service"  # 标识数据来源为真实服务
+            "data_source": "profile-service"
         }
 
     def _analyze_order_patterns(self, orders: List[OrderInfo]) -> Dict[str, Any]:

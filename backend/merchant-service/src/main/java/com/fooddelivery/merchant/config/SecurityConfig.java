@@ -27,65 +27,65 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        // 开发环境允许所有来源
-        configuration.setAllowedOriginPatterns(List.of("*")); // 使用 allowedOriginPatterns 替代 allowedOrigins
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true); // 改为 true
-        configuration.setMaxAge(3600L);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
-
-    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                // ========== 管理员接口（临时开发模式全部放行）==========
-                .requestMatchers(new AntPathRequestMatcher("/api/admin/**")).permitAll()
+                // 1. 禁用 CSRF (移动端必须)
+                .csrf(AbstractHttpConfigurer::disable)
 
-                // ========== 公开商家接口 ==========
-                // 放行商家列表接口 (GET /merchants 和 /api/merchants)
-                .requestMatchers(new AntPathRequestMatcher("/merchants", HttpMethod.GET.name())).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/api/merchants", HttpMethod.GET.name())).permitAll()
+                // 2. 启用 CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 放行公开菜单查看接口 (GET) - 支持数字 ID 和外部 ID
-                .requestMatchers(new AntPathRequestMatcher("/merchants/*/menu-items/public", HttpMethod.GET.name())).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/api/merchants/*/menu-items/public", HttpMethod.GET.name())).permitAll()
+                // 3. 设置无状态 Session
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 放行商家详情查看接口 (GET) - 支持数字 ID 和外部 ID
-                .requestMatchers(new AntPathRequestMatcher("/merchants/*", HttpMethod.GET.name())).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/api/merchants/*", HttpMethod.GET.name())).permitAll()
+                // 4. 权限规则配置 (注意顺序：越具体的越靠前)
+                .authorizeHttpRequests(auth -> auth
+                        // ========== [关键修复] 必须认证的接口 (放在通配符之前) ==========
+                        // "我的店铺"信息必须登录才能看，防止被误判为公开接口
+                        .requestMatchers("/api/merchants/my", "/merchants/my").authenticated()
 
-                // 放行外部 ID 查询接口
-                .requestMatchers(new AntPathRequestMatcher("/merchants/external/*", HttpMethod.GET.name())).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/api/merchants/external/*", HttpMethod.GET.name())).permitAll()
+                        // 商家入驻/创建店铺 (POST) 必须登录
+                        .requestMatchers(HttpMethod.POST, "/api/merchants", "/merchants").authenticated()
 
-                // 放行导入接口（允许智能体导入真实餐厅数据）
-                .requestMatchers(new AntPathRequestMatcher("/merchants/import", HttpMethod.POST.name())).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/merchants/import/batch", HttpMethod.POST.name())).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/api/merchants/import", HttpMethod.POST.name())).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/api/merchants/import/batch", HttpMethod.POST.name())).permitAll()
+                        // ========== 公开接口 (白名单) ==========
+                        // 导入数据 (允许智能体/脚本调用)
+                        .requestMatchers("/api/merchants/import/**", "/merchants/import/**").permitAll()
 
-                // 放行内部服务调用接口 (如 AI Pricing 获取菜单)
-                .requestMatchers(new AntPathRequestMatcher("/merchants/internal/**")).permitAll()
+                        // 内部服务调用
+                        .requestMatchers("/merchants/internal/**", "/api/merchants/internal/**").permitAll()
 
-                // 放行 Swagger 文档资源
-                .requestMatchers(new AntPathRequestMatcher("/swagger-ui/**")).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/v3/api-docs/**")).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/swagger-resources/**")).permitAll()
-                
-                // 其他所有接口都需要认证 (JWT Token)
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                        // 商家详情/列表/菜单 (GET) - 允许公开查看
+                        // 注意：这里放在 /my 之后，确保 /my 不会被这个通配符“吃掉”
+                        .requestMatchers(HttpMethod.GET, "/merchants/**", "/api/merchants/**").permitAll()
+
+                        // 管理员接口
+                        .requestMatchers("/admin/**", "/api/admin/**").permitAll()
+
+                        // Swagger 文档
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**").permitAll()
+
+                        // ========== 其他所有请求必须认证 ==========
+                        .anyRequest().authenticated())
+
+                // 5. 添加 JWT 过滤器
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
+    }
+
+    // CORS 配置 Bean
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.setAllowedOriginPatterns(List.of("*"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 }

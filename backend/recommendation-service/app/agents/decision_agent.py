@@ -507,7 +507,9 @@ class DecisionAgent(BaseAgent):
             "cuisine": restaurant.get("cuisine_type", ""),
             "delivery_time": restaurant.get("estimated_delivery_time", 30),
             "is_hot_food": restaurant.get("is_hot_food", True),
-            "order_count": restaurant.get("order_count", 0)
+            "order_count": restaurant.get("order_count", 0),
+            "image": restaurant.get("image"),  # 🆕 图片字段
+            "address": restaurant.get("address", ""),  # 🆕 地址
         }
     
     def _arms_to_recommendations(self, arms: List[RestaurantArm],
@@ -527,6 +529,13 @@ class DecisionAgent(BaseAgent):
                 "score": score,
                 "reason": reason,  # 🆕 每个餐厅的个性化推荐理由
                 "features": arm.features,
+                # 🆕 直接暴露关键字段便于前端使用
+                "rating": arm.features.get("rating", 4.0),
+                "distance": arm.features.get("distance", 1000),
+                "estimated_delivery_time": arm.features.get("delivery_time", 30),
+                "cuisine_type": arm.features.get("cuisine", arm.features.get("cuisine_type", "")),
+                "avg_price": arm.features.get("price", arm.features.get("avg_price", 30)),
+                "image": arm.features.get("image"),  # 🆕 图片字段
                 "mab_stats": {
                     "pulls": arm.pulls,
                     "average_reward": arm.average_reward

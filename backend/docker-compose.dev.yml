@@ -78,6 +78,21 @@ services:
       retries: 3
       start_period: 60s
 
+  redis:
+    image: redis:alpine
+    container_name: food-platform-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
   # === Java 微服务 ===
   # 商家服务
   merchant-service:
@@ -184,6 +199,8 @@ services:
       - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
       - EUREKA_CLIENT_ENABLED=true
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -238,37 +255,33 @@ services:
     restart: unless-stopped
     ports:
       - "8087:8082"
+
+    env_file:
+      - .env
+
     volumes:
-      - ./recommendation-service/.env:/app/.env:ro # 挂载环境变量文件
+      # 保留这个挂载，以防代码需要读取私钥文件路径等
+      - ./.env:/app/.env:ro
+
     environment:
       - TZ=Asia/Shanghai
       - PYTHONPATH=/app
-      # 基础配置
-      - DEBUG=${DEBUG:-false}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      # AI配置
-      - USE_AI_ORCHESTRATOR=${USE_AI_ORCHESTRATOR:-true}
-      - USE_MCP_PROTOCOL=${USE_MCP_PROTOCOL:-true}
-      # API密钥（从.env文件或环境变量读取）
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
-      - MAP_API_KEY=${MAP_API_KEY:-}
-      - QWEATHER_API_KEY=${QWEATHER_API_KEY:-}
+
+      - DEBUG=true
+      - LOG_LEVEL=INFO
+      - USE_AI_ORCHESTRATOR=true
+      - USE_MCP_PROTOCOL=true
+
       # 默认位置
-      - DEFAULT_CITY=${DEFAULT_CITY:-上海}
-      - DEFAULT_LATITUDE=${DEFAULT_LATITUDE:-31.2891}
-      - DEFAULT_LONGITUDE=${DEFAULT_LONGITUDE:-121.2180}
+      - DEFAULT_CITY=上海
+      - DEFAULT_LATITUDE=31.2891
+      - DEFAULT_LONGITUDE=121.2180
+
     depends_on:
       postgres-db:
         condition: service_healthy
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8082/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 90s
 
-  # AI 定价服务
+  # AI 智能定价服务 (Python/FastAPI)
   ai-pricing-service:
     build:
       context: ./ai-pricing-service
@@ -276,11 +289,13 @@ services:
     container_name: food-platform-ai-pricing-service
     restart: unless-stopped
     ports:
-      - "8089:8000"
+      - "8090:8000"
     environment:
+      - TZ=Asia/Shanghai
       - DATABASE_URL=postgresql+asyncpg://dev:dev123@postgres-db:5432/ai_pricing_db
       - RABBITMQ_URL=amqp://dev:dev123@rabbitmq:5672/
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=gemini-2.0-flash
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -292,8 +307,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-
-  # 平台管理服务
+    # 平台管理服务
   platform-service:
     build:
       context: .
@@ -358,7 +372,7 @@ services:
       - EUREKA_SERVER_ENABLE_SELF_PRESERVATION=false
     # profiles: [ "enhanced" ]
 
-  # Spring Cloud 配置中心
+    # Spring Cloud 配置中心
   config-server:
     image: hyness/spring-cloud-config-server:3.1.3
     container_name: food-platform-config-server
@@ -432,6 +446,8 @@ volumes:
   grafana_data:
     driver: local
   prometheus_data:
+    driver: local
+  redis_data:
     driver: local
 
 # === 配置文件 ===

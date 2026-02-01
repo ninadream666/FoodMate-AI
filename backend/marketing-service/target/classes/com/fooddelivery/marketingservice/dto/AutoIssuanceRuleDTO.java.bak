@@ -1,0 +1,69 @@
+package com.fooddelivery.marketingservice.dto;
+
+import com.fooddelivery.marketingservice.entity.AutoIssuanceRule;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+/**
+ * 自动发放规则响应DTO
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AutoIssuanceRuleDTO {
+
+    private Long id;
+    private String ruleName;
+    private String description;
+    private AutoIssuanceRule.TriggerType triggerType;
+    private Long couponTemplateId;
+    private String couponTemplateName; // 冗余字段，方便前端显示
+    private Boolean enabled;
+    private String conditionJson;
+    private AutoIssuanceRule.IssuanceFrequency frequency;
+    private Integer priority;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime effectiveFrom;
+    private LocalDateTime effectiveUntil;
+    private Integer totalIssueLimit;
+    private Integer issuedCount;
+    private Long createdBy;
+
+    /**
+     * 规则状态计算
+     */
+    public String getStatus() {
+        if (!enabled) {
+            return "已禁用";
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (effectiveFrom != null && now.isBefore(effectiveFrom)) {
+            return "未生效";
+        }
+        if (effectiveUntil != null && now.isAfter(effectiveUntil)) {
+            return "已过期";
+        }
+        if (totalIssueLimit != null && issuedCount >= totalIssueLimit) {
+            return "已达上限";
+        }
+
+        return "运行中";
+    }
+
+    /**
+     * 剩余发放次数
+     */
+    public Integer getRemainingIssues() {
+        if (totalIssueLimit == null) {
+            return null; // 无限制
+        }
+        return Math.max(0, totalIssueLimit - (issuedCount != null ? issuedCount : 0));
+    }
+}

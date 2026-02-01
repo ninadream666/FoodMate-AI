@@ -1,0 +1,75 @@
+server:
+  port: 8080 # Docker 内部端口
+
+spring:
+  application:
+    name: merchant-service
+    
+  # 可选的外部配置
+  config:
+    import: "optional:configserver:http://config-server:8888"
+    
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres-db:5432/food_delivery_db}
+    username: ${SPRING_DATASOURCE_USERNAME:dev}
+    password: ${SPRING_DATASOURCE_PASSWORD:dev123}
+    driver-class-name: org.postgresql.Driver
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:rabbitmq}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:dev}
+    password: ${SPRING_RABBITMQ_PASSWORD:dev123}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    
+  # Flyway 数据库迁移配置
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+    clean-disabled: true
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 5000
+            readTimeout: 10000
+          order-service:
+            url: ${ORDER_SERVICE_URL:http://order-service:8080}
+          user-service:
+            url: ${USER_SERVICE_URL:http://user-service:8080}
+
+# 服务发现配置（可选）
+eureka:
+  client:
+    enabled: ${EUREKA_CLIENT_ENABLED:true}
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://eureka-server:8761/eureka}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    health-check-url-path: /actuator/health
+
+jwt:
+  # 必须与user-service一致
+  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+  expiration: ${JWT_EXPIRATION:86400000} # 1 day
+
+# 增强监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true

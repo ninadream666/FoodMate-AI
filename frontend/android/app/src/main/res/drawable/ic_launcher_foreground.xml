@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- 背景圆形 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0"/>
+    
+    <!-- F 字母 -->
+    <path
+        android:fillColor="#FF6B35"
+        android:pathData="M30,35h18v4h-13v10h11v4h-11v15h-5z"/>
+    
+    <!-- A 字母 -->
+    <path
+        android:fillColor="#FF6B35"
+        android:pathData="M52,68l3,-8h10l3,8h5l-10,-33h-6l-10,33h5zM60,43l4,13h-8z"/>
+    
+    <!-- I 字母（小点） -->
+    <path
+        android:fillColor="#E85A2D"
+        android:pathData="M76,35a3,3 0,1 1,0 6a3,3 0,1 1,0 -6"/>
+    
+    <!-- 食物装饰（叉子形状） -->
+    <path
+        android:fillColor="#E85A2D"
+        android:strokeWidth="1.5"
+        android:pathData="M78,44v24M75,44v8M81,44v8"/>
+</vector>

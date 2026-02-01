@@ -1,0 +1,196 @@
+package com.fooddelivery.marketingservice.integration;
+
+import com.fooddelivery.marketingservice.dto.UserEventTriggerRequest;
+import com.fooddelivery.marketingservice.entity.AutoIssuanceRule;
+import com.fooddelivery.marketingservice.service.SmartIssuanceService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+
+/**
+ * 用户服务集成接口
+ * 处理来自其他微服务的事件通知，触发智能发放
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class UserServiceIntegration {
+
+    private final SmartIssuanceService smartIssuanceService;
+
+    /**
+     * 处理新用户注册事件
+     * 异步处理，避免影响用户注册流程的性能
+     */
+    @Async("smartIssuanceExecutor")
+    public void handleNewUserRegistration(Long userId, String registrationSource, LocalDateTime registrationTime) {
+        log.info("处理新用户注册事件，用户ID: {}, 注册来源: {}", userId, registrationSource);
+
+        try {
+            String eventData = String.format(
+                    "{\"registeredAt\": \"%s\", \"registrationSource\": \"%s\"}",
+                    registrationTime.toString(),
+                    registrationSource != null ? registrationSource : "unknown");
+
+            UserEventTriggerRequest request = UserEventTriggerRequest.builder()
+                    .userId(userId)
+                    .eventType(AutoIssuanceRule.TriggerType.NEW_USER)
+                    .eventData(eventData)
+                    .eventTime(registrationTime)
+                    .sourceService("user-service")
+                    .build();
+
+            smartIssuanceService.processUserEventTrigger(request);
+            log.info("新用户注册事件处理完成，用户ID: {}", userId);
+
+        } catch (Exception e) {
+            log.error("新用户注册事件处理失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 处理用户信用等级升级事件
+     */
+    @Async("smartIssuanceExecutor")
+    public void handleCreditLevelUpgrade(Long userId, Integer oldLevel, Integer newLevel, String upgradeReason) {
+        log.info("处理用户信用升级事件，用户ID: {}, 等级变化: {} -> {}", userId, oldLevel, newLevel);
+
+        try {
+            String eventData = String.format(
+                    "{\"oldLevel\": %d, \"newLevel\": %d, \"upgradeReason\": \"%s\"}",
+                    oldLevel, newLevel, upgradeReason != null ? upgradeReason : "automatic");
+
+            UserEventTriggerRequest request = UserEventTriggerRequest.builder()
+                    .userId(userId)
+                    .eventType(AutoIssuanceRule.TriggerType.CREDIT_UPGRADE)
+                    .eventData(eventData)
+                    .eventTime(LocalDateTime.now())
+                    .sourceService("user-service")
+                    .build();
+
+            smartIssuanceService.processUserEventTrigger(request);
+            log.info("用户信用升级事件处理完成，用户ID: {}", userId);
+
+        } catch (Exception e) {
+            log.error("用户信用升级事件处理失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 处理订单里程碑事件
+     */
+    @Async("smartIssuanceExecutor")
+    public void handleOrderMilestone(Long userId, Integer orderCount, Double totalAmount, String milestoneType) {
+        log.info("处理订单里程碑事件，用户ID: {}, 订单数: {}, 总金额: {}", userId, orderCount, totalAmount);
+
+        try {
+            String eventData = String.format(
+                    "{\"orderCount\": %d, \"totalAmount\": %.2f, \"milestoneType\": \"%s\"}",
+                    orderCount, totalAmount, milestoneType != null ? milestoneType : "order_count");
+
+            UserEventTriggerRequest request = UserEventTriggerRequest.builder()
+                    .userId(userId)
+                    .eventType(AutoIssuanceRule.TriggerType.ORDER_MILESTONE)
+                    .eventData(eventData)
+                    .eventTime(LocalDateTime.now())
+                    .sourceService("order-service")
+                    .build();
+
+            smartIssuanceService.processUserEventTrigger(request);
+            log.info("订单里程碑事件处理完成，用户ID: {}", userId);
+
+        } catch (Exception e) {
+            log.error("订单里程碑事件处理失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 处理用户生日事件
+     */
+    @Async("smartIssuanceExecutor")
+    public void handleUserBirthday(Long userId, LocalDateTime birthday) {
+        log.info("处理用户生日事件，用户ID: {}, 生日: {}", userId, birthday.toLocalDate());
+
+        try {
+            String eventData = String.format(
+                    "{\"birthday\": \"%s\", \"eventType\": \"birthday\"}",
+                    birthday.toLocalDate().toString());
+
+            UserEventTriggerRequest request = UserEventTriggerRequest.builder()
+                    .userId(userId)
+                    .eventType(AutoIssuanceRule.TriggerType.BIRTHDAY)
+                    .eventData(eventData)
+                    .eventTime(LocalDateTime.now())
+                    .sourceService("user-service")
+                    .build();
+
+            smartIssuanceService.processUserEventTrigger(request);
+            log.info("用户生日事件处理完成，用户ID: {}", userId);
+
+        } catch (Exception e) {
+            log.error("用户生日事件处理失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 处理VIP用户事件
+     */
+    @Async("smartIssuanceExecutor")
+    public void handleVipUserPromotion(Long userId, Integer vipLevel, String promotionReason) {
+        log.info("处理VIP用户晋升事件，用户ID: {}, VIP等级: {}", userId, vipLevel);
+
+        try {
+            String eventData = String.format(
+                    "{\"vipLevel\": %d, \"promotionReason\": \"%s\", \"promotedAt\": \"%s\"}",
+                    vipLevel,
+                    promotionReason != null ? promotionReason : "automatic",
+                    LocalDateTime.now().toString());
+
+            UserEventTriggerRequest request = UserEventTriggerRequest.builder()
+                    .userId(userId)
+                    .eventType(AutoIssuanceRule.TriggerType.VIP_USER)
+                    .eventData(eventData)
+                    .eventTime(LocalDateTime.now())
+                    .sourceService("user-service")
+                    .build();
+
+            smartIssuanceService.processUserEventTrigger(request);
+            log.info("VIP用户晋升事件处理完成，用户ID: {}", userId);
+
+        } catch (Exception e) {
+            log.error("VIP用户晋升事件处理失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 处理沉默用户召回事件
+     */
+    @Async("smartIssuanceExecutor")
+    public void handleInactiveUserRecall(Long userId, Integer inactiveDays, LocalDateTime lastOrderTime) {
+        log.info("处理沉默用户召回事件，用户ID: {}, 沉默天数: {}", userId, inactiveDays);
+
+        try {
+            String eventData = String.format(
+                    "{\"inactiveDays\": %d, \"lastOrderTime\": \"%s\", \"recallType\": \"inactive_user\"}",
+                    inactiveDays,
+                    lastOrderTime != null ? lastOrderTime.toString() : "unknown");
+
+            UserEventTriggerRequest request = UserEventTriggerRequest.builder()
+                    .userId(userId)
+                    .eventType(AutoIssuanceRule.TriggerType.INACTIVE_USER)
+                    .eventData(eventData)
+                    .eventTime(LocalDateTime.now())
+                    .sourceService("user-service")
+                    .build();
+
+            smartIssuanceService.processUserEventTrigger(request);
+            log.info("沉默用户召回事件处理完成，用户ID: {}", userId);
+
+        } catch (Exception e) {
+            log.error("沉默用户召回事件处理失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
+        }
+    }
+}

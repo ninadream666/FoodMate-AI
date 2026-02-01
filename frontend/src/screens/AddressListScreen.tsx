@@ -1,0 +1,198 @@
+import React, { useState, useEffect } from 'react';
+import {
+    View,
+    Text,
+    FlatList,
+    TouchableOpacity,
+    StyleSheet,
+    Alert,
+    ActivityIndicator,
+    SafeAreaView
+} from 'react-native';
+import { addressService } from '../services/addressService';
+import { useIsFocused } from '@react-navigation/native'; // 每次进入页面都刷新
+
+const AddressListScreen = ({ navigation, route }: any) => {
+    // mode: 'manage' (默认) 或 'select' (从购物车来)
+    const { mode = 'manage' } = route.params || {};
+
+    const [addresses, setAddresses] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const isFocused = useIsFocused(); // 监听焦点
+
+    useEffect(() => {
+        if (isFocused) {
+            loadAddresses();
+        }
+    }, [isFocused]);
+
+    const loadAddresses = async () => {
+        setLoading(true);
+        try {
+            console.log('[AddressListScreen] 开始加载地址列表...');
+
+            // 检查用户登录状态
+            const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+            const token = await AsyncStorage.getItem('token');
+            const user = await AsyncStorage.getItem('user');
+
+            console.log('[AddressListScreen] 认证状态:', {
+                hasToken: !!token,
+                tokenPreview: token ? token.substring(0, 20) + '...' : null,
+                user: user ? JSON.parse(user) : null
+            });
+
+            if (!token) {
+                console.error('[AddressListScreen] 用户未登录');
+                Alert.alert('错误', '请先登录');
+                return;
+            }
+
+            const data = await addressService.getMyAddresses();
+            console.log('[AddressListScreen] 地址数据获取成功:', data);
+
+            // 排序：默认地址排第一
+            const sorted = data.sort((a: any, b: any) => {
+                if (a.isDefault && !b.isDefault) return -1;
+                if (!a.isDefault && b.isDefault) return 1;
+                return b.id - a.id;
+            });
+            setAddresses(sorted);
+        } catch (error) {
+            console.error('加载地址列表失败:', error);
+            // 如果是网络错误或服务不可用，显示空列表而不是崩溃
+            setAddresses([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSetDefault = async (id: number) => {
+        try {
+            await addressService.setDefault(id);
+            loadAddresses(); // 刷新列表
+        } catch (error) {
+            Alert.alert('设置失败');
+        }
+    };
+
+    const handleDelete = (id: number) => {
+        Alert.alert('删除地址', '确认删除吗？', [
+            { text: '取消', style: 'cancel' },
+            {
+                text: '删除', style: 'destructive', onPress: async () => {
+                    try {
+                        await addressService.deleteAddress(id);
+                        loadAddresses();
+                    } catch (e) {
+                        Alert.alert('删除失败');
+                    }
+                }
+            }
+        ]);
+    };
+
+    const handleSelect = (address: any) => {
+        if (mode === 'select') {
+            // 返回上一页 (CartScreen)，并带回 selectedAddress
+            // 使用 navigate merge 模式
+            navigation.navigate({
+                name: 'Cart',
+                params: { selectedAddress: address },
+                merge: true,
+            });
+        }
+    };
+
+    const renderItem = ({ item }: any) => (
+        <TouchableOpacity
+            style={[styles.card, item.isDefault && styles.defaultBorder]}
+            onPress={() => handleSelect(item)} // 点击选中
+            activeOpacity={mode === 'select' ? 0.6 : 1}
+        >
+            <View style={styles.cardHeader}>
+                <View style={styles.tagRow}>
+                    <Text style={styles.tag}>地址</Text>
+                    {item.isDefault && <Text style={styles.defaultTag}>默认</Text>}
+                </View>
+
+                {/* 只在管理模式显示删除按钮 */}
+                <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteBtn}>
+                    <Text style={styles.deleteText}>删除</Text>
+                </TouchableOpacity>
+            </View>
+
+            <Text style={styles.addressText}>
+                {item.city} {item.street} {item.detail}
+            </Text>
+
+            {/* 设为默认按钮 */}
+            {!item.isDefault && (
+                <TouchableOpacity
+                    style={styles.setDefaultBtn}
+                    onPress={() => handleSetDefault(item.id)}
+                >
+                    <Text style={styles.setDefaultText}>设为默认</Text>
+                </TouchableOpacity>
+            )}
+        </TouchableOpacity>
+    );
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <FlatList
+                data={addresses}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderItem}
+                contentContainerStyle={styles.list}
+                ListEmptyComponent={!loading ? <Text style={styles.empty}>暂无地址</Text> : null}
+            />
+
+            {/* 底部新增按钮 */}
+            <View style={styles.footer}>
+                <TouchableOpacity
+                    style={styles.addBtn}
+                    onPress={() => navigation.navigate('AddressEdit')}
+                >
+                    <Text style={styles.addBtnText}>+ 新增地址</Text>
+                </TouchableOpacity>
+            </View>
+
+            {loading && (
+                <View style={styles.loading}>
+                    <ActivityIndicator size="large" color="#e85a2d" />
+                </View>
+            )}
+        </SafeAreaView>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: '#f5f5f5' },
+    list: { padding: 16 },
+    card: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    defaultBorder: { borderColor: '#e85a2d' },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+    tagRow: { flexDirection: 'row', gap: 8 },
+    tag: { fontSize: 12, color: '#e85a2d', backgroundColor: '#fff5f2', padding: 4, borderRadius: 4 },
+    defaultTag: { fontSize: 12, color: 'green', backgroundColor: '#e6fffa', padding: 4, borderRadius: 4 },
+    deleteBtn: { padding: 4 },
+    deleteText: { color: '#999', fontSize: 12 },
+    addressText: { fontSize: 16, color: '#333', lineHeight: 24, marginBottom: 10 },
+    setDefaultBtn: { borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 10, alignItems: 'center' },
+    setDefaultText: { color: '#666', fontSize: 12 },
+    footer: { padding: 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#eee' },
+    addBtn: { backgroundColor: '#e85a2d', height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center' },
+    addBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+    empty: { textAlign: 'center', marginTop: 50, color: '#999' },
+    loading: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.5)' },
+});
+
+export default AddressListScreen;
