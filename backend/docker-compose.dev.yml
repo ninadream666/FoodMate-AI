@@ -289,7 +289,7 @@ services:
     container_name: food-platform-ai-pricing-service
     restart: unless-stopped
     ports:
-      - "8090:8000"
+      - "8089:8000"
     environment:
       - TZ=Asia/Shanghai
       - DATABASE_URL=postgresql+asyncpg://dev:dev123@postgres-db:5432/ai_pricing_db

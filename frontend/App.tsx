@@ -23,6 +23,7 @@ import MerchantShopInfoScreen from './src/screens/merchant/MerchantShopInfoScree
 import RefundAuditScreen from './src/screens/merchant/RefundAuditScreen';
 import ServiceMarketplaceScreen from './src/screens/merchant/ServiceMarketplaceScreen';
 import SettlementDashboardScreen from './src/screens/merchant/SettlementDashboardScreen';
+import NutriVisionResultScreen from './src/screens/NutriVisionResultScreen';
 // 商家端页面 (注意路径包含 /merchant)
 import MerchantDashboardScreen from './src/screens/merchant/MerchantDashboardScreen';
 import SmartPricingScreen from './src/screens/merchant/SmartPricingScreen';
@@ -50,6 +51,13 @@ function App(): React.JSX.Element {
             name="Home"
             component={HomeScreen}
             options={{ title: '美食广场', headerBackVisible: false }}
+          />
+
+          {/* 实景菜单营养透视结果页*/}
+          <Stack.Screen
+            name="NutriVisionResult"
+            component={NutriVisionResultScreen}
+            options={{ headerShown: false }} // 全屏显示
           />
 
           {/* 管理端 (PC端功能，App端保留入口) */}
