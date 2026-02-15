@@ -3,6 +3,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+// 健康上下文 Provider
+import { HealthProvider } from './src/hooks/useHealthContext';
+
 // 导入页面
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -35,142 +38,144 @@ const Stack = createNativeStackNavigator();
 function App(): React.JSX.Element {
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <Stack.Navigator initialRouteName="Login">
+      <HealthProvider>
+        <NavigationContainer>
+          <Stack.Navigator initialRouteName="Login">
 
-          {/* 登录页 */}
-          <Stack.Screen
-            name="Login"
-            component={LoginScreen}
-            options={{ headerShown: false }}
-          />
+            {/* 登录页 */}
+            <Stack.Screen
+              name="Login"
+              component={LoginScreen}
+              options={{ headerShown: false }}
+            />
 
-          {/* 顾客主页 */}
-          <Stack.Screen
-            name="Home"
-            component={HomeScreen}
-            options={{ title: '美食广场', headerBackVisible: false }}
-          />
+            {/* 顾客主页 */}
+            <Stack.Screen
+              name="Home"
+              component={HomeScreen}
+              options={{ title: '美食广场', headerBackVisible: false }}
+            />
 
-          {/* 管理端 (PC端功能，App端保留入口) */}
-          <Stack.Screen
-            name="AdminDashboard"
-            component={AdminDashboardScreen}
-            options={{ title: '系统管理', headerBackVisible: false }}
-          />
+            {/* 管理端 (PC端功能，App端保留入口) */}
+            <Stack.Screen
+              name="AdminDashboard"
+              component={AdminDashboardScreen}
+              options={{ title: '系统管理', headerBackVisible: false }}
+            />
 
-          {/* 核心业务流程 */}
-          <Stack.Screen
-            name="RestaurantDetail"
-            component={RestaurantDetailScreen}
-            options={{ title: '餐厅详情' }}
-          />
-          <Stack.Screen
-            name="Cart"
-            component={CartScreen}
-            options={{ title: '购物车' }}
-          />
-          <Stack.Screen
-            name="OrderConfirm"
-            component={OrderConfirmScreen}
-            options={{ title: '确认订单' }}
-          />
-          <Stack.Screen
-            name="PaymentSuccess"
-            component={PaymentSuccessScreen}
-            options={{ title: '支付成功', headerShown: false }}
-          />
+            {/* 核心业务流程 */}
+            <Stack.Screen
+              name="RestaurantDetail"
+              component={RestaurantDetailScreen}
+              options={{ title: '餐厅详情' }}
+            />
+            <Stack.Screen
+              name="Cart"
+              component={CartScreen}
+              options={{ title: '购物车' }}
+            />
+            <Stack.Screen
+              name="OrderConfirm"
+              component={OrderConfirmScreen}
+              options={{ title: '确认订单' }}
+            />
+            <Stack.Screen
+              name="PaymentSuccess"
+              component={PaymentSuccessScreen}
+              options={{ title: '支付成功', headerShown: false }}
+            />
 
-          {/* 地址与订单 */}
-          <Stack.Screen
-            name="AddressList"
-            component={AddressListScreen}
-            options={{ title: '我的地址' }}
-          />
-          <Stack.Screen
-            name="AddressEdit"
-            component={AddressEditScreen}
-            options={{ title: '新增地址' }}
-          />
-          <Stack.Screen
-            name="OrderList"
-            component={OrderListScreen}
-            options={{ title: '我的订单' }}
-          />
-          <Stack.Screen
-            name="OrderTracking"
-            component={OrderTrackingScreen}
-            options={{ title: '订单详情' }}
-          />
+            {/* 地址与订单 */}
+            <Stack.Screen
+              name="AddressList"
+              component={AddressListScreen}
+              options={{ title: '我的地址' }}
+            />
+            <Stack.Screen
+              name="AddressEdit"
+              component={AddressEditScreen}
+              options={{ title: '新增地址' }}
+            />
+            <Stack.Screen
+              name="OrderList"
+              component={OrderListScreen}
+              options={{ title: '我的订单' }}
+            />
+            <Stack.Screen
+              name="OrderTracking"
+              component={OrderTrackingScreen}
+              options={{ title: '订单详情' }}
+            />
 
-          {/* 个人中心 */}
-          <Stack.Screen
-            name="Profile"
-            component={ProfileScreen}
-            options={{ title: '个人中心' }}
-          />
-          <Stack.Screen
-            name="Wallet"
-            component={WalletScreen}
-            options={{ title: '我的钱包' }}
-          />
-          <Stack.Screen
-            name="Survey"
-            component={SurveyScreen}
-            options={{ title: '美食偏好', headerShown: false }}
-          />
+            {/* 个人中心 */}
+            <Stack.Screen
+              name="Profile"
+              component={ProfileScreen}
+              options={{ title: '个人中心' }}
+            />
+            <Stack.Screen
+              name="Wallet"
+              component={WalletScreen}
+              options={{ title: '我的钱包' }}
+            />
+            <Stack.Screen
+              name="Survey"
+              component={SurveyScreen}
+              options={{ title: '美食偏好', headerShown: false }}
+            />
 
-          {/* 商家端 (集中管理，无重复) */}
-          <Stack.Screen
-            name="MerchantDashboard"
-            component={MerchantDashboardScreen}
-            options={{ title: '商家工作台' }}
-          />
-          <Stack.Screen
-            name="SmartPricing"
-            component={SmartPricingScreen}
-            options={{ title: '智能定价' }}
-          />
-          <Stack.Screen
-            name="MenuManagement"
-            component={MenuManagementScreen}
-            options={{ title: '菜单管理' }}
-          />
+            {/* 商家端 (集中管理，无重复) */}
+            <Stack.Screen
+              name="MerchantDashboard"
+              component={MerchantDashboardScreen}
+              options={{ title: '商家工作台' }}
+            />
+            <Stack.Screen
+              name="SmartPricing"
+              component={SmartPricingScreen}
+              options={{ title: '智能定价' }}
+            />
+            <Stack.Screen
+              name="MenuManagement"
+              component={MenuManagementScreen}
+              options={{ title: '菜单管理' }}
+            />
 
-          <Stack.Screen
-            name="MerchantOnboarding"
-            component={MerchantOnboardingScreen}
-            options={{ title: '商家入驻' }}
-          />
-          <Stack.Screen
-            name="MerchantShopInfo"
-            component={MerchantShopInfoScreen}
-            options={{ title: '店铺信息' }}
-          />
-          <Stack.Screen
-            name="RefundAudit"
-            component={RefundAuditScreen}
-            options={{ title: '退款审批' }}
-          />
-          <Stack.Screen
-            name="ServiceMarketplace"
-            component={ServiceMarketplaceScreen}
-            options={{ title: '服务市场' }}
-          />
-          <Stack.Screen
-            name="SettlementDashboard"
-            component={SettlementDashboardScreen}
-            options={{ title: '财务结算' }}
-          />
+            <Stack.Screen
+              name="MerchantOnboarding"
+              component={MerchantOnboardingScreen}
+              options={{ title: '商家入驻' }}
+            />
+            <Stack.Screen
+              name="MerchantShopInfo"
+              component={MerchantShopInfoScreen}
+              options={{ title: '店铺信息' }}
+            />
+            <Stack.Screen
+              name="RefundAudit"
+              component={RefundAuditScreen}
+              options={{ title: '退款审批' }}
+            />
+            <Stack.Screen
+              name="ServiceMarketplace"
+              component={ServiceMarketplaceScreen}
+              options={{ title: '服务市场' }}
+            />
+            <Stack.Screen
+              name="SettlementDashboard"
+              component={SettlementDashboardScreen}
+              options={{ title: '财务结算' }}
+            />
 
-          {/* 调试工具 - 仅用于开发 */}
-          <Stack.Screen
-            name="LocationDebug"
-            component={LocationDebugScreen}
-            options={{ title: '定位调试' }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
+            {/* 调试工具 - 仅用于开发 */}
+            <Stack.Screen
+              name="LocationDebug"
+              component={LocationDebugScreen}
+              options={{ title: '定位调试' }}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </HealthProvider>
     </SafeAreaProvider>
   );
 }
