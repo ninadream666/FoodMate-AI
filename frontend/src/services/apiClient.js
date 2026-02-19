@@ -57,7 +57,9 @@ export const request = async (urlKey, endpoint, options = {}) => {
         ...options.headers,
     };
 
-    if (token) {
+    // 对于登录/注册等认证接口，不发送旧的 token (避免过期 token 导致 500 错误)
+    const isAuthEndpoint = endpoint.includes('/auth/') || endpoint.includes('/login') || endpoint.includes('/register');
+    if (token && !isAuthEndpoint) {
         headers['Authorization'] = `Bearer ${token}`;
     }
 

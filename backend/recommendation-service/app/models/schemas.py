@@ -24,6 +24,32 @@ class UserPreferences(BaseModel):
     max_price: Optional[float] = Field(None, description="最高价格")
 
 
+class HealthContext(BaseModel):
+    """健康上下文模型 - 用于接收用户生理状态数据"""
+    daily_steps: int = Field(0, description="今日步数")
+    recent_steps_30min: int = Field(0, description="最近30分钟步数")
+    heart_rate: int = Field(75, description="心率 (bpm)")
+    activity_status: str = Field("still", description="活动状态: still/walking/running/cycling")
+    is_post_workout: bool = Field(False, description="是否刚运动完")
+    
+    class Config:
+        extra = "allow"
+
+
+class WeatherContext(BaseModel):
+    """天气上下文模型 - 用于接收实时天气数据"""
+    condition: str = Field("晴", description="天气状况：晴、多云、小雨、大雨等")
+    temperature: int = Field(25, description="温度（摄氏度）")
+    humidity: int = Field(50, description="湿度（%）")
+    wind_speed: float = Field(10.0, description="风速（km/h）")
+    is_raining: bool = Field(False, description="是否下雨")
+    is_heavy_rain: bool = Field(False, description="是否大雨")
+    delivery_impact: str = Field("none", description="配送影响: none/minor/moderate/severe")
+    
+    class Config:
+        extra = "allow"
+
+
 class RecommendationRequest(BaseModel):
     """智能推荐请求模型"""
     location: LocationRequest
@@ -34,6 +60,8 @@ class RecommendationRequest(BaseModel):
     search_radius: int = Field(5000, description="搜索半径（米）")
     user_id: Optional[str] = Field(None, description="用户ID")
     query: Optional[str] = Field(None, description="用户查询")
+    health_context: Optional[HealthContext] = Field(None, description="健康上下文")
+    weather_context: Optional[WeatherContext] = Field(None, description="天气上下文")
 
     class Config:
         populate_by_name = True

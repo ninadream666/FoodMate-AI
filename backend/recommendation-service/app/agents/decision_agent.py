@@ -180,13 +180,13 @@ class ContextualBanditStrategy(MABStrategy):
         return [pair[0] for pair in sorted_pairs]
     
     def _calculate_contextual_score(self, arm: RestaurantArm, context: Dict[str, Any] = None) -> float:
-        """计算上下文感知得分（0.6-1.0范围，乘以100后为60-100分）"""
+        """计算上下文感知得分（0-1.0范围，乘以100后为60-100分）"""
         features = arm.features
         context = context or {}
         weights = context.get("weights", self.weights)
         
-        # 基础分 0.6（确保最低60分）
-        base_score = 0.6
+        # 基础分 0.5（降低以给上下文更大影响空间）
+        base_score = 0.50
         variable_score = 0.0
         
         # 距离得分（距离越近越好）- 占可变分的25%
@@ -237,12 +237,123 @@ class ContextualBanditStrategy(MABStrategy):
         time_score = max(0.3, min(1.0, 1 - (delivery_time - 15) / 45))
         variable_score += weights.get("delivery_time", 0.10) * time_score
         
+        # ========== 上下文感知加成（天气/交通/运动/时段） ==========
+        context_bonus = 0.0
+        
+        # 优先从前端传入的 weather_context 获取天气数据（后端天气API经常降级为默认值）
+        env = context.get("environment", {})
+        weather_ctx = env.get("weather", {})
+        frontend_weather = context.get("frontend_weather", {})
+        
+        # is_bad_weather: 前端标记 > 当前上下文 > 天气分析结果
+        is_bad_weather = context.get("is_bad_weather", False) or frontend_weather.get("is_bad_weather", False) or weather_ctx.get("is_bad_weather", False)
+        
+        # 温度: 优先用前端传入的真实温度，而不是后端API降级后的默认值25°C
+        temperature = frontend_weather.get("temperature") or weather_ctx.get("temperature")
+        if temperature is None or temperature == 25:  # 25很可能是后端降级默认值
+            temperature = frontend_weather.get("temperature") or weather_ctx.get("temperature", 20)
+        
+        # 1. 天气影响排序（加大幅度！）
+        if is_bad_weather:
+            # 雨天：近距离餐厅大幅加分，远距离大幅扣分
+            if distance <= 1000:
+                context_bonus += 0.20
+            elif distance <= 2000:
+                context_bonus += 0.08
+            elif distance > 3000:
+                context_bonus -= 0.15
+            if delivery_time <= 20:
+                context_bonus += 0.10
+            elif delivery_time > 35:
+                context_bonus -= 0.10
+        
+        # 2. 温度影响排序（降低阈值：30°C和10°C）
+        is_hot_food = features.get("is_hot_food", True)
+        cuisine_str = str(cuisine).lower()
+        if temperature is not None:
+            if temperature >= 30:
+                # 高温天：冷食类加分，火锅等热食类扣分
+                cold_keywords = ["冰", "凉", "沙拉", "冷", "饮", "果汁", "甜品", "日料", "寿司", "西食", "快餐"]
+                hot_keywords = ["火锅", "烤", "麻辣", "串", "煲", "砂锅", "炒"]
+                if any(k in cuisine_str for k in cold_keywords):
+                    context_bonus += 0.18
+                elif any(k in cuisine_str for k in hot_keywords):
+                    context_bonus -= 0.12
+                else:
+                    # 普通菜系在高温下也稍微偏向快速配送
+                    if delivery_time <= 20:
+                        context_bonus += 0.06
+            elif temperature <= 10:
+                # 低温天：热食加分，冷食扣分
+                hot_keywords = ["火锅", "汤", "粥", "麻辣", "烤", "煲", "砂锅", "川菜", "湘菜", "锅", "炖", "蒸"]
+                cold_keywords = ["冰", "凉", "沙拉", "冷", "果汁", "甜品"]
+                if any(k in cuisine_str for k in hot_keywords):
+                    context_bonus += 0.18
+                elif any(k in cuisine_str for k in cold_keywords):
+                    context_bonus -= 0.12
+                else:
+                    # 普通菜系在低温下也稍微偏向热食
+                    if is_hot_food:
+                        context_bonus += 0.06
+        
+        # 3. 交通拥堵影响排序
+        congestion_index = context.get("congestion_index", 1.0)
+        if isinstance(congestion_index, str):
+            try:
+                congestion_index = float(congestion_index)
+            except:
+                congestion_index = 1.0
+        if congestion_index > 1.3:
+            if distance <= 1000:
+                context_bonus += 0.12
+            elif distance <= 2000:
+                context_bonus += 0.03
+            elif distance > 3000:
+                context_bonus -= 0.10
+        
+        # 4. 高峰时段影响
+        if context.get("is_peak_hour", False):
+            if delivery_time <= 20:
+                context_bonus += 0.08
+            elif delivery_time > 35:
+                context_bonus -= 0.06
+        
+        # 5. 运动后影响（大幅加强！）
+        health_ctx = context.get("health_context", {})
+        if health_ctx.get("is_post_workout", False):
+            healthy_keywords = ["轻食", "沙拉", "健康", "低脂", "蛋白", "鸡胸", "粗粮", "日料", "寿司", "西食", "粥", "汤", "面"]
+            heavy_keywords = ["火锅", "烤", "油炸", "炸鸡", "烧烤", "麻辣", "串", "小龙虾"]
+            if any(k in cuisine_str for k in healthy_keywords):
+                context_bonus += 0.22
+            elif any(k in cuisine_str for k in heavy_keywords):
+                context_bonus -= 0.12
+            else:
+                # 普通菜系稍微加分（运动后什么都能吃）
+                context_bonus += 0.03
+        elif health_ctx.get("heart_rate", 0) > 120:
+            # 高心率：偏向清淡
+            light_keywords = ["粥", "汤", "面", "轻食", "沙拉", "清淡", "日料", "健康"]
+            if any(k in cuisine_str for k in light_keywords):
+                context_bonus += 0.15
+        
+        # 6. 节日/周末影响
+        temporal_ctx = env.get("temporal", {})
+        if temporal_ctx.get("is_holiday", False) or temporal_ctx.get("festival"):
+            if rating >= 4.5:
+                context_bonus += 0.08
+        
         # 加入历史奖励（小幅加成）
         historical_score = arm.average_reward * 0.05
         
-        # 最终得分 = 基础分 + 可变分（最大0.4）
-        final_score = base_score + variable_score * 0.4 + historical_score
-        return min(1.0, final_score)
+        # 最终得分 = 基础分(0.5) + 可变分*0.3(最大~0.3) + 上下文加成(可达±0.30) + 历史
+        # 有上下文时，得分范围大约 0.38 ~ 1.0；显示时映射为 60~100分
+        final_score = base_score + variable_score * 0.3 + context_bonus + historical_score
+        
+        # 调试日志：有上下文加成时打印
+        if abs(context_bonus) > 0.01:
+            logger.info(f"📊 {arm.name}: base={base_score:.2f} var={variable_score*0.3:.2f} ctx={context_bonus:+.2f} → {final_score:.2f} (temp={temperature}, bad_weather={is_bad_weather}, post_workout={health_ctx.get('is_post_workout', False)}, cuisine={cuisine_str[:10]})")
+        
+        return max(0.0, min(1.0, final_score))
 
 
 class DecisionAgent(BaseAgent):  
@@ -352,6 +463,8 @@ class DecisionAgent(BaseAgent):
             profile_analysis = input_data.get("profile_analysis", {})
             user_query = input_data.get("user_query", "")
             top_k = input_data.get("top_k", 10)
+            health_context = input_data.get("health_context", {})
+            weather_context = input_data.get("weather_context", {})
             
             if not restaurants:
                 return {
@@ -364,6 +477,28 @@ class DecisionAgent(BaseAgent):
             decision_context = self._build_decision_context(
                 context_analysis, profile_analysis
             )
+            
+            # 🆕 注入前端传入的健康/天气上下文到决策上下文
+            if health_context:
+                decision_context["health_context"] = health_context
+                if health_context.get("is_post_workout"):
+                    logger.info(f"🏃 检测到运动后状态，调整推荐排序")
+            if weather_context:
+                # 将前端天气单独存储为 frontend_weather，优先级最高
+                decision_context["frontend_weather"] = weather_context
+                # 同时合并到环境天气
+                if weather_context.get("is_heavy_rain") or weather_context.get("is_raining"):
+                    decision_context["is_bad_weather"] = True
+                    logger.info(f"🌧️ 检测到雨天，调整推荐排序")
+                # 强制覆盖后端降级的默认温度
+                frontend_temp = weather_context.get("temperature")
+                if frontend_temp is not None:
+                    env_weather = decision_context.get("environment", {}).get("weather", {})
+                    env_weather["temperature"] = frontend_temp  # 始终用前端温度
+                    if "environment" not in decision_context:
+                        decision_context["environment"] = {}
+                    decision_context["environment"]["weather"] = env_weather
+                    logger.info(f"🌡️ 使用前端传入温度: {frontend_temp}°C")
             
             # 将餐厅转换为 MAB 臂
             arms = self._restaurants_to_arms(restaurants)
@@ -464,6 +599,9 @@ class DecisionAgent(BaseAgent):
             
             # 用户分群
             "user_segment": profile.get("user_segment", "standard"),
+            
+            # 🆕 健康上下文（用于运动后推荐调整）
+            "health_context": context_analysis.get("health_context", {}),
             
             # 🆕 完整的环境信息（用于生成推荐理由）
             "environment": {

@@ -63,6 +63,10 @@ class WorkflowState(TypedDict, total=False):
     profile_analysis: Dict[str, Any]
     decision_result: Dict[str, Any]
     
+    # 前端传入的上下文（用于决策排序）
+    health_context: Dict[str, Any]
+    weather_context: Dict[str, Any]
+    
     # 工作流元数据
     workflow_id: str
     start_time: str
@@ -261,7 +265,9 @@ class LangGraphOrchestrator:
                 "context_analysis": state.get("context_analysis", {}),
                 "profile_analysis": state.get("profile_analysis", {}),
                 "user_query": state.get("user_query", ""),
-                "top_k": state.get("top_k", 10)
+                "top_k": state.get("top_k", 10),
+                "health_context": state.get("health_context", {}),
+                "weather_context": state.get("weather_context", {})
             })
             
             # 更新状态
@@ -351,7 +357,9 @@ class LangGraphOrchestrator:
                          user_id: str = "guest",
                          latitude: float = None,
                          longitude: float = None,
-                         top_k: int = 10) -> Dict[str, Any]:
+                         top_k: int = 10,
+                         health_context: Dict[str, Any] = None,
+                         weather_context: Dict[str, Any] = None) -> Dict[str, Any]:
         """
         执行完整的推荐编排流程
         
@@ -383,7 +391,9 @@ class LangGraphOrchestrator:
             "start_time": start_time.isoformat(),
             "current_node": "start",
             "node_history": [],
-            "errors": []
+            "errors": [],
+            "health_context": health_context or {},
+            "weather_context": weather_context or {}
         }
         
         try:
