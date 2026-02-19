@@ -4,16 +4,16 @@ import { Platform } from 'react-native';
 // 开发环境配置
 const DEVELOPMENT_CONFIG = {
     // 根据平台设置API主机
-    // 真机调试：使用您电脑的IP地址 192.168.1.16
-    // 确保手机和电脑在同一WiFi网络中
+    // 使用 adb reverse 映射后，Android 模拟器可以直接通过 localhost 访问宿主机服务
+    // 真机测试时改为电脑的局域网IP地址。
     API_HOST: Platform.select({
-        android: 'http://192.168.1.16',
-        ios: 'http://192.168.1.16',
-        default: 'http://192.168.1.16'
+        android: 'http://192.168.2.175', 
+        ios: 'http://192.168.2.175',
+        default: 'http://192.168.2.175'
     }),
 
     // 请求超时时间 (毫秒)
-    TIMEOUT: 15000,
+    TIMEOUT: 60000,
 
     // 重试次数
     MAX_RETRIES: 3
@@ -30,19 +30,20 @@ const PRODUCTION_CONFIG = {
 const CONFIG = __DEV__ ? DEVELOPMENT_CONFIG : PRODUCTION_CONFIG;
 
 export const SERVICE_URLS = {
-    auth: `${CONFIG.API_HOST}:8083/api/auth`,      // 对应 AuthController
-    users: `${CONFIG.API_HOST}:8083/users`,        // 对应 UserController 和 AddressController
-    merchants: `${CONFIG.API_HOST}:8081/merchants`, // 对应 MerchantController 等
-    orders: `${CONFIG.API_HOST}:8084/orders`,       // 对应 OrderController
-    coupons: `${CONFIG.API_HOST}:8082/coupons`,     // 对应 CouponController
-    marketing: `${CONFIG.API_HOST}:8082/marketing`, // 对应 MarketingController
-    profile: `${CONFIG.API_HOST}:8086/profile`,     // 对应 UserProfileController
-    recommendation: `${CONFIG.API_HOST}:8087/api/v2`, // 推荐服务
-    platform: `${CONFIG.API_HOST}:8088/api/admin`,  // 管理员平台服务 (需要 ADMIN 角色)
-    merchantPlatform: `${CONFIG.API_HOST}:8088/api/merchant/platform-services`, // 商家端平台服务
-    merchantSettlement: `${CONFIG.API_HOST}:8088/api/merchant/settlements`,     // 商家端结算服务
-    merchantCommission: `${CONFIG.API_HOST}:8088/api/merchant/commissions`,     // 商家端分成服务
-    'ai-pricing': `${CONFIG.API_HOST}:8090`,        // AI 智能定价服务
+    auth: `${CONFIG.API_HOST}:8083/auth`,      // user-service
+    users: `${CONFIG.API_HOST}:8083/users`,        // user-service
+    merchants: `${CONFIG.API_HOST}:8081/merchants`, // merchant-service
+    orders: `${CONFIG.API_HOST}:8084/orders`,       // order-service
+    coupons: `${CONFIG.API_HOST}:8082/coupons`,     // marketing-service
+    marketing: `${CONFIG.API_HOST}:8082/marketing`, // marketing-service
+    profile: `${CONFIG.API_HOST}:8086/profile`,     // profile-service
+    recommendation: `${CONFIG.API_HOST}:8087/api/v2`, // recommendation-service
+    platform: `${CONFIG.API_HOST}:8088/api/admin`,  // platform-service
+    merchantPlatform: `${CONFIG.API_HOST}:8088/api/merchant/platform-services`,
+    merchantSettlement: `${CONFIG.API_HOST}:8088/api/merchant/settlements`,
+    merchantCommission: `${CONFIG.API_HOST}:8088/api/merchant/commissions`,
+    'ai-pricing': `${CONFIG.API_HOST}:8089`,        // ai-pricing-service
+    nutrivision: `${CONFIG.API_HOST}:8090`,         // nutrivision-service
 };
 
 export const API_CONFIG = {
