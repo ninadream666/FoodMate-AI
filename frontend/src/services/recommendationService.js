@@ -29,6 +29,32 @@ export const recommendationService = {
                 max_results: Number(params.maxResults) || 10,
             };
 
+            // 添加健康上下文（如果提供）
+            if (params.healthContext) {
+                body.health_context = {
+                    daily_steps: params.healthContext.dailySteps || 0,
+                    recent_steps_30min: params.healthContext.recentSteps30min || 0,
+                    heart_rate: params.healthContext.heartRate || 75,
+                    activity_status: params.healthContext.activityStatus || 'still',
+                    is_post_workout: params.healthContext.isPostWorkout || false,
+                };
+                console.log('🏃 携带健康上下文:', body.health_context);
+            }
+
+            // 添加天气上下文（如果提供）
+            if (params.weatherContext) {
+                body.weather_context = {
+                    condition: params.weatherContext.condition || '晴',
+                    temperature: params.weatherContext.temperature || 25,
+                    humidity: params.weatherContext.humidity || 50,
+                    wind_speed: params.weatherContext.windSpeed || 10,
+                    is_raining: params.weatherContext.isRaining || false,
+                    is_heavy_rain: params.weatherContext.isHeavyRain || false,
+                    delivery_impact: params.weatherContext.deliveryImpact || 'none',
+                };
+                console.log('🌦️ 携带天气上下文:', body.weather_context);
+            }
+
             console.log('🔍 调用智能推荐 - 详细参数:', JSON.stringify(body, null, 2));
             console.log('🌐 即将发送API请求到 recommendation/agents/recommend');
 

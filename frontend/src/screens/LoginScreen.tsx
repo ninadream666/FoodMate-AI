@@ -12,6 +12,7 @@ import {
     Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services/authService';
 
 // 注意：这里暂时注释掉未迁移的服务，防止报错
@@ -41,6 +42,9 @@ const LoginScreen = ({ navigation }: any) => {
 
         setLoading(true);
         try {
+            // 清除任何旧的过期 token，避免 500 错误
+            await AsyncStorage.removeItem('token');
+
             if (isLogin) {
                 // --- 登录逻辑 ---
                 console.log(`正在登录: ${username}, 角色: ${role}`);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
     View,
     Text,
@@ -21,6 +21,12 @@ import { authService } from '../services/authService';
 import locationService from '../services/locationService'; // 定位服务
 import LocationDisplay from '../components/LocationDisplay'; // 位置显示组件
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import StatusCapsule from '../components/StatusCapsule'; // 状态胶囊组件（内置开发者面板触发）
+import ActiveRecommendationModal from '../components/ActiveRecommendationModal'; // 主动推荐弹窗
+import WeatherAlertModal from '../components/WeatherAlertModal'; // 天气感知弹窗
+import DevModePanel from '../components/DevModePanel'; // 开发者面板
+import { useHealthContext } from '../hooks/useHealthContext'; // 健康上下文
+import weatherService, { WeatherData } from '../services/weatherService'; // 天气服务
 
 const HomeScreen = ({ navigation }: any) => {
     const [restaurants, setRestaurants] = useState<any[]>([]);
@@ -39,6 +45,22 @@ const HomeScreen = ({ navigation }: any) => {
 
     // 常用健康标签
     const HEALTH_TAGS = ["花生过敏", "海鲜过敏", "乳糖不耐受", "低糖", "低脂", "高蛋白", "素食"];
+    // 健康上下文
+    const health = useHealthContext();
+    // 主动推荐弹窗状态
+    const [showActiveRecommendation, setShowActiveRecommendation] = useState(false);
+    // 开发者面板状态
+    const [showDevPanel, setShowDevPanel] = useState(false);
+    // 天气感知弹窗状态
+    const [showWeatherAlert, setShowWeatherAlert] = useState(false);
+    // 上一次运动状态（用于检测变化）
+    const prevPostWorkoutRef = useRef(false);
+    // 上一次天气状态（用于检测变化）
+    const prevWeatherRef = useRef<string | null>(null);
+    // 天气数据
+    const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+    // 天气弹窗已显示标记（避免重复弹出）
+    const weatherAlertShownRef = useRef(false);
 
     // 初始化加载
     useEffect(() => {
@@ -52,6 +74,54 @@ const HomeScreen = ({ navigation }: any) => {
         testAPIConnection();
         // 不要立即调用loadData，等待LocationDisplay提供位置
     }, []);
+
+    // 监测运动状态变化，触发主动推荐弹窗
+    useEffect(() => {
+        // 检测从非运动后状态变为运动后状态
+        if (health.isPostWorkout && !prevPostWorkoutRef.current) {
+            console.log('🏃 检测到运动结束，显示主动推荐弹窗');
+            setShowActiveRecommendation(true);
+            // 自动刷新推荐（带健康上下文）
+            if (currentLocation) {
+                loadData(currentLocation);
+            }
+        }
+        prevPostWorkoutRef.current = health.isPostWorkout;
+    }, [health.isPostWorkout]);
+
+    // 获取天气数据
+    const fetchWeather = async (latitude: number, longitude: number) => {
+        try {
+            console.log('🌤️ 获取天气数据...');
+            const weather = await weatherService.getWeather(latitude, longitude);
+            setWeatherData(weather);
+            console.log('🌤️ 天气数据:', weather);
+
+            // 检测天气变化，弹出提醒
+            const currentCondition = weather.condition;
+            const shouldShowAlert =
+                (weather.isRaining || weather.isHeavyRain || weather.isExtreme ||
+                    weather.temperature > 35 || weather.temperature < 5) &&
+                !weatherAlertShownRef.current;
+
+            // 如果天气状况发生变化且需要提醒
+            if (shouldShowAlert && prevWeatherRef.current !== currentCondition) {
+                console.log('⚠️ 检测到需要提醒的天气:', currentCondition);
+                setShowWeatherAlert(true);
+                weatherAlertShownRef.current = true;
+                // 30分钟后重置，允许再次弹出
+                setTimeout(() => {
+                    weatherAlertShownRef.current = false;
+                }, 30 * 60 * 1000);
+            }
+            prevWeatherRef.current = currentCondition;
+
+            return weather;
+        } catch (error) {
+            console.error('获取天气失败:', error);
+            return null;
+        }
+    };
 
     const loadUser = async () => {
         const u = await authService.getCurrentUser();
@@ -142,8 +212,10 @@ const HomeScreen = ({ navigation }: any) => {
         return false;
     };
 
-    const loadData = async (providedLocation = null) => {
-        console.log('🏁 loadData 函数被调用! 参数:', providedLocation ? '有位置' : '无位置');
+    // 2. 修改后的数据加载逻辑
+    // skipWeatherFetch: 跳过天气API调用（用于模拟时保留模拟天气）
+    const loadData = async (providedLocation = null, skipWeatherFetch = false) => {
+        console.log('🏁 loadData 函数被调用! 参数:', providedLocation ? '有位置' : '无位置', '跳过天气:', skipWeatherFetch);
 
         // 防止重复加载
         if (loading) {
@@ -162,7 +234,7 @@ const HomeScreen = ({ navigation }: any) => {
             console.log('🏁 loadData开始执行，设置loading=true');
             setLoading(true);
 
-            let location = providedLocation;
+            let location: any = providedLocation;
 
             // 如果没有提供位置，使用当前位置或等待位置更新
             if (!location) {
@@ -187,6 +259,13 @@ const HomeScreen = ({ navigation }: any) => {
 
             setCurrentLocation(location);
 
+            // 获取天气数据（异步，不阻塞主流程）- 可跳过以保留模拟数据
+            if (!skipWeatherFetch) {
+                fetchWeather(location.latitude, location.longitude);
+            } else {
+                console.log('🌤️ 跳过天气获取（保留模拟天气）');
+            }
+
             // 检查是否是北京默认位置
             if (Math.abs(location.latitude - 39.9042) < 0.001 && Math.abs(location.longitude - 116.4074) < 0.001) {
                 console.warn('⚠️ 警告：使用的是默认北京位置，不是真实位置');
@@ -205,10 +284,30 @@ const HomeScreen = ({ navigation }: any) => {
                 userId: currentUser?.id || 'guest',
                 latitude: location.latitude, // 不进行数字转换，保持原始精度
                 longitude: location.longitude,
-                address: location.address
+                address: location.address,
+                // 添加健康上下文
+                healthContext: {
+                    dailySteps: health.dailySteps,
+                    recentSteps30min: health.recentSteps30min,
+                    heartRate: health.heartRate,
+                    activityStatus: health.activityStatus,
+                    isPostWorkout: health.isPostWorkout,
+                },
+                // 添加天气上下文
+                weatherContext: weatherData ? {
+                    condition: weatherData.condition,
+                    temperature: weatherData.temperature,
+                    humidity: weatherData.humidity,
+                    windSpeed: weatherData.windSpeed,
+                    isRaining: weatherData.isRaining,
+                    isHeavyRain: weatherData.isHeavyRain,
+                    deliveryImpact: weatherData.deliveryImpact,
+                } : undefined,
             };
 
             console.log('🚀 发送推荐请求参数:', recommendParams);
+            console.log('🏃 健康上下文:', recommendParams.healthContext);
+            console.log('🌦️ 天气上下文:', recommendParams.weatherContext);
             console.log('📡 即将调用recommendationService.getV2Recommendations...');
             const response = await recommendationService.getV2Recommendations(recommendParams);
             console.log('🎯 推荐服务原始响应:', response);
@@ -411,14 +510,31 @@ const HomeScreen = ({ navigation }: any) => {
                 showRefresh={true}
             />
 
+            {/* 状态胶囊 - 显示天气和健康状态 */}
+            <StatusCapsule
+                weather={weatherData ? {
+                    condition: weatherData.condition,
+                    temperature: weatherData.temperature,
+                } : undefined}
+                onPress={() => {
+                    // 点击可以打开开发者面板（5次点击触发）
+                    console.log('状态胶囊被点击');
+                }}
+            />
+
             {/* 欢迎语 */}
             <View style={styles.welcomeRow}>
-                <View>
+                <View style={{ flex: 1 }}>
                     <Text style={styles.welcomeText}>今天吃点什么?</Text>
                     <Text style={styles.userName}>{user?.username || user?.nickname || '朋友'}</Text>
                 </View>
-                <View style={{ flexDirection: 'row' }}>
-                    {/* ... 原有按钮 ... */}
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('OrderList')}
+                        style={{ padding: 8 }}
+                    >
+                        <Text style={{ color: '#333', fontWeight: 'bold' }}>📜 订单</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
                         <Text style={styles.logoutText}>退出</Text>
                     </TouchableOpacity>
@@ -438,6 +554,94 @@ const HomeScreen = ({ navigation }: any) => {
                     <Text style={{color: '#fff'}}>→</Text>
                 </View>
             </TouchableOpacity>
+            {/* 开发者工具栏（仅开发模式显示） */}
+            {__DEV__ && (
+                <View style={{ marginBottom: 12 }}>
+                    <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                console.log('🛠️ 打开健康模拟面板');
+                                setShowDevPanel(true);
+                            }}
+                            style={{ flex: 1, padding: 10, backgroundColor: '#fff3e0', borderRadius: 8, alignItems: 'center' }}
+                        >
+                            <Text style={{ color: '#e85a2d', fontWeight: 'bold' }}>🏃 健康模拟</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('LocationDebug')}
+                            style={{ flex: 1, padding: 10, backgroundColor: '#e3f2fd', borderRadius: 8, alignItems: 'center' }}
+                        >
+                            <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>🔍 位置调试</Text>
+                        </TouchableOpacity>
+                    </View>
+                    {/* 快捷模拟：运动结束 */}
+                    <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                console.log('🏃‍♂️ 一键模拟：刚跑完步');
+                                health.simulateJustFinishedWorkout();
+                                // 直接显示弹窗（不依赖 useEffect）
+                                setShowActiveRecommendation(true);
+                                // 用户在弹窗内点击"查看推荐"时会刷新推荐列表
+                            }}
+                            style={{ flex: 1, padding: 12, backgroundColor: '#fce4ec', borderRadius: 8, alignItems: 'center' }}
+                        >
+                            <Text style={{ color: '#c2185b', fontWeight: 'bold', fontSize: 14 }}>💪 模拟刚跑完步</Text>
+                            <Text style={{ color: '#c2185b', fontSize: 10, marginTop: 2 }}>心率145 / 步数12000</Text>
+                        </TouchableOpacity>
+                    </View>
+                    {/* 天气模拟按钮 */}
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                console.log('🌧️ 模拟大雨天气');
+                                const rainWeather: WeatherData = {
+                                    condition: '大雨',
+                                    temperature: 18,
+                                    humidity: 95,
+                                    windSpeed: 20,
+                                    icon: '🌧️',
+                                    isRaining: true,
+                                    isHeavyRain: true,
+                                    isExtreme: false,
+                                    deliveryImpact: 'severe',
+                                    recommendation: '外面雨很大，已为您优先筛选配送运力充足、包装防水的商家',
+                                };
+                                setWeatherData(rainWeather);
+                                setShowWeatherAlert(true);
+                                // 注意：不要在这里调用 loadData()，因为它会重新获取真实天气并覆盖模拟数据
+                                // 用户点击弹窗中的"查看推荐"按钮时会刷新推荐
+                            }}
+                            style={{ flex: 1, padding: 10, backgroundColor: '#e8f5e9', borderRadius: 8, alignItems: 'center' }}
+                        >
+                            <Text style={{ color: '#388e3c', fontWeight: 'bold' }}>🌧️ 模拟大雨</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => {
+                                console.log('🥵 模拟高温天气');
+                                const hotWeather: WeatherData = {
+                                    condition: '晴',
+                                    temperature: 38,
+                                    humidity: 40,
+                                    windSpeed: 5,
+                                    icon: '☀️',
+                                    isRaining: false,
+                                    isHeavyRain: false,
+                                    isExtreme: false,
+                                    deliveryImpact: 'minor',
+                                    recommendation: '天气炎热，为您推荐清凉解暑的美食',
+                                };
+                                setWeatherData(hotWeather);
+                                setShowWeatherAlert(true);
+                                // 注意：不要在这里调用 loadData()，用户点击弹窗按钮时会刷新推荐
+                            }}
+                            style={{ flex: 1, padding: 10, backgroundColor: '#ffebee', borderRadius: 8, alignItems: 'center' }}
+                        >
+                            <Text style={{ color: '#d32f2f', fontWeight: 'bold' }}>🥵 模拟高温</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
 
             {/* 搜索框 */}
             <View style={styles.searchContainer}>
@@ -538,6 +742,40 @@ const HomeScreen = ({ navigation }: any) => {
                 </View>
             </Modal>
 
+            {/* 主动推荐弹窗（运动结束后自动弹出） */}
+            <ActiveRecommendationModal
+                visible={showActiveRecommendation}
+                onClose={() => setShowActiveRecommendation(false)}
+                onViewRecommendations={() => {
+                    // 点击查看推荐时，刷新推荐列表（带健康上下文）
+                    console.log('📍 查看推荐餐食，刷新推荐列表...');
+                    setShowActiveRecommendation(false);
+                    if (currentLocation) {
+                        loadData(currentLocation, true); // 跳过天气获取
+                    }
+                }}
+            />
+
+            {/* 开发者健康模拟面板 */}
+            <DevModePanel
+                visible={showDevPanel}
+                onClose={() => setShowDevPanel(false)}
+            />
+
+            {/* 天气感知弹窗 */}
+            <WeatherAlertModal
+                visible={showWeatherAlert}
+                weather={weatherData}
+                onClose={() => setShowWeatherAlert(false)}
+                onAcceptRecommendation={() => {
+                    // 刷新推荐（使用当前天气数据，不重新获取）
+                    console.log('🌤️ 接受天气推荐，刷新推荐列表...');
+                    setShowWeatherAlert(false);
+                    if (currentLocation) {
+                        loadData(currentLocation, true); // skipWeatherFetch=true 保留模拟天气
+                    }
+                }}
+            />
         </SafeAreaView>
     );
 };
