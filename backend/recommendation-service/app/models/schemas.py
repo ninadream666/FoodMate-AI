@@ -67,6 +67,32 @@ class RecommendationRequest(BaseModel):
         populate_by_name = True
 
 
+# ========== 端云协同专有模型 (新增) ==========
+
+class EdgeSynergyConstraints(BaseModel):
+    """端云协同 - 边缘端计算出的脱敏硬性约束"""
+    forbidden_ingredients: Optional[List[str]] = Field(default_factory=list, description="绝对禁用的成分（如过敏原、生理期不适宜成分等）")
+    required_temperature: Optional[List[str]] = Field(default_factory=list, description="温度要求（如：常温、热饮）")
+    max_price: Optional[float] = Field(None, description="最高价格限制")
+    preferred_tags: Optional[List[str]] = Field(default_factory=list, description="偏好的食物标签（如：清淡、甜品）")
+
+    class Config:
+        extra = "allow"
+
+
+class EdgeSynergyRequest(BaseModel):
+    """端云协同推荐请求模型"""
+    location: LocationRequest
+    query: str = Field(..., description="用户通过语音输入的点餐意图")
+    constraints: EdgeSynergyConstraints = Field(..., description="边缘端计算出的脱敏约束条件")
+    max_results: int = Field(10, description="最大返回结果数")
+    search_radius: int = Field(5000, description="搜索半径（米）")
+    weather_context: Optional[WeatherContext] = Field(None, description="天气上下文")
+
+    class Config:
+        populate_by_name = True
+
+
 # ========== 简化版上下文模型（兼容多智能体输出） ==========
 
 class ContextInfo(BaseModel):

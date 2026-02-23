@@ -8,7 +8,7 @@ const MOCK_RECOMMENDATIONS = {
     data: {
         restaurants: [
             { id: 1, name: '川味观', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAhbQ9QcRMxm3Llr59SYyPVDBvXIeETgPqmZ_TDh0yGFWfgYmjwN89xAIT2MGtR--XXTFjIlci4ywk8FxQXju58r-0x4abnohjNJ0yvHytPSCMeME8hpWfe-iuarjXSMaMtmaToplyJCQzWEJ1PC_FrV_i0Rf2WcM57dchzX78SC-fPZrifDw9SYP2b73FdLAcxRrqgO0nkOXsdaMMvXb85jDZ2Lm68VN2jDGHZCeeS4N-judX4sb3iiv0fUZqmCc0iOZlIFSo2K0Bx', rating: 4.8, deliveryTime: '30-40分钟', tags: ['川菜', '辣味'] },
-            { id: 2, name: '寿司之家', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCmmd-i4u5v21dh8Ip1PqQdmDDbIYxNeb8OpD0iwmy60G1vNZ9xxIxPJqyAP7kCV8jzvrSQD8zQuLrRvI_-R1CCMGm0tGeRbvLANxmBxvzpAN8sG8zR8kyBH4UdgaP-37WBj-k0Soe7jH3a2ERUM7qsHnkxbPV2UynBCU8ppX0BaGm93gPtVDmAil-sCuYyFxRWiSmcuit_tWPlIA8C_O7TctaQxlMVWKYdQ7xHhFFZplnBVJ2kCwJ0pr2Rm9VquCzWpE7qLdbczkm4', rating: 4.6, deliveryTime: '25-35分钟', tags: ['日料', '寿司'] },
+            { id: 2, name: '寿司之家', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCmmd-i4u5v21dh8Ip1PqQdmDDbIYxNeb8OpD0iwmy60G1vNZ9xxIxPJqyAP7kCV8jzvrSQD8zQuLrRvI_-R1CCMGm0tGeRbvLANxmBxvzpAN8sG8zR8kyBH4UdgaP-37WBj-k0Soe7jH3a2ERUM7qsHnkxbPV2UynBCU8ppX0BaGm93gPtVDmAil-sCuYyFxRWiSmcuit_tWPlIA8C_O7TctaQxlMVWKYdQ7xHhFFZplnBVJ2kCwJ0pr2Rm9Vpr2Rm9VquCzWpE7qLdbczkm4', rating: 4.6, deliveryTime: '25-35分钟', tags: ['日料', '寿司'] },
         ]
     }
 };
@@ -95,6 +95,47 @@ export const recommendationService = {
             return await api.get('recommendation', '/agents/explain');
         } catch (e) {
             return null;
+        }
+    },
+
+    // 3. 🛡️ 获取端云协同智能推荐 (隐私保护版)
+    getEdgeSynergyRecommendations: async (params = {}) => {
+        try {
+            const body = {
+                location: {
+                    address: params.address || '当前位置',
+                    latitude: params.latitude || 0,
+                    longitude: params.longitude || 0,
+                },
+                query: params.query || '',
+                constraints: params.constraints || {
+                    forbidden_ingredients: [],
+                    required_temperature: []
+                },
+                max_results: Number(params.maxResults) || 10,
+                weather_context: params.weatherContext || null
+            };
+
+            console.log('🛡️ [Edge Synergy] 向云端发送脱敏约束请求:', JSON.stringify(body, null, 2));
+            const data = await api.post('recommendation', '/agents/edge-synergy-recommend', body);
+            
+            // 处理云端传回的降级状态
+            if (data.status === 'NO_MATCH') {
+                console.log('🛡️ [Edge Synergy] 云端返回 NO_MATCH，未找到严格符合健康约束的餐品，需要触发降级');
+                return { ...data, isFallbackNeeded: true };
+            }
+
+            // 自动导入逻辑
+            const list = data.recommendations || data.restaurants || [];
+            if (list.length > 0 && merchantService.importRealRestaurant) {
+                importAgentRestaurants(list);
+            }
+
+            return { ...data, isFallbackNeeded: false };
+        } catch (error) {
+            console.error('❌ 端云协同服务调用失败:', error);
+            // 请求失败时，也触发降级，让首页回到默认推荐
+            return { success: false, isFallbackNeeded: true, message: error.message };
         }
     }
 };

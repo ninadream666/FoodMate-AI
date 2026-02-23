@@ -1,16 +1,15 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
-<<<<<<< HEAD
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-=======
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- 步数传感器权限 (Android 10+) -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
->>>>>>> 45ce227dffd53aee045ff8b0e56694fcf4b1867e
 
     <application
       android:name=".MainApplication"
@@ -20,7 +19,9 @@
       android:allowBackup="false"
       android:theme="@style/AppTheme"
       android:usesCleartextTraffic="${usesCleartextTraffic}"
-      android:supportsRtl="true">
+      android:supportsRtl="true"
+      tools:replace="android:appComponentFactory"
+      android:appComponentFactory="androidx.core.app.CoreComponentFactory">
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"

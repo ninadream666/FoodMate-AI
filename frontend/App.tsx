@@ -57,7 +57,6 @@ function App(): React.JSX.Element {
               options={{ title: '美食广场', headerBackVisible: false }}
             />
 
-<<<<<<< HEAD
           {/* 实景菜单营养透视结果页*/}
           <Stack.Screen
             name="NutriVisionResult"
@@ -71,14 +70,6 @@ function App(): React.JSX.Element {
             component={AdminDashboardScreen}
             options={{ title: '系统管理', headerBackVisible: false }}
           />
-=======
-            {/* 管理端 (PC端功能，App端保留入口) */}
-            <Stack.Screen
-              name="AdminDashboard"
-              component={AdminDashboardScreen}
-              options={{ title: '系统管理', headerBackVisible: false }}
-            />
->>>>>>> 45ce227dffd53aee045ff8b0e56694fcf4b1867e
 
             {/* 核心业务流程 */}
             <Stack.Screen

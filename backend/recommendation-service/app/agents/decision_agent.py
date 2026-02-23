@@ -336,7 +336,16 @@ class ContextualBanditStrategy(MABStrategy):
             if any(k in cuisine_str for k in light_keywords):
                 context_bonus += 0.15
         
-        # 6. 节日/周末影响
+        # ========== 🆕 6. 绝对意图匹配（最高优先级，实现"指名道姓"的推荐） ==========
+        pure_query = context.get("pure_query", "").strip()
+        if pure_query and pure_query not in ["餐厅", "美食", "饭店"]:
+            pure_query_lower = pure_query.lower()
+            name_str = str(arm.name).lower()
+            if pure_query_lower in name_str or pure_query_lower in cuisine_str:
+                context_bonus += 0.40  # 给极高分数加成，保证冲上榜首
+                logger.info(f"🎯 绝对意图命中: '{pure_query}' 匹配了餐厅 '{arm.name}'，获得一票否决级加分 0.40")
+
+        # 7. 节日/周末影响
         temporal_ctx = env.get("temporal", {})
         if temporal_ctx.get("is_holiday", False) or temporal_ctx.get("festival"):
             if rating >= 4.5:
@@ -345,8 +354,8 @@ class ContextualBanditStrategy(MABStrategy):
         # 加入历史奖励（小幅加成）
         historical_score = arm.average_reward * 0.05
         
-        # 最终得分 = 基础分(0.5) + 可变分*0.3(最大~0.3) + 上下文加成(可达±0.30) + 历史
-        # 有上下文时，得分范围大约 0.38 ~ 1.0；显示时映射为 60~100分
+        # 最终得分 = 基础分(0.5) + 可变分*0.3(最大~0.3) + 上下文加成(可达±0.40) + 历史
+        # 有上下文时，得分范围大约 0.38 ~ 1.0+；显示时映射为 60~100分
         final_score = base_score + variable_score * 0.3 + context_bonus + historical_score
         
         # 调试日志：有上下文加成时打印
@@ -478,11 +487,22 @@ class DecisionAgent(BaseAgent):
                 context_analysis, profile_analysis
             )
             
-            # 🆕 注入前端传入的健康/天气上下文到决策上下文
+            # 🆕 注入前端传入的健康/天气/纯净意图到决策上下文
             if health_context:
                 decision_context["health_context"] = health_context
                 if health_context.get("is_post_workout"):
                     logger.info(f"🏃 检测到运动后状态，调整推荐排序")
+                
+                # 提取并应用端云协同脱敏硬性约束
+                if health_context.get("edge_constraints"):
+                    decision_context["edge_constraints"] = health_context.get("edge_constraints")
+                    logger.info(f"🛡️ 接收到端侧隐私约束: {decision_context['edge_constraints']}")
+                
+                # 🆕 提取纯净查询（由 Service 层透传过来）
+                pure_query = health_context.get("pure_query", "")
+                if pure_query:
+                    decision_context["pure_query"] = pure_query
+                    
             if weather_context:
                 # 将前端天气单独存储为 frontend_weather，优先级最高
                 decision_context["frontend_weather"] = weather_context
@@ -503,7 +523,48 @@ class DecisionAgent(BaseAgent):
             # 将餐厅转换为 MAB 臂
             arms = self._restaurants_to_arms(restaurants)
             
-            # 使用 MAB 策略排序
+            # 端云协同前置硬过滤 (Hard-Filter)
+            # 确保端侧不允许的敏感物质/菜品类别被完全拦截，防止被推荐
+            edge_constraints = decision_context.get("edge_constraints")
+            if edge_constraints:
+                filtered_arms = []
+                forbidden_ingredients = edge_constraints.get("forbidden_ingredients", [])
+                required_temperature = edge_constraints.get("required_temperature", [])
+                
+                for arm in arms:
+                    cuisine_str = str(arm.features.get("cuisine", "")).lower()
+                    name_str = str(arm.name).lower()
+                    is_hot_food = arm.features.get("is_hot_food", True)
+                    
+                    # 1. 检查过敏原及违禁成分 (例如端侧测出过敏史，直接过滤)
+                    is_forbidden = False
+                    for forbidden in forbidden_ingredients:
+                        if forbidden.lower() in cuisine_str or forbidden.lower() in name_str:
+                            is_forbidden = True
+                            logger.info(f"🛡️ 端云协同拦截: 餐厅 '{arm.name}' 包含端侧屏蔽敏感成分 '{forbidden}'")
+                            break
+                    if is_forbidden:
+                        continue
+                        
+                    # 2. 检查硬性温度限制 (例如生理期要求，屏蔽冰沙/冷饮)
+                    if required_temperature:
+                        # 识别是否明显是冷饮生冷品
+                        is_cold = any(k in cuisine_str or k in name_str for k in ["冰", "冷", "凉", "沙拉", "刺身"])
+                        
+                        # 如果端侧强制要求热饮或常温
+                        if any(t in ["热", "常温", "温"] for t in required_temperature):
+                            if is_cold or not is_hot_food:
+                                logger.info(f"🛡️ 端云协同拦截: 餐厅 '{arm.name}' 不符合端侧温度健康约束 '{required_temperature}'")
+                                continue
+                                
+                    filtered_arms.append(arm)
+                
+                arms = filtered_arms
+                if not arms:
+                    logger.warning("🛡️ 端侧约束过于严格，当前区域所有餐厅均被拦截，触发容错降级流程")
+                    # 没餐厅了不让后续代码报错，正常走完流程并返回空列表
+            
+            # 使用 MAB 策略排序 (对于已经过安全过滤的餐厅)
             ranked_arms = self.strategy.rank_all(arms, decision_context)
             
             # 生成推荐结果
@@ -511,7 +572,7 @@ class DecisionAgent(BaseAgent):
                 ranked_arms[:top_k], decision_context
             )
             
-            # 🆕 使用 DeepSeek AI 生成个性化推荐理由
+            # 使用 DeepSeek AI 生成个性化推荐理由
             recommendations = await self.generate_ai_reasons(
                 recommendations, decision_context
             )
@@ -600,10 +661,10 @@ class DecisionAgent(BaseAgent):
             # 用户分群
             "user_segment": profile.get("user_segment", "standard"),
             
-            # 🆕 健康上下文（用于运动后推荐调整）
+            # 健康上下文（用于运动后推荐调整）
             "health_context": context_analysis.get("health_context", {}),
             
-            # 🆕 完整的环境信息（用于生成推荐理由）
+            # 完整的环境信息（用于生成推荐理由）
             "environment": {
                 "weather": weather,
                 "temporal": temporal,
@@ -646,8 +707,8 @@ class DecisionAgent(BaseAgent):
             "delivery_time": restaurant.get("estimated_delivery_time", 30),
             "is_hot_food": restaurant.get("is_hot_food", True),
             "order_count": restaurant.get("order_count", 0),
-            "image": restaurant.get("image"),  # 🆕 图片字段
-            "address": restaurant.get("address", ""),  # 🆕 地址
+            "image": restaurant.get("image"),  # 图片字段
+            "address": restaurant.get("address", ""),  # 地址
         }
     
     def _arms_to_recommendations(self, arms: List[RestaurantArm],
@@ -665,15 +726,15 @@ class DecisionAgent(BaseAgent):
                 "restaurant_id": arm.restaurant_id,
                 "name": arm.name,
                 "score": score,
-                "reason": reason,  # 🆕 每个餐厅的个性化推荐理由
+                "reason": reason,  # 每个餐厅的个性化推荐理由
                 "features": arm.features,
-                # 🆕 直接暴露关键字段便于前端使用
+                # 直接暴露关键字段便于前端使用
                 "rating": arm.features.get("rating", 4.0),
                 "distance": arm.features.get("distance", 1000),
                 "estimated_delivery_time": arm.features.get("delivery_time", 30),
                 "cuisine_type": arm.features.get("cuisine", arm.features.get("cuisine_type", "")),
                 "avg_price": arm.features.get("price", arm.features.get("avg_price", 30)),
-                "image": arm.features.get("image"),  # 🆕 图片字段
+                "image": arm.features.get("image"),  # 图片字段
                 "mab_stats": {
                     "pulls": arm.pulls,
                     "average_reward": arm.average_reward
@@ -796,12 +857,12 @@ class DecisionAgent(BaseAgent):
             temporal = env.get("temporal", {})
             traffic = env.get("traffic", {})
             
-            # 🆕 获取用户偏好信息
+            # 获取用户偏好信息
             preferred_cuisines = context.get("preferred_cuisines", [])
             user_segment = context.get("user_segment", "standard")
             max_price = context.get("max_price", 100)
             
-            # 🆕 构建完整的环境描述（确保有合理默认值）
+            # 构建完整的环境描述（确保有合理默认值）
             temperature = weather.get("temperature") or weather.get("temp") or 22
             weather_condition = weather.get("condition") or weather.get("weather") or "晴"
             is_bad_weather = weather.get("is_bad_weather", False)
@@ -855,7 +916,7 @@ class DecisionAgent(BaseAgent):
             }
             period_desc = period_map.get(meal_period, "用餐时段")
             
-            # 🆕 更智能的天气影响描述
+            # 更智能的天气影响描述
             weather_analysis = []
             if is_bad_weather or weather_condition in ["暴雨", "大雨", "中雨", "雪", "大雪", "暴雪"]:
                 weather_analysis.append(f"⛈️ {weather_condition}天气，配送可能延迟，优先近距离餐厅")
@@ -868,7 +929,7 @@ class DecisionAgent(BaseAgent):
             else:
                 weather_analysis.append(f"☀️ {weather_condition}，{temperature}°C，适合各种美食")
             
-            # 🆕 交通影响描述
+            # 交通影响描述
             traffic_analysis = ""
             if congestion_index > 1.8 or congestion_level in ["严重拥堵", "拥堵"]:
                 traffic_analysis = f"🚗 交通{congestion_level}，建议选择近距离餐厅"
@@ -877,7 +938,7 @@ class DecisionAgent(BaseAgent):
             else:
                 traffic_analysis = f"🛣️ 道路畅通，配送时间可控"
             
-            # 🆕 用户偏好描述
+            # 用户偏好描述
             user_context = ""
             if preferred_cuisines:
                 user_context = f"用户喜欢: {', '.join(preferred_cuisines[:3])}"
@@ -900,7 +961,7 @@ class DecisionAgent(BaseAgent):
                 for i, r in enumerate(target_restaurants)
             ])
             
-            # 🆕 更智能的prompt，让DeepSeek理解完整上下文
+            # 更智能的prompt，让DeepSeek理解完整上下文
             prompt = f"""你是一个贴心的美食推荐助手。请根据当前环境为以下{target_count}家餐厅生成个性化推荐理由。
 
 🌍 【当前环境】
@@ -1129,7 +1190,7 @@ class DecisionAgent(BaseAgent):
         intent = profile_analysis.get("intent_analysis", {})
         profile = profile_analysis.get("profile", {})
 
-        # 🆕 提取详细环境数据
+        # 提取详细环境数据
         temperature = weather.get("temperature", 20)
         weather_condition = weather.get("condition", "晴")
         is_bad_weather = weather.get("is_bad_weather", False)
@@ -1148,7 +1209,7 @@ class DecisionAgent(BaseAgent):
         weight_explanations = []
         environment_summary = []
 
-        # 🆕 环境概述（天气+交通+时间）
+        # 环境概述（天气+交通+时间）
         # 天气描述
         if is_bad_weather or weather_condition in ["暴雨", "大雨", "中雨", "雪", "大雪"]:
             environment_summary.append(f"🌧️ {weather_condition}（{temperature}°C）")
@@ -1233,7 +1294,7 @@ class DecisionAgent(BaseAgent):
         if user_segment in segment_notes:
             weight_explanations.append(segment_notes[user_segment])
 
-        # 🆕 组合推荐摘要
+        # 组合推荐摘要
         reasoning = f"🤖 **智能推荐** | {' | '.join(environment_summary)}\n\n"
         
         if reasoning_parts:
