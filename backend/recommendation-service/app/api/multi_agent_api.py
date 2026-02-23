@@ -18,7 +18,10 @@ logger = logging.getLogger(__name__)
 from ..models.schemas import (
     RecommendationRequest,
     RecommendationResponse,
-    LocationRequest
+    LocationRequest,
+    EdgeSynergyRequest,
+    UserPreferences,
+    HealthContext
 )
 from ..services.multi_agent_recommendation_service import multi_agent_recommendation_service
 from ..services.profile_service_client import profile_service_adapter
@@ -87,6 +90,64 @@ async def multi_agent_recommendation(
         raise HTTPException(
             status_code=500,
             detail=f"多智能体推荐服务错误: {str(e)}"
+        )
+
+
+@router.post("/edge-synergy-recommend", response_model=RecommendationResponse)
+async def edge_synergy_recommendation(
+    request: EdgeSynergyRequest
+):
+    """
+    🛡️ 端云协同推荐 (隐私保护模式)
+    
+    专门处理带有端侧硬性脱敏约束的推荐请求。
+    此接口保证不查询用户的云端画像，所有敏感决策依赖于 Edge 传来的约束。
+    """
+    try:
+        logger.info(f"端云协同推荐请求，意图: {request.query}")
+        
+        # 将端侧发送来的硬性约束放入 health_context 的扩展字段中，供后续智能体(DecisionAgent)拦截使用
+        health_dict = {"edge_constraints": request.constraints.dict()}
+        health_context = HealthContext(**health_dict)
+        
+        # 将脱敏请求转化为内部使用的通用请求格式
+        # 强制使用虚拟 user_id 确保 ProfilerAgent 不去调用真实的 profile-service
+        internal_request = RecommendationRequest(
+            location=request.location,
+            query=request.query,
+            max_results=request.max_results,
+            search_radius=request.search_radius,
+            user_id="edge_synergy_anonymous_user",
+            weather_context=request.weather_context,
+            health_context=health_context,
+            preferences=UserPreferences(
+                dietary_restrictions=request.constraints.forbidden_ingredients,
+                max_price=request.constraints.max_price
+            )
+        )
+
+        result = await multi_agent_recommendation_service.get_recommendations(internal_request)
+        
+        # 降级容错设计：如果端侧传来的约束过严（如：禁止冰饮但周边全是冷饮店），结果为空
+        if result.total_count == 0 or not result.restaurants:
+            logger.warning("端侧约束过于严格，云端无符合条件的餐品，返回降级标识")
+            return RecommendationResponse(
+                status="NO_MATCH",
+                message="周边暂无严格符合您健康约束的餐品",
+                restaurants=[],
+                total_count=0
+            )
+        
+        logger.info(f"端云协同推荐完成，成功返回{result.total_count}家安全餐厅")
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"端云协同推荐失败: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"端云协同推荐服务错误: {str(e)}"
         )
 
 

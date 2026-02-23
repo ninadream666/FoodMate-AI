@@ -334,7 +334,7 @@ class AmapPOIService:
                 try:
                     # 提取数字
                     import re
-                    price_match = re.findall(r'\\d+', cost)
+                    price_match = re.findall(r'\d+', cost)
                     if price_match:
                         avg_price = float(price_match[0])
                 except:
@@ -442,82 +442,6 @@ class AmapPOIService:
         logger.info(f"搜索到 {len(unique_restaurants)} 个餐厅，去重后返回")
         
         return unique_restaurants[:search_params.get("page_size", 20)]
-    async def search_restaurants(
-        self,
-        location: str = None,
-        latitude: float = None,
-        longitude: float = None,
-        keywords: str = "餐厅",
-        radius: int = 5000,
-        limit: int = 30
-    ) -> List[Dict[str, Any]]:
-        """
-        统一的餐厅搜索接口
-        
-        Args:
-            location: 地址描述（如"上海市浦东新区"）
-            latitude: 纬度
-            longitude: 经度
-            keywords: 搜索关键词
-            radius: 搜索半径（米）
-            limit: 最大返回数量
-            
-        Returns:
-            餐厅列表（字典格式）
-        """
-        restaurants = []
-        
-        try:
-            # 如果有经纬度，使用周边搜索
-            if latitude and longitude:
-                location_str = f"{longitude},{latitude}"
-                poi_results = await self.search_restaurants_around(
-                    location=location_str,
-                    radius=radius,
-                    keywords=keywords,
-                    page_size=min(limit, 25)
-                )
-            # 否则使用关键词+城市搜索
-            elif location:
-                poi_results = await self.search_restaurants_by_keywords(
-                    keywords=keywords,
-                    region=location,
-                    page_size=min(limit, 25)
-                )
-            else:
-                # 默认使用上海
-                poi_results = await self.search_restaurants_by_keywords(
-                    keywords=keywords,
-                    region="上海市",
-                    page_size=min(limit, 25)
-                )
-            
-            # 转换为字典格式
-            for poi in poi_results:
-                restaurants.append({
-                    "id": poi.id,
-                    "name": poi.name,
-                    "cuisine_type": poi.cuisine_type,
-                    "rating": poi.rating,
-                    "avg_price": poi.avg_price,
-                    "distance": int(poi.distance * 1000),  # 转换为米
-                    "estimated_delivery_time": poi.estimated_delivery_time,
-                    "address": poi.address,
-                    "tel": poi.tel,
-                    "location": poi.location,
-                    "type": poi.type,
-                    "is_hot_food": poi.is_hot_food,
-                    "is_cold_food": poi.is_cold_food,
-                    "spice_level": poi.spice_level,
-                    "tags": poi.tags
-                })
-            
-            logger.info(f"搜索到 {len(restaurants)} 家餐厅")
-            return restaurants[:limit]
-            
-        except Exception as e:
-            logger.error(f"搜索餐厅失败: {e}")
-            return []
 
     async def search_restaurants(
         self,
@@ -528,65 +452,69 @@ class AmapPOIService:
         radius: int = 5000,
         limit: int = 30
     ) -> List[Dict[str, Any]]:
-        """统一的餐厅搜索接口"""
+        """
+        统一的餐厅搜索接口（支持双重召回机制，防止精准查询无结果）
+        """
         restaurants = []
-        try:
+        seen_ids = set()
+
+        # 内部辅助函数：执行一次获取
+        async def _fetch_pois(search_kw: str, max_count: int):
             if latitude and longitude:
                 location_str = f"{longitude},{latitude}"
-                poi_results = await self.search_restaurants_around(
-                    location=location_str, radius=radius, keywords=keywords, page_size=min(limit, 25))
+                return await self.search_restaurants_around(
+                    location=location_str, radius=radius, keywords=search_kw, page_size=min(max_count, 25))
             elif location:
-                poi_results = await self.search_restaurants_by_keywords(
-                    keywords=keywords, region=location, page_size=min(limit, 25))
+                return await self.search_restaurants_by_keywords(
+                    keywords=search_kw, region=location, page_size=min(max_count, 25))
             else:
-                poi_results = await self.search_restaurants_by_keywords(
-                    keywords=keywords, region="上海市", page_size=min(limit, 25))
-            for poi in poi_results:
-                restaurants.append({
-                    "id": poi.id, "name": poi.name, "cuisine_type": poi.cuisine_type,
-                    "rating": poi.rating, "avg_price": poi.avg_price,
-                    "distance": int(poi.distance * 1000),
-                    "estimated_delivery_time": poi.estimated_delivery_time,
-                    "address": poi.address, "tel": poi.tel, "location": poi.location,
-                    "type": poi.type, "is_hot_food": poi.is_hot_food
-                })
+                return await self.search_restaurants_by_keywords(
+                    keywords=search_kw, region="上海市", page_size=min(max_count, 25))
+
+        try:
+            # 1. 第一重召回：精准意图召回
+            actual_keyword = keywords if keywords and keywords.strip() else "餐厅"
+            primary_results = await _fetch_pois(actual_keyword, limit)
+            
+            for poi in primary_results:
+                if poi.id not in seen_ids:
+                    seen_ids.add(poi.id)
+                    restaurants.append(self._format_poi_to_dict(poi))
+            
+            # 2. 第二重召回：广泛兜底召回
+            # 如果用户的关键词不是通用词，且第一重拉回来的数量不够，我们就用"餐厅"兜底
+            if actual_keyword not in ["餐厅", "美食", "饭店"] and len(restaurants) < limit:
+                fallback_results = await _fetch_pois("餐厅", limit)
+                for poi in fallback_results:
+                    if poi.id not in seen_ids:
+                        seen_ids.add(poi.id)
+                        restaurants.append(self._format_poi_to_dict(poi))
+                        if len(restaurants) >= limit:
+                            break
+            
+            logger.info(f"双重召回完成，主关键词'{actual_keyword}'，共获取 {len(restaurants)} 家餐厅")
             return restaurants[:limit]
+            
         except Exception as e:
             logger.error(f"搜索餐厅失败: {e}")
             return []
 
-    async def search_restaurants(
-        self,
-        location: str = None,
-        latitude: float = None,
-        longitude: float = None,
-        keywords: str = "餐厅",
-        radius: int = 5000,
-        limit: int = 30
-    ) -> List[Dict[str, Any]]:
-        """统一的餐厅搜索接口"""
-        restaurants = []
-        try:
-            if latitude and longitude:
-                location_str = f"{longitude},{latitude}"
-                poi_results = await self.search_restaurants_around(
-                    location=location_str, radius=radius, keywords=keywords, page_size=min(limit, 25))
-            elif location:
-                poi_results = await self.search_restaurants_by_keywords(
-                    keywords=keywords, region=location, page_size=min(limit, 25))
-            else:
-                poi_results = await self.search_restaurants_by_keywords(
-                    keywords=keywords, region="上海市", page_size=min(limit, 25))
-            for poi in poi_results:
-                restaurants.append({
-                    "id": poi.id, "name": poi.name, "cuisine_type": poi.cuisine_type,
-                    "rating": poi.rating, "avg_price": poi.avg_price,
-                    "distance": int(poi.distance * 1000),
-                    "estimated_delivery_time": poi.estimated_delivery_time,
-                    "address": poi.address, "tel": poi.tel, "location": poi.location,
-                    "type": poi.type, "is_hot_food": poi.is_hot_food
-                })
-            return restaurants[:limit]
-        except Exception as e:
-            logger.error(f"搜索餐厅失败: {e}")
-            return []
+    def _format_poi_to_dict(self, poi: POIRestaurant) -> Dict[str, Any]:
+        """辅助方法：将 POI 对象转换为字典格式"""
+        return {
+            "id": poi.id, 
+            "name": poi.name, 
+            "cuisine_type": poi.cuisine_type,
+            "rating": poi.rating, 
+            "avg_price": poi.avg_price,
+            "distance": int(poi.distance * 1000),  # 转换为米
+            "estimated_delivery_time": poi.estimated_delivery_time,
+            "address": poi.address, 
+            "tel": poi.tel, 
+            "location": poi.location,
+            "type": poi.type, 
+            "is_hot_food": poi.is_hot_food,
+            "is_cold_food": poi.is_cold_food,
+            "spice_level": poi.spice_level,
+            "tags": poi.tags
+        }

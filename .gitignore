@@ -10,3 +10,15 @@ Thumbs.db
 
 # Logs
 *.log
+
+# AI Models
+*.bin
+*.pt
+*.gguf
+*.pth
+
+# Android assets large models
+frontend/android/app/src/main/assets/
+
+# Voice models
+vosk-model-small-cn/

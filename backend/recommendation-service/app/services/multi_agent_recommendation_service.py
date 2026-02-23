@@ -119,13 +119,14 @@ class MultiAgentRecommendationService:
             
             logger.info(f"开始多智能体推荐，位置: {location}")
             
-            # 搜索附近餐厅
+            # 搜索附近餐厅 (传入真正的用户原始 query 供双重召回使用)
             restaurants = await self._search_restaurants(
                 location=location,
                 latitude=latitude,
                 longitude=longitude,
                 radius=getattr(request, 'search_radius', 5000),
-                limit=30
+                limit=30,
+                user_query=getattr(request, 'query', "")  # 🆕 传入真实查询词
             )
             
             if not restaurants:
@@ -134,7 +135,7 @@ class MultiAgentRecommendationService:
             
             # 执行智能体编排
             # 🆕 传入前端的健康/天气上下文，供决策引擎排序使用
-            health_ctx = None
+            health_ctx = {}
             weather_ctx = None
             if hasattr(request, 'health_context') and request.health_context:
                 health_ctx = {
@@ -153,6 +154,9 @@ class MultiAgentRecommendationService:
                     "is_heavy_rain": request.weather_context.is_heavy_rain,
                     "delivery_impact": request.weather_context.delivery_impact,
                 }
+            
+            # 💡 巧妙利用 health_ctx 将纯净的原始意图传递给下游的 DecisionAgent
+            health_ctx["pure_query"] = getattr(request, 'query', "")
             
             result = await self.orchestrator.orchestrate(
                 user_query=user_query,
@@ -173,14 +177,9 @@ class MultiAgentRecommendationService:
             # 🆕 将前端传入的健康/天气上下文注入 context_analysis，供决策引擎使用
             if "context_analysis" not in result:
                 result["context_analysis"] = {}
-            if hasattr(request, 'health_context') and request.health_context:
-                result["context_analysis"]["health_context"] = {
-                    "daily_steps": request.health_context.daily_steps,
-                    "recent_steps_30min": request.health_context.recent_steps_30min,
-                    "heart_rate": request.health_context.heart_rate,
-                    "activity_status": request.health_context.activity_status,
-                    "is_post_workout": request.health_context.is_post_workout,
-                }
+            if health_ctx:
+                result["context_analysis"]["health_context"] = health_ctx
+            
             if hasattr(request, 'weather_context') and request.weather_context:
                 wc = request.weather_context
                 # 合并前端天气数据到 context_analysis.weather，确保决策引擎可以用
@@ -256,15 +255,19 @@ class MultiAgentRecommendationService:
         latitude: float = None,
         longitude: float = None,
         radius: int = 5000,
-        limit: int = 30
+        limit: int = 30,
+        user_query: str = ""  # 🆕 接收原始查询
     ) -> List[Dict[str, Any]]:
         """搜索附近餐厅"""
         try:
+            # 提取核心意图词，如果没有则默认"餐厅"
+            search_keyword = user_query if user_query and user_query.strip() else "餐厅"
+
             poi_results = await self.poi_service.search_restaurants(
                 location=location,
                 latitude=latitude,
                 longitude=longitude,
-                keywords="餐厅",
+                keywords=search_keyword,
                 radius=radius,
                 limit=limit
             )
@@ -335,7 +338,7 @@ class MultiAgentRecommendationService:
         distance = restaurant.get("features", {}).get("distance", restaurant.get("distance", 2000))
         rating = restaurant.get("features", {}).get("rating", restaurant.get("rating", 4.0))
         delivery_time = restaurant.get("features", {}).get("delivery_time", 
-                         restaurant.get("estimated_delivery_time", 30))
+                          restaurant.get("estimated_delivery_time", 30))
         cuisine_str = str(cuisine).lower()
         
         # ========== 1. 天气相关（最高优先级）==========
@@ -662,11 +665,12 @@ class MultiAgentRecommendationService:
         """降级推荐策略 - 带个性化推荐理由"""
         try:
             # 基础餐厅搜索
+            search_keyword = request.query if hasattr(request, 'query') and request.query else "餐厅"
             poi_results = await self.poi_service.search_restaurants(
                 location=request.location.address,
                 latitude=request.location.latitude,
                 longitude=request.location.longitude,
-                keywords="餐厅",
+                keywords=search_keyword,
                 radius=getattr(request, 'search_radius', 5000),
                 limit=request.max_results
             )
