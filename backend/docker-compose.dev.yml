@@ -295,7 +295,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://dev:dev123@postgres-db:5432/ai_pricing_db
       - RABBITMQ_URL=amqp://dev:dev123@rabbitmq:5672/
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - GEMINI_MODEL=gemini-2.0-flash
+      - GEMINI_MODEL=gemini-2.5-flash
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -348,7 +348,7 @@ services:
       - "8090:8000"
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - GEMINI_MODEL=gemini-2.0-flash
+      - GEMINI_MODEL=gemini-2.5-flash
       - GEMINI_BASE_URL=https://yinli.one/v1/chat/completions
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
