@@ -26,6 +26,7 @@ from .api.health import router as health_router
 from .api.multi_agent_api import router as multi_agent_router
 from .api.mcp_api import router as mcp_router, startup_mcp, shutdown_mcp
 from .api.auth_api import router as auth_router
+from .api.ml_api import router as ml_router
 from .models.schemas import HealthCheckResponse
 
 # 创建FastAPI应用实例
@@ -111,6 +112,13 @@ app.include_router(
 app.include_router(
     auth_router,
     tags=["认证"]
+)
+
+# 注册 ML 模型管理路由
+app.include_router(
+    ml_router,
+    prefix="/api/v2",
+    tags=["ML模型管理"]
 )
 
 
