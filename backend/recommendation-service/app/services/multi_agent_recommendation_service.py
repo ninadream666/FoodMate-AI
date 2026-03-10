@@ -62,7 +62,7 @@ class MultiAgentRecommendationService:
         初始化多智能体推荐服务
         
         Args:
-            mab_strategy: MAB策略 (ucb1, thompson, epsilon, contextual)
+            mab_strategy: MAB策略 (ucb1, thompson, epsilon, contextual, ml_ensemble)
         """
         self.mab_strategy = mab_strategy
         
@@ -755,7 +755,7 @@ class MultiAgentRecommendationService:
         切换MAB策略
         
         Args:
-            strategy: ucb1, thompson, epsilon, contextual
+            strategy: ucb1, thompson, epsilon, contextual, ml_ensemble
         """
         if self.orchestrator:
             self.orchestrator.set_mab_strategy(strategy)

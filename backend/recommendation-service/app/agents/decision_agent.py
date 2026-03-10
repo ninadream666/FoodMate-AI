@@ -24,6 +24,14 @@ import os
 from openai import AsyncOpenAI
 from .base_agent import BaseAgent, Tool, global_tool_registry
 
+# ML Ensemble 策略（LightGBM + DeepFM）
+try:
+    from ..ml.ensemble_strategy import EnsembleMLStrategy
+    from ..ml.data_collector import get_collector as get_data_collector
+    ML_AVAILABLE = True
+except ImportError:
+    ML_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -401,6 +409,25 @@ class DecisionAgent(BaseAgent):
             "epsilon": EpsilonGreedyStrategy(),
             "contextual": ContextualBanditStrategy()
         }
+        
+        # ML Ensemble 策略: LightGBM + DeepFM 融合排序
+        if strategy == "ml_ensemble" and ML_AVAILABLE:
+            try:
+                fallback = ContextualBanditStrategy()
+                ml_strategy = EnsembleMLStrategy(
+                    lgb_weight=float(os.getenv("ML_LGB_WEIGHT", "0.6")),
+                    deepfm_weight=float(os.getenv("ML_DEEPFM_WEIGHT", "0.4")),
+                    fallback_strategy=fallback
+                )
+                logger.info("🤖 已创建 ML Ensemble 策略 (LightGBM + DeepFM)")
+                return ml_strategy
+            except Exception as e:
+                logger.warning(f"⚠️ ML Ensemble 策略创建失败，降级到 contextual: {e}")
+                return ContextualBanditStrategy()
+        elif strategy == "ml_ensemble":
+            logger.warning("⚠️ ML 模块不可用，降级到 contextual 策略")
+            return ContextualBanditStrategy()
+        
         return strategies.get(strategy, ContextualBanditStrategy())
     
     def _register_tools(self):
@@ -566,6 +593,26 @@ class DecisionAgent(BaseAgent):
             
             # 使用 MAB 策略排序 (对于已经过安全过滤的餐厅)
             ranked_arms = self.strategy.rank_all(arms, decision_context)
+            
+            # 📦 异步记录推荐曝光数据（用于 ML 模型训练）
+            if ML_AVAILABLE:
+                try:
+                    collector = get_data_collector()
+                    impression_data = [
+                        {
+                            "restaurant_id": arm.restaurant_id,
+                            "features": arm.features,
+                            "pulls": arm.pulls,
+                            "avg_reward": arm.average_reward,
+                            "rank": idx + 1,
+                        }
+                        for idx, arm in enumerate(ranked_arms[:top_k])
+                    ]
+                    asyncio.create_task(
+                        collector.log_batch_impressions(impression_data, decision_context)
+                    )
+                except Exception as e:
+                    logger.debug(f"训练数据记录失败（不影响推荐）: {e}")
             
             # 生成推荐结果
             recommendations = self._arms_to_recommendations(
@@ -1160,6 +1207,12 @@ class DecisionAgent(BaseAgent):
     def _calculate_display_score(self, arm: RestaurantArm,
                                  context: Dict[str, Any]) -> float:
         """计算展示分数（60-100分范围）"""
+        # ML Ensemble 模式：直接用模型输出分数映射到 60-100
+        ml_score = arm.features.get("_ml_score")
+        if ml_score is not None:
+            display_score = 60 + ml_score * 40  # 0~1 -> 60~100
+            return round(max(60.0, min(100.0, display_score)), 1)
+        
         if isinstance(self.strategy, ContextualBanditStrategy):
             raw_score = self.strategy._calculate_contextual_score(arm, context)
             # 确保分数在60-100范围内
@@ -1377,6 +1430,26 @@ class DecisionAgent(BaseAgent):
             arm.pulls += 1
             arm.rewards += reward
             logger.debug(f"Updated reward for {restaurant_id}: {arm.average_reward:.3f}")
+            
+            # 📦 异步记录反馈数据（用于 ML 模型训练）
+            if ML_AVAILABLE:
+                try:
+                    collector = get_data_collector()
+                    feedback_type = "click" if reward <= 0.3 else ("order" if reward >= 1.0 else "rating")
+                    import asyncio
+                    try:
+                        loop = asyncio.get_running_loop()
+                        loop.create_task(
+                            collector.log_feedback(
+                                restaurant_id=restaurant_id,
+                                feedback_type=feedback_type,
+                                reward_value=reward,
+                            )
+                        )
+                    except RuntimeError:
+                        pass  # 非异步上下文，跳过
+                except Exception as e:
+                    logger.debug(f"反馈数据记录失败（不影响奖励更新）: {e}")
     
     def set_strategy(self, strategy: str):
         """动态切换 MAB 策略"""
