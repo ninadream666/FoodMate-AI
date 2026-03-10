@@ -1,4 +1,4 @@
-package com.nutrivisionmobile
+package com.ninkynonkpinkyponk.foodmateai
 
 import android.app.Application
 import com.facebook.react.PackageList

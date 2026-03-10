@@ -1,4 +1,4 @@
-package com.nutrivisionmobile
+package com.ninkynonkpinkyponk.foodmateai
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
