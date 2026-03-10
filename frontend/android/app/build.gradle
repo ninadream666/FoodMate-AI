@@ -77,9 +77,9 @@ android {
     // buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.nutrivisionmobile"
+    namespace "com.ninkynonkpinkyponk.foodmateai"
     defaultConfig {
-        applicationId "com.nutrivisionmobile"
+        applicationId "com.ninkynonkpinkyponk.foodmateai"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
