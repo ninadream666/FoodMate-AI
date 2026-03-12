@@ -55,6 +55,7 @@ except ImportError:
 from .context_agent import create_context_agent
 from .profiler_agent import create_profiler_agent
 from .reasoning_agent import create_reasoning_agent
+from .collaborative_agent import create_collaborative_agent
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,7 @@ class ParallelWorkflowState(TypedDict, total=False):
     context_result: Dict[str, Any]      # ContextAgent 结果
     retrieval_result: Dict[str, Any]    # RetrievalAgent 结果 (POI)
     profile_result: Dict[str, Any]      # ProfilerAgent 结果
+    collaborative_result: Dict[str, Any]  # CollaborativeAgent 结果
     
     # 候选餐厅
     restaurants: List[Dict[str, Any]]
@@ -92,7 +94,7 @@ class ParallelOrchestrator:
     并行智能体编排器
     
     特点:
-    1. 并行执行 ContextAgent + RetrievalAgent + ProfilerAgent
+    1. 并行执行 ContextAgent + RetrievalAgent + ProfilerAgent + CollaborativeAgent
     2. 数据汇聚后由 ReasoningAgent 统一处理
     3. 生成推荐列表和暖心文案
     """
@@ -111,6 +113,7 @@ class ParallelOrchestrator:
             weather_service, map_service, calendar_service
         )
         self.profiler_agent = create_profiler_agent(user_service)
+        self.collaborative_agent = create_collaborative_agent()
         self.reasoning_agent = create_reasoning_agent()
         
         # POI 服务 (用于 RetrievalAgent)
@@ -224,6 +227,21 @@ class ParallelOrchestrator:
         tasks.append(fetch_profile())
         task_names.append("profile")
         
+        # 任务D: CollaborativeAgent - 协同过滤
+        async def fetch_collaborative():
+            t0 = datetime.now()
+            result = await self.collaborative_agent.process({
+                "restaurants": state.get("restaurants", []),
+                "profile_analysis": {},  # 并行模式下画像可能尚未完成，CF 独立运行
+                "user_id": state.get("user_id", "anonymous"),
+            })
+            timing["collaborative_ms"] = (datetime.now() - t0).total_seconds() * 1000
+            logger.info(f"  🤝 CollaborativeAgent 完成 ({timing['collaborative_ms']:.0f}ms)")
+            return result
+        
+        tasks.append(fetch_collaborative())
+        task_names.append("collaborative")
+        
         # 并行执行所有任务
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
@@ -231,6 +249,7 @@ class ParallelOrchestrator:
         context_result = {}
         retrieval_result = {}
         profile_result = {}
+        collaborative_result = {}
         restaurants = []
         errors = []
         
@@ -245,6 +264,8 @@ class ParallelOrchestrator:
                 restaurants = result.get("restaurants", [])
             elif name == "profile":
                 profile_result = result
+            elif name == "collaborative":
+                collaborative_result = result
         
         total_ms = (datetime.now() - start_time).total_seconds() * 1000
         timing["parallel_total_ms"] = total_ms
@@ -254,6 +275,7 @@ class ParallelOrchestrator:
             "context_result": context_result,
             "retrieval_result": retrieval_result,
             "profile_result": profile_result,
+            "collaborative_result": collaborative_result,
             "restaurants": restaurants,
             "timing": timing,
             "errors": errors
@@ -268,10 +290,11 @@ class ParallelOrchestrator:
         logger.info("✨ 执行推理节点 (ReasoningAgent)")
         t0 = datetime.now()
         
-        # 调用 ReasoningAgent
+        # 调用 ReasoningAgent (注入协同过滤分数)
         result = await self.reasoning_agent.process({
             "context_analysis": state.get("context_result", {}),
             "profile_analysis": state.get("profile_result", {}),
+            "collaborative_analysis": state.get("collaborative_result", {}),
             "restaurants": state.get("restaurants", []),
             "user_query": state.get("user_query", ""),
             "top_k": state.get("top_k", 5)

@@ -2,10 +2,11 @@
  * useHealthContext.tsx - 健康上下文 Provider
  * 
  * 功能：
- * 1. 整合步数、心率、运动状态数据
+ * 1. 整合步数、心率、运动状态、环境光线数据
  * 2. 支持开发者模式（模拟数据）
  * 3. 自动重置运动后状态（5分钟后）
  * 4. 提供倒计时显示
+ * 5. 环境光感知（自动传感器 + 手动模拟）
  */
 
 import React, {
@@ -18,12 +19,16 @@ import React, {
     ReactNode,
 } from 'react';
 import { usePedometer } from './usePedometer';
+import { useAmbientLight, LightLevel, luxToLevel } from './useAmbientLight';
 
 // 运动后状态持续时间（5分钟）
 const POST_WORKOUT_DURATION = 5 * 60 * 1000;
 
 // 活动状态类型
 export type ActivityStatus = 'still' | 'walking' | 'running' | 'cycling';
+
+// 光线等级类型（re-export for convenience）
+export type { LightLevel } from './useAmbientLight';
 
 // 健康上下文状态
 export interface HealthState {
@@ -39,12 +44,18 @@ export interface HealthState {
     isPostWorkout: boolean;
     postWorkoutExpiresAt: number | null;
 
+    // 环境光线数据
+    lightLux: number;
+    lightLevel: LightLevel;
+
     // 开发者模式
     isDevMode: boolean;
 
     // 传感器状态
     isPedometerAvailable: boolean;
     pedometerError: string | null;
+    isLightSensorAvailable: boolean;
+    lightSensorError: string | null;
 }
 
 // 上下文接口
@@ -53,6 +64,9 @@ interface HealthContextType extends HealthState {
     setSimulatedHeartRate: (value: number) => void;
     setSimulatedSteps: (value: number) => void;
     setSimulatedActivityStatus: (status: ActivityStatus) => void;
+
+    // 光线模拟设置
+    setSimulatedLightLux: (value: number) => void;
 
     // 开发者模式控制
     setDevMode: (enabled: boolean) => void;
@@ -77,9 +91,13 @@ const defaultState: HealthState = {
     activityStatus: 'still',
     isPostWorkout: false,
     postWorkoutExpiresAt: null,
+    lightLux: 300,
+    lightLevel: 'normal' as LightLevel,
     isDevMode: false,
     isPedometerAvailable: false,
     pedometerError: null,
+    isLightSensorAvailable: false,
+    lightSensorError: null,
 };
 
 // 创建上下文
@@ -95,11 +113,15 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
     // 真实步数数据
     const pedometer = usePedometer();
 
+    // 真实环境光数据
+    const ambientLight = useAmbientLight();
+
     // 模拟数据状态
     const [simulatedData, setSimulatedData] = useState({
         heartRate: 75,
         steps: 0,
         activityStatus: 'still' as ActivityStatus,
+        lightLux: 300,
     });
 
     // 开发者模式
@@ -151,6 +173,7 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
             heartRate: 75,
             steps: 0,
             activityStatus: 'still',
+            lightLux: 300,
         });
         console.log('🔄 已重置所有健康状态');
     }, []);
@@ -179,6 +202,7 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
             heartRate: 145,
             steps: 12000,
             activityStatus: 'running',
+            lightLux: simulatedData.lightLux,
         });
         triggerPostWorkout();
         console.log('🎯 已模拟"刚跑完步"状态（自动启用开发者模式）');
@@ -199,6 +223,11 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
         setSimulatedData(prev => ({ ...prev, activityStatus: status }));
     }, []);
 
+    // 设置模拟光线值
+    const setSimulatedLightLux = useCallback((value: number) => {
+        setSimulatedData(prev => ({ ...prev, lightLux: Math.max(0, Math.min(50000, value)) }));
+    }, []);
+
     // 计算最终状态
     const finalState: HealthState = {
         // 步数：开发者模式用模拟值，否则用真实值
@@ -216,12 +245,18 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
         isPostWorkout: isPostWorkout || pedometer.isPostWorkout,
         postWorkoutExpiresAt,
 
+        // 环境光线：开发者模式用模拟值，否则用真实传感器值
+        lightLux: isDevMode ? simulatedData.lightLux : ambientLight.luxValue,
+        lightLevel: isDevMode ? luxToLevel(simulatedData.lightLux) : ambientLight.lightLevel,
+
         // 开发者模式
         isDevMode,
 
         // 传感器状态
         isPedometerAvailable: pedometer.isAvailable,
         pedometerError: pedometer.error,
+        isLightSensorAvailable: ambientLight.isAvailable,
+        lightSensorError: ambientLight.error,
     };
 
     const contextValue: HealthContextType = {
@@ -229,6 +264,7 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
         setSimulatedHeartRate,
         setSimulatedSteps,
         setSimulatedActivityStatus,
+        setSimulatedLightLux,
         setDevMode: setIsDevMode,
         triggerPostWorkout,
         resetAllStates,

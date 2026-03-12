@@ -362,13 +362,44 @@ class ContextualBanditStrategy(MABStrategy):
         # 加入历史奖励（小幅加成）
         historical_score = arm.average_reward * 0.05
         
-        # 最终得分 = 基础分(0.5) + 可变分*0.3(最大~0.3) + 上下文加成(可达±0.40) + 历史
+        # ========== 🆕 8. 协同过滤分数融合 (CollaborativeAgent NCF 信号) ==========
+        cf_bonus = 0.0
+        cf_scores = context.get("collaborative_scores", {})
+        cf_weight = context.get("cf_weight", 0.0)
+        if cf_scores and cf_weight > 0:
+            cf_raw = cf_scores.get(str(arm.restaurant_id), 0.0)
+            cf_bonus = cf_raw * cf_weight
+            if cf_bonus > 0.02:
+                logger.info(
+                    f"🤝 CF加成: {arm.name} cf_raw={cf_raw:.3f} × α={cf_weight:.3f} → +{cf_bonus:.3f}"
+                )
+        
+        # ========== 🆕 9. 环境光线影响（端侧光传感器信号） ==========
+        light_level = health_ctx.get("light_level", "normal")
+        if light_level in ("dark", "dim"):
+            # 暗光/夜间 → 偏向夜宵、热饮、暖食
+            night_keywords = ["夜宵", "烧烤", "串", "火锅", "热饮", "奶茶", "粥", "酒吧", "小龙虾", "烤肉"]
+            cold_keywords = ["沙拉", "冰", "冷饮", "刺身", "冰淇淋"]
+            if any(k in cuisine_str for k in night_keywords):
+                context_bonus += 0.15
+            elif any(k in cuisine_str for k in cold_keywords):
+                context_bonus -= 0.08
+        elif light_level in ("bright", "sunlight"):
+            # 强光/户外 → 偏向冰饮、清爽、外带友好
+            cool_keywords = ["冰", "冷饮", "果汁", "沙拉", "轻食", "奶茶", "冰淇淋", "甜品"]
+            heavy_keywords = ["火锅", "烧烤", "麻辣", "烤肉"]
+            if any(k in cuisine_str for k in cool_keywords):
+                context_bonus += 0.12
+            elif any(k in cuisine_str for k in heavy_keywords):
+                context_bonus -= 0.06
+
+        # 最终得分 = 基础分(0.5) + 可变分*0.3(最大~0.3) + 上下文加成(可达±0.40) + 历史 + 协同过滤
         # 有上下文时，得分范围大约 0.38 ~ 1.0+；显示时映射为 60~100分
-        final_score = base_score + variable_score * 0.3 + context_bonus + historical_score
+        final_score = base_score + variable_score * 0.3 + context_bonus + historical_score + cf_bonus
         
         # 调试日志：有上下文加成时打印
         if abs(context_bonus) > 0.01:
-            logger.info(f"📊 {arm.name}: base={base_score:.2f} var={variable_score*0.3:.2f} ctx={context_bonus:+.2f} → {final_score:.2f} (temp={temperature}, bad_weather={is_bad_weather}, post_workout={health_ctx.get('is_post_workout', False)}, cuisine={cuisine_str[:10]})")
+            logger.info(f"📊 {arm.name}: base={base_score:.2f} var={variable_score*0.3:.2f} ctx={context_bonus:+.2f} → {final_score:.2f} (temp={temperature}, bad_weather={is_bad_weather}, post_workout={health_ctx.get('is_post_workout', False)}, light={light_level}, cuisine={cuisine_str[:10]})")
         
         return max(0.0, min(1.0, final_score))
 
@@ -497,6 +528,7 @@ class DecisionAgent(BaseAgent):
             restaurants = input_data.get("restaurants", [])
             context_analysis = input_data.get("context_analysis", {})
             profile_analysis = input_data.get("profile_analysis", {})
+            collaborative_analysis = input_data.get("collaborative_analysis", {})
             user_query = input_data.get("user_query", "")
             top_k = input_data.get("top_k", 10)
             health_context = input_data.get("health_context", {})
@@ -546,6 +578,17 @@ class DecisionAgent(BaseAgent):
                         decision_context["environment"] = {}
                     decision_context["environment"]["weather"] = env_weather
                     logger.info(f"🌡️ 使用前端传入温度: {frontend_temp}°C")
+            
+            # 🆕 注入协同过滤分数 (来自 CollaborativeAgent)
+            if collaborative_analysis and collaborative_analysis.get("collaborative_scores"):
+                decision_context["collaborative_scores"] = collaborative_analysis["collaborative_scores"]
+                decision_context["cf_weight"] = collaborative_analysis.get("cf_weight", 0.0)
+                logger.info(
+                    f"🤝 注入协同过滤分数: {collaborative_analysis.get('num_scored', 0)} 家餐厅, "
+                    f"α={decision_context['cf_weight']:.3f}, "
+                    f"Encoder={collaborative_analysis.get('encoder_mode', 'unknown')}, "
+                    f"NCF={collaborative_analysis.get('ncf_mode', 'unknown')}"
+                )
             
             # 将餐厅转换为 MAB 臂
             arms = self._restaurants_to_arms(restaurants)

@@ -147,8 +147,9 @@ class ContextAgent(BaseAgent):
                 temporal_result = self._get_default_temporal()
             
             # 综合环境影响评估
+            health_context = input_data.get("health_context", {})
             environment_impact = self._evaluate_environment_impact(
-                weather_result, traffic_result, temporal_result
+                weather_result, traffic_result, temporal_result, health_context
             )
             
             result = {
@@ -459,12 +460,24 @@ class ContextAgent(BaseAgent):
         return list(set(recommendations))[:5]
     
     def _evaluate_environment_impact(self, weather: Dict, traffic: Dict, 
-                                     temporal: Dict) -> Dict[str, Any]:
-        """综合评估环境影响"""
+                                     temporal: Dict, health_context: Dict = None) -> Dict[str, Any]:
+        """综合评估环境影响（含环境光线）"""
+        if health_context is None:
+            health_context = {}
+            
         # 计算综合影响分数
         weather_score = 1.0 if weather.get("is_bad_weather") else 0.0
         traffic_score = min(1.0, (traffic.get("congestion_index", 1.0) - 1.0) / 2.0)
         peak_score = 1.0 if temporal.get("is_peak_hour") else 0.0
+        
+        # 环境光线影响评估
+        light_level = health_context.get("light_level", "normal")
+        light_lux = health_context.get("lightLux", health_context.get("light_lux", -1))
+        light_impact = "none"
+        if light_level in ("dark", "dim"):
+            light_impact = "low_light"
+        elif light_level in ("bright", "sunlight"):
+            light_impact = "high_light"
         
         overall_impact = (weather_score * 0.4 + traffic_score * 0.4 + peak_score * 0.2)
         
@@ -484,6 +497,13 @@ class ContextAgent(BaseAgent):
             suggestions.append(f"交通拥堵，建议选择{traffic.get('recommended_delivery_radius', 3000)}米内餐厅")
         if temporal.get("is_peak_hour"):
             suggestions.append("用餐高峰期，可能需要等待")
+        if light_impact == "low_light":
+            suggestions.append("当前光线较暗，为您推荐夜间暖食和热饮")
+        elif light_impact == "high_light":
+            suggestions.append("当前户外光线强烈，为您推荐清爽冰饮")
+        
+        if light_impact != "none":
+            logger.info(f"💡 环境光感知: level={light_level}, lux={light_lux}, impact={light_impact}")
         
         return {
             "overall_score": overall_impact,
@@ -491,6 +511,8 @@ class ContextAgent(BaseAgent):
             "weather_impact": weather_score,
             "traffic_impact": traffic_score,
             "peak_impact": peak_score,
+            "light_impact": light_impact,
+            "light_level": light_level,
             "suggestions": suggestions,
             "recommended_max_distance": traffic.get("recommended_delivery_radius", 5000)
         }

@@ -1,0 +1,854 @@
+
+## 协同过滤集成方案：新增 CollaborativeAgent（协同过滤智能体）
+
+基于对现有多智能体推荐架构的完整分析，推荐以下**增量集成方案**——在不改动任何现有模块核心逻辑的前提下，新增第四个智能体 **CollaborativeAgent**，并将其输出作为 DecisionAgent 的附加信号源。
+
+---
+
+### 一、现有架构能力盘点与缺口分析
+
+当前系统已实现的推荐信号维度：
+
+| 层次             | 负责模块                          | 信号类型                         |
+| ---------------- | --------------------------------- | -------------------------------- |
+| 场（Context）    | ContextAgent                      | 天气、交通、时段、运动状态       |
+| 人（User）       | ProfilerAgent                     | 个人口味偏好、菜系倾向、饮食限制 |
+| 物（Item）       | DecisionAgent (Contextual Bandit) | 餐厅距离/评分/价格/菜系/配送时间 |
+| 学习（Learning） | MAB + LightGBM + DeepFM           | 在线行为反馈 + 离线模型排序      |
+
+**缺口**：系统完全没有利用**用户间行为关联**——即"与你消费习惯相似的用户还喜欢什么"。这正是协同过滤（Collaborative Filtering）要解决的问题。现有的 ProfilerAgent 只建模单个用户画像，DecisionAgent 的 MAB 参数也是按单个用户×单个餐厅独立维护的，没有跨用户的知识迁移。
+
+---
+
+### 二、方案核心：自训练领域专用嵌入模型 + Neural Collaborative Filtering
+
+#### 2.1 为什么不用传统协同过滤
+
+传统的 User-based CF（基于用户相似度的邻近搜索）和 Item-based CF（基于物品共现矩阵）存在三个困难：
+- **稀疏性**：外卖场景下用户-餐厅交互矩阵极度稀疏（每个用户只在有限几家店点过餐）
+- **冷启动**：新用户和新入驻商家无历史交互数据
+- **语义盲**：传统 CF 只看 ID 共现，无法理解"爱吃麻辣火锅的人大概率也喜欢酸菜鱼"这种语义关联
+
+#### 2.2 为什么不用现成 LLM API (DeepSeek/Gemini) Embedding
+
+- **成本**：每次推荐请求都需调用外部 API，高并发下费用不可控
+- **延迟**：外部 API 延迟 200~600ms，不适合实时推荐场景
+- **领域适配**：通用 LLM 的 embedding 对外卖领域的菜系/口味/场景语义理解不够精准
+- **隐私**：用户画像文本发送到第三方 API 存在隐私风险
+
+#### 2.3 采用 FoodCF-Encoder (自训练) + NCF 的混合方案
+
+**核心思路**：自训练一个面向外卖推荐领域的专用嵌入模型 **FoodCF-Encoder**，将用户和餐厅分别编码为**128 维语义向量**，再用 Neural Collaborative Filtering 网络学习交互模式。
+
+```
+┌──────────────────────────────────────────────────────┐
+│              CollaborativeAgent                       │
+│                                                       │
+│  ┌─────────────┐    ┌──────────────────┐              │
+│  │ User Tower   │    │ Restaurant Tower │              │
+│  │ FoodCF-Enc   │    │  FoodCF-Enc     │              │
+│  │ (自训练128d)  │    │ (自训练128d)     │              │
+│  └──────┬──────┘    └───────┬──────────┘              │
+│         │                    │                         │
+│         ▼                    ▼                         │
+│  ┌──────────────────────────────────┐                  │
+│  │  NCF Interaction Layer           │                  │
+│  │  (GMF + MLP dual pathway)        │                  │
+│  └──────────────┬───────────────────┘                  │
+│                 │                                      │
+│                 ▼                                      │
+│        collaborative_scores[]                          │
+│  (每个候选餐厅的协同过滤得分)                            │
+└──────────────────────┬───────────────────────────────┘
+                       │
+                       ▼ 注入 DecisionAgent
+```
+
+---
+
+### 三、FoodCF-Encoder 自训练嵌入模型 — 技术架构
+
+#### 3.1 模型基座
+
+选用 **GTE-Qwen2-1.5B** (阿里通义, 2024) 作为基座：
+- Decoder-only 架构的嵌入模型，在 MTEB 中文榜排名前列
+- 1.5B 参数量，推理可运行于 CPU（适合容器化部署）
+- 原生支持指令感知编码（instruction-aware embedding）
+
+#### 3.2 三阶段渐进式训练
+
+| 阶段        | 方法                         | 参考文献                                                                                      | 目标                                                                                                 |
+| ----------- | ---------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Stage 1** | LLM 合成数据增强预热         | Wang et al., "Improving Text Embeddings with LLMs" (E5-Mistral), **NAACL 2024**               | 利用大模型（DeepSeek）自动生成外卖领域的 query-document 训练对，解决标注数据不足问题                 |
+| **Stage 2** | 指令感知对比学习             | Lee et al., "NV-Embed", **NeurIPS 2024**                                                      | 双向注意力（去除 causal mask）+ Latent Attention Pooling 替代简单 mean pooling，提取更丰富的序列语义 |
+| **Stage 3** | 多任务 + Matryoshka 联合微调 | Kusupati et al., "Matryoshka Representation Learning", **NeurIPS 2022**; OpenAI 实践 **2024** | 128d/64d/32d 多粒度截断嵌入，云端用 128d 高精度，端侧用 32d 低延迟                                   |
+
+#### 3.3 核心创新点
+
+**Latent Attention Pooling (NV-Embed)**:
+```python
+class LatentAttentionPooling:
+    """
+    使用可学习的 latent query tokens 通过 cross-attention 从序列中提取嵌入,
+    比简单 mean pooling 提取更丰富的语义信息。
+    """
+    def __init__(self, hidden_dim, num_latent_tokens=4, output_dim=128):
+        self.latent_queries = nn.Parameter(torch.randn(1, num_tokens, hidden_dim))
+        self.cross_attn = nn.MultiheadAttention(embed_dim=hidden_dim, num_heads=8)
+        self.proj = nn.Linear(num_tokens * hidden_dim, output_dim)
+```
+
+**指令前缀 (E5-Mistral 风格)**:
+```python
+INSTRUCTION_USER = "判断该用户会在哪些外卖餐厅下单："
+INSTRUCTION_RESTAURANT = "描述这家外卖餐厅的特色："
+```
+
+**RLMRec 风格画像转文本** (Ren et al., WWW 2024):
+将用户结构化画像转为自然语言描述，使嵌入模型充分理解偏好语义：
+```
+"偏好菜系: 川菜、火锅; 口味: 麻辣; 消费水平: 20-50元; 近期常点: 川菜(5次)、火锅(3次)"
+```
+
+#### 3.4 三级降级链
+
+| 优先级 | 模式                        | 条件                                           | 精度     |
+| ------ | --------------------------- | ---------------------------------------------- | -------- |
+| 1      | **FoodCF-Encoder 微调模型** | `models/foodcf_encoder/` 存在                  | ★★★ 最高 |
+| 2      | **GTE-Qwen2-1.5B 预训练**   | 已安装 `transformers`，可下载 HuggingFace 模型 | ★★ 中等  |
+| 3      | **TF-IDF 哈希嵌入**         | 纯 CPU、零依赖、始终可用                       | ★ 基线   |
+
+```python
+# 降级链实现 (foodcf_encoder.py)
+def _load_model(self):
+    # 尝试 1: 加载微调模型
+    if os.path.isdir(self.model_path) and os.path.exists(...):
+        self._load_finetuned()     # → mode = "finetuned"
+
+    # 尝试 2: 加载 HuggingFace 预训练模型
+    try:
+        self._load_pretrained()    # → mode = "pretrained"
+
+    # 尝试 3: TF-IDF 哈希降级 (零依赖, 始终成功)
+    self._mode = "fallback"        # → mode = "fallback"
+```
+
+---
+
+### 四、NCF 交互网络 — 技术架构
+
+#### 4.1 模型结构
+
+采用 He et al. (WWW 2017) 提出的 Neural Collaborative Filtering 双路径架构：
+
+```
+    ┌─────────────┐    ┌──────────────────┐
+    │ User Embed   │    │ Restaurant Embed │
+    │  (128d)      │    │   (128d)         │
+    └──────┬──────┘    └───────┬──────────┘
+           │                    │
+    ┌──────┴────────────────────┴──────────┐
+    │                                       │
+    │  ┌─────────┐       ┌──────────────┐  │
+    │  │  GMF     │       │   MLP        │  │
+    │  │ u ⊙ r   │       │ [u;r]→512    │  │
+    │  │  (128d)  │       │ →256→128     │  │
+    │  └────┬────┘       └──────┬───────┘  │
+    │       │                    │          │
+    │       └──────┬─────────────┘          │
+    │              │ concat                 │
+    │       ┌──────▼──────┐                 │
+    │       │  Final MLP  │                 │
+    │       │  → sigmoid  │                 │
+    │       └──────┬──────┘                 │
+    │              │                        │
+    │        score ∈ [0,1]                  │
+    └───────────────────────────────────────┘
+```
+
+- **GMF 路径**: element-wise product `user_embed ⊙ restaurant_embed` → (128d)
+- **MLP 路径**: concat `[user; restaurant]` → 512 → 256 → 128 (BatchNorm + ReLU + Dropout)
+- **Final MLP**: concat [GMF_out; MLP_out] → 64 → 1 → sigmoid
+- **降级**: NCF 模型文件不存在时，退化为余弦相似度计算
+
+#### 4.2 推理引擎
+
+```python
+class NCFInferenceEngine:
+    """
+    NCF 推理引擎
+    - 加载训练好的 NCF 模型，提供用户-餐厅交互分数预测
+    - 模型不存在时，降级为余弦相似度计算
+    """
+    def predict(self, user_embedding, restaurant_embeddings) -> np.ndarray:
+        if self._mode == "ncf":
+            return self._predict_ncf(...)     # GMF+MLP 网络前向
+        else:
+            return self._predict_cosine(...)  # cos(u, r) → [0,1]
+```
+
+---
+
+### 五、CollaborativeAgent 智能体 — 核心实现
+
+#### 5.1 继承架构
+
+```python
+class CollaborativeAgent(BaseAgent):
+    """第四个智能体，与 ContextAgent/ProfilerAgent/DecisionAgent 同级"""
+
+    def __init__(self):
+        super().__init__(
+            name="CollaborativeAgent",
+            description="协同过滤智能体 - 基于 FoodCF-Encoder + NCF 挖掘用户间行为关联"
+        )
+        self._encoder = None       # FoodCF-Encoder (懒加载)
+        self._ncf_engine = None    # NCF 推理引擎 (懒加载)
+```
+
+#### 5.2 处理流程
+
+```python
+async def process(self, input_data):
+    # 1. 构建用户画像文本 (RLMRec 风格)
+    user_profile_text = self._build_user_profile_text(profile_analysis, user_id)
+
+    # 2. 构建餐厅描述文本
+    restaurant_texts = [self._build_restaurant_text(r) for r in restaurants]
+
+    # 3. FoodCF-Encoder 编码 (异步, 不阻塞事件循环)
+    user_embed = await run_in_executor(self._encoder.encode_user, user_profile_text)
+    rest_embeds = await self._get_restaurant_embeddings(restaurant_ids, restaurant_texts)
+
+    # 4. NCF 交互预测
+    scores = await run_in_executor(self._ncf_engine.predict, user_embed, rest_embeds)
+
+    # 5. 冷启动权重衰减
+    cf_weight = CF_SCORE_WEIGHT  # 默认 0.15
+    if is_cold_start:
+        cf_weight *= CF_COLD_START_DECAY  # 衰减为 0.05
+
+    return {
+        "collaborative_scores": {rid: score for rid, score in zip(restaurant_ids, scores)},
+        "cf_weight": cf_weight,
+        "encoder_mode": self._encoder.mode,
+        "ncf_mode": self._ncf_engine.mode,
+    }
+```
+
+#### 5.3 冷启动判断
+
+```python
+def _is_cold_start(self, profile_analysis):
+    """少于 3 次订单视为冷启动"""
+    cuisine_freq = profile.get("cuisine_order_frequency", {})
+    order_count = sum(cuisine_freq.values())
+    return order_count < 3
+```
+
+#### 5.4 餐厅嵌入缓存
+
+```python
+_restaurant_embed_cache: Dict[str, np.ndarray] = {}
+
+async def _get_restaurant_embeddings(self, restaurant_ids, restaurant_texts):
+    """餐厅信息相对稳定，嵌入可以缓存复用"""
+    # 命中缓存 → 直接使用
+    # 未命中 → 批量编码 → 写入缓存
+```
+
+---
+
+### 六、在 LangGraph 状态图中的集成位置
+
+#### 6.1 串行编排 (LangGraphOrchestrator)
+
+```
+START → ContextAgent → ProfilerAgent → CollaborativeAgent → DecisionAgent → END
+                                        ↑ 新增节点
+```
+
+**WorkflowState 新增字段**:
+```python
+class WorkflowState(TypedDict, total=False):
+    ...
+    collaborative_analysis: Dict[str, Any]  # 新增
+    ...
+```
+
+**路由逻辑更新**:
+```
+_route_after_profile():
+    原: profile → decision
+    新: profile → collaborative → decision (有餐厅数据时)
+         profile → end (无餐厅数据时)
+```
+
+#### 6.2 并行编排 (ParallelOrchestrator)
+
+```
+                        ┌───────────────────┐
+                        │  Start             │
+                        └───────┬───────────┘
+                ┌───────────────┼───────────────────┐───────────────┐
+                ▼               ▼                   ▼               ▼
+    ┌───────────────┐  ┌───────────────┐  ┌─────────────────┐  ┌──────────────┐
+    │ ContextAgent   │  │ RetrievalAgent │  │ ProfilerAgent   │  │ Collaborative│ ← 新增
+    │ (环境感知)      │  │ (POI搜索)      │  │ (用户画像)       │  │ Agent (CF)   │
+    │  ~150ms        │  │  ~200ms        │  │  ~5ms           │  │  ~50ms       │
+    └───────┬───────┘  └───────┬───────┘  └───────┬─────────┘  └──────┬───────┘
+            └───────────────────┼────────────────────┼──────────────────┘
+                                ▼  ====== 数据汇聚 ======
+                    ┌───────────────────────┐
+                    │   ReasoningAgent       │
+                    │  (核心大脑, 含 CF 分数) │
+                    └───────────────────────┘
+```
+
+- 通过 `asyncio.gather()` 四路并行，**不增加推荐延迟**
+- 总耗时 = max(150ms, 200ms, 5ms, 50ms) ≈ 200ms (与原架构相同)
+
+---
+
+### 七、DecisionAgent CF 分数融合 — 评分公式
+
+在 `ContextualBanditStrategy._calculate_contextual_score()` 中新增第 8 层评分信号:
+
+```python
+# ========== 原有 7 层评分 ==========
+# Layer 1: 基础分 = 0.50
+# Layer 2: 变量分 (距离/评分/价格/菜系/配送时间) × 0.3
+# Layer 3: 天气影响 (±0.20)
+# Layer 4: 温度影响 (±0.18)
+# Layer 5: 交通拥堵 (±0.12)
+# Layer 6: 运动后/高心率 (±0.22)
+# Layer 7: 绝对意图匹配 (+0.40)
+#           + MAB 历史奖励 × 0.05
+
+# ========== 🆕 新增 Layer 8: 协同过滤 ==========
+cf_scores = context.get("collaborative_scores", {})
+cf_weight = context.get("cf_weight", 0.0)  # 默认 α=0.15, 冷启动 α=0.05
+cf_raw = cf_scores.get(str(arm.restaurant_id), 0.0)
+cf_bonus = cf_raw * cf_weight
+
+# 最终合成
+final_score = base_score           # 0.50
+            + variable_score * 0.3 # ~0.30
+            + context_bonus        # ±0.40
+            + historical_score     # ~0.05
+            + cf_bonus             # 🆕 最大 ~0.15
+```
+
+**协同分数注入链路**:
+```
+CollaborativeAgent.process()
+    → collaborative_scores: Dict[restaurant_id, float]
+    → collaborative_analysis (LangGraph State)
+    → DecisionAgent.process() 读取并注入 decision_context
+    → ContextualBanditStrategy._calculate_contextual_score() 使用
+```
+
+---
+
+### 八、训练管线
+
+#### 8.1 NCF 训练脚本 (`train_ncf.py`)
+
+```bash
+# 生成模拟数据并训练
+python -m app.ml.train_ncf --generate-mock 2000 --epochs 20
+
+# 一键训练全部模型 (LightGBM + DeepFM + NCF + FoodCF-Encoder)
+python -m app.ml.train_all --ncf-generate-mock 2000
+
+# 仅训练 NCF
+python -m app.ml.train_all --ncf-only --ncf-generate-mock 2000
+```
+
+#### 8.2 NCF 训练流程
+
+```
+1. 加载三元组数据: (user_profile_text, restaurant_text, label)
+2. FoodCF-Encoder 批量编码 → (user_embed, rest_embed) 128d 向量
+3. 构建 PyTorch DataLoader
+4. 训练 GMF+MLP 网络 (BCE Loss, Adam, ReduceLROnPlateau)
+5. 保存最佳模型到 models/ncf_model.pth
+```
+
+#### 8.3 NCF 模拟数据生成
+
+```python
+# 50 个模拟用户 × 200 家模拟餐厅
+# 每用户 30 次交互 → 1500 条三元组
+# Label 逻辑: 菜系匹配+价格匹配+评分高+距离近 → 高 label
+```
+
+| 环节         | 方案                                       | 与现有模块关系                                 |
+| ------------ | ------------------------------------------ | ---------------------------------------------- |
+| **训练数据** | `ncf_training_data.jsonl` 三元组格式       | 可从现有 `training_samples.jsonl` 关联扩展     |
+| **离线训练** | `train_ncf.py` / `train_all.py --ncf-only` | 复用现有训练管线和 Docker Compose              |
+| **模型存储** | `models/ncf_model.pth` (~1MB)              | 与现有 LightGBM/DeepFM 模型共用 `models/` 目录 |
+| **在线推理** | NCFInferenceEngine → 余弦降级              | <50ms 推理延迟                                 |
+
+#### 8.4 FoodCF-Encoder 三阶段微调训练 (`train_foodcf_encoder.py`)
+
+```bash
+# Stage 1: 生成合成训练数据 (E5-Mistral 范式: query/positive/hard_negative 三元组)
+python -m app.ml.train_foodcf_encoder --generate-synthetic 5000
+
+# Stage 2+3: 指令对比学习 + 多任务 Matryoshka 联合微调
+python -m app.ml.train_foodcf_encoder --data ml_data/encoder_train.jsonl --epochs 10
+
+# 完整管线 (生成数据 + 训练)
+python -m app.ml.train_foodcf_encoder --generate-synthetic 5000 --epochs 10
+
+# 仅 Stage 2 (对比学习)
+python -m app.ml.train_foodcf_encoder --stage2-only --epochs 5
+
+# 仅 Stage 3 (多任务 Matryoshka)
+python -m app.ml.train_foodcf_encoder --stage3-only --epochs 5
+
+# 通过 train_all.py 一键训练
+python -m app.ml.train_all --encoder-only --encoder-generate-synthetic 5000
+python -m app.ml.train_all --encoder-generate-synthetic 5000  # 全量训练含 Encoder
+```
+
+#### 8.5 FoodCF-Encoder 训练流程
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Stage 1: LLM 合成数据增强 (E5-Mistral, NAACL 2024)                │
+│  generate_synthetic_data(n_samples)                                │
+│  → (query, positive, hard_negative) 三元组                         │
+│  → query: 用户画像文本 (RLMRec 风格)                                │
+│  → positive: 匹配餐厅 (菜系+价格匹配)                               │
+│  → hard_negative: 看似匹配但不适合 (价格超标/菜系不符/限制冲突)       │
+│  → 保存到 ml_data/encoder_train.jsonl                               │
+└─────────────────────────┬───────────────────────────────────────────┘
+                          ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  Stage 2: 指令感知对比学习 (NV-Embed, NeurIPS 2024)                 │
+│  GTE-Qwen2-1.5B 基座 + LoRA (rank=64, 可选 QLoRA)                  │
+│  + Latent Attention Pooling (4 tokens → 128d)                       │
+│  损失: InfoNCE + in-batch negatives + hard negative                 │
+└─────────────────────────┬───────────────────────────────────────────┘
+                          ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  Stage 3: 多任务 + Matryoshka 联合微调                               │
+│  T1: 交互匹配 (InfoNCE)                                             │
+│  T2: 评分回归 (MSE, 权重 0.3)                                       │
+│  T3: Matryoshka 正则 (128d/64d/32d, 权重 0.1)                       │
+│  总损失: L = L_match + 0.3·L_rating + 0.1·L_MRL                    │
+└─────────────────────────┬───────────────────────────────────────────┘
+                          ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  保存模型到 models/foodcf_encoder/                                   │
+│  - config.json (模型配置)                                            │
+│  - user_pooling.pt (用户塔 Latent Attention Pooling 权重)            │
+│  - restaurant_pooling.pt (餐厅塔 Latent Attention Pooling 权重)      │
+│  - adapter_model.safetensors (LoRA adapter, 如使用 peft)             │
+│  - tokenizer 文件                                                    │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### 8.6 合成数据格式
+
+每条训练记录包含 (query, positive, hard_negative) 三元组：
+```json
+{
+  "query": "偏好菜系: 川菜、火锅; 口味: 麻辣; 消费水平: 20-50元; 用户类型: student",
+  "positive": "老四川火锅馆; ·火锅; 人均48元; 评分4.7",
+  "hard_negative": "正宗火锅会所; ·火锅; 人均128元; 评分4.3",
+  "label": 1.0,
+  "rating": 4.5
+}
+```
+
+Hard negative 生成策略（3种类型随机选择）：
+- **价格不匹配**: 菜系命中但价格远超预算（如用户预算20-50元，餐厅人均128元）
+- **菜系不匹配**: 价格区间命中但菜系完全不同
+- **饮食限制冲突**: 菜系和价格都匹配，但违反用户饮食限制（如花生过敏）
+
+| 训练环节     | 方案                                                      | 说明                                 |
+| ------------ | --------------------------------------------------------- | ------------------------------------ |
+| **合成数据** | `encoder_train.jsonl` 三元组                              | E5-Mistral 范式，零标注成本          |
+| **微调方法** | LoRA (rank=64) / 可选 QLoRA (4-bit)                       | 单卡 24GB 即可微调 1.5B 模型         |
+| **Pooling**  | Latent Attention Pooling (4 tokens)                       | NV-Embed 核心创新，优于 mean pooling |
+| **多维度**   | Matryoshka (128d/64d/32d)                                 | 一个模型适配云端+端侧                |
+| **模型大小** | LoRA adapter ~80MB + 量化基座 ~900MB                      | 或仅 Pooling 权重 ~2MB (无 peft 时)  |
+| **离线训练** | `train_foodcf_encoder.py` / `train_all.py --encoder-only` | 复用现有训练管线                     |
+
+---
+
+### 九、冷启动处理
+
+| 场景                         | 策略                                                                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **新用户**（无订单历史）     | ProfilerAgent 口味偏好标签生成 FoodCF-Encoder 伪嵌入；CF 权重 α 自动衰减为 0.05 (×0.33)，让 Contextual Bandit 和上下文信号主导 |
+| **新餐厅**（无被点历史）     | 基于菜单描述的 FoodCF-Encoder 嵌入（语义理解），无需历史交互数据即可生成有意义的嵌入                                           |
+| **无训练模型**（系统冷启动） | NCF 降级为余弦相似度；FoodCF-Encoder 降级为 TF-IDF 哈希嵌入；仍能提供基线 CF 信号                                              |
+| **所有组件不可用**           | CollaborativeAgent 返回空 scores + cf_weight=0，DecisionAgent 完全依赖现有 MAB + ML Ensemble（系统行为与原来完全一致）         |
+
+---
+
+### 十、文件变更清单
+
+#### 10.1 新增文件 (5个)
+
+| 文件                                | 行数 | 说明                                                                                                                |
+| ----------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------- |
+| `app/ml/foodcf_encoder.py`          | ~350 | FoodCF-Encoder 自训练嵌入模型：GTE-Qwen2 基座 + Latent Attention Pooling + 三级降级链                               |
+| `app/ml/ncf_model.py`               | ~230 | NCF 交互网络：GMF+MLP 双路径 + NCFInferenceEngine 推理引擎 + 余弦降级                                               |
+| `app/agents/collaborative_agent.py` | ~280 | CollaborativeAgent 智能体：整合 Encoder+NCF，处理冷启动，嵌入缓存                                                   |
+| `app/ml/train_ncf.py`               | ~310 | NCF 训练脚本：模拟数据生成 + Encoder 编码 + NCF 训练 + 模型保存                                                     |
+| `app/ml/train_foodcf_encoder.py`    | ~480 | FoodCF-Encoder 三阶段微调训练脚本：Stage 1 合成数据生成 + Stage 2 指令对比学习 + Stage 3 多任务 Matryoshka 联合微调 |
+
+#### 10.2 修改文件 (6个)
+
+| 文件                                   | 修改内容                                                                                                                                                                                                                          |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/agents/langgraph_orchestrator.py` | (1) import CollaborativeAgent; (2) WorkflowState 新增 `collaborative_analysis` 字段; (3) 新增 `_collaborative_node` 方法; (4) 路由 profile→collaborative→decision; (5) 回退编排加入 CF 节点; (6) `get_agent_states()` 含 CF agent |
+| `app/agents/parallel_orchestrator.py`  | (1) import CollaborativeAgent; (2) ParallelWorkflowState 新增 `collaborative_result`; (3) `_parallel_fetch_node` 新增第4并行任务; (4) `_reasoning_node` 传入 `collaborative_analysis`                                             |
+| `app/agents/decision_agent.py`         | (1) `process()` 接收 `collaborative_analysis` 参数; (2) 将 CF 分数注入 decision_context; (3) `_calculate_contextual_score()` 新增第8层 cf_bonus 评分                                                                              |
+| `app/agents/__init__.py`               | 导出 CollaborativeAgent                                                                                                                                                                                                           |
+| `requirements.txt`                     | 新增 `transformers>=4.38.0`, `sentencepiece>=0.1.99`                                                                                                                                                                              |
+| `app/ml/train_all.py`                  | 新增 `--ncf-only`, `--ncf-generate-mock`, `--ncf-epochs` 参数 (Step 3: NCF 训练); 新增 `--encoder-only`, `--encoder-epochs`, `--encoder-generate-synthetic` 参数 (Step 4: FoodCF-Encoder 微调)                                    |
+
+---
+
+### 十一、具体代码变更详情
+
+#### 11.1 `app/agents/langgraph_orchestrator.py` 变更
+
+**变更 1: 新增 import**
+```python
+# 原:
+from .context_agent import ContextAgent, create_context_agent
+from .profiler_agent import ProfilerAgent, create_profiler_agent
+from .decision_agent import DecisionAgent, create_decision_agent
+
+# 新增:
+from .collaborative_agent import CollaborativeAgent, create_collaborative_agent
+```
+
+**变更 2: WorkflowState 新增字段**
+```python
+class WorkflowState(TypedDict, total=False):
+    ...
+    context_analysis: Dict[str, Any]
+    profile_analysis: Dict[str, Any]
+    collaborative_analysis: Dict[str, Any]  # 🆕 CollaborativeAgent 结果
+    decision_result: Dict[str, Any]
+    ...
+```
+
+**变更 3: `__init__` 创建第四个智能体**
+```python
+self.context_agent = create_context_agent(...)
+self.profiler_agent = create_profiler_agent(user_service)
+self.collaborative_agent = create_collaborative_agent()  # 🆕
+self.decision_agent = create_decision_agent(mab_strategy)
+```
+
+**变更 4: `_build_graph` 新增节点和边**
+```python
+# 新增节点
+workflow.add_node("collaborative_analysis", self._collaborative_node)
+
+# 路由更新: profile → collaborative → decision
+workflow.add_conditional_edges("profile_analysis", self._route_after_profile, {
+    "collaborative_analysis": "collaborative_analysis",  # 🆕
+    "decision_making": "decision_making",
+    "end": END
+})
+workflow.add_edge("collaborative_analysis", "decision_making")  # 🆕
+```
+
+**变更 5: 新增 `_collaborative_node` 方法**
+```python
+async def _collaborative_node(self, state: WorkflowState) -> Dict[str, Any]:
+    result = await self.collaborative_agent.process({
+        "restaurants": state.get("restaurants", []),
+        "profile_analysis": state.get("profile_analysis", {}),
+        "user_id": state.get("user_id", "guest"),
+    })
+    return {"collaborative_analysis": result, ...}
+```
+
+**变更 6: `_decision_node` 传入 CF 分数**
+```python
+result = await self.decision_agent.process({
+    ...
+    "collaborative_analysis": state.get("collaborative_analysis", {}),  # 🆕
+    ...
+})
+```
+
+**变更 7: `_route_after_profile` 路由更新**
+```python
+# 原: return "decision_making"
+# 新: return "collaborative_analysis"  (有餐厅数据时先过 CF 再到决策)
+```
+
+**变更 8: `_fallback_orchestrate` 新增 CF 步骤**
+```python
+# 1. 环境分析
+# 2. 用户画像
+# 3. 协同过滤  ← 🆕
+collaborative_result = await self._collaborative_node(state)
+# 4. 决策
+```
+
+---
+
+#### 11.2 `app/agents/parallel_orchestrator.py` 变更
+
+**变更 1: 新增 import 和状态字段**
+```python
+from .collaborative_agent import create_collaborative_agent
+
+class ParallelWorkflowState(TypedDict, total=False):
+    ...
+    collaborative_result: Dict[str, Any]  # 🆕
+```
+
+**变更 2: `__init__` 创建 CollaborativeAgent**
+```python
+self.collaborative_agent = create_collaborative_agent()  # 🆕
+```
+
+**变更 3: `_parallel_fetch_node` 新增第4并行任务**
+```python
+# 任务D: CollaborativeAgent - 协同过滤  ← 🆕
+async def fetch_collaborative():
+    result = await self.collaborative_agent.process({
+        "restaurants": state.get("restaurants", []),
+        "profile_analysis": {},
+        "user_id": state.get("user_id", "anonymous"),
+    })
+    return result
+
+tasks.append(fetch_collaborative())
+task_names.append("collaborative")
+
+# 结果处理中新增:
+elif name == "collaborative":
+    collaborative_result = result
+
+# 返回值新增:
+return {
+    ...
+    "collaborative_result": collaborative_result,  # 🆕
+    ...
+}
+```
+
+**变更 4: `_reasoning_node` 传入 CF 分数**
+```python
+result = await self.reasoning_agent.process({
+    ...
+    "collaborative_analysis": state.get("collaborative_result", {}),  # 🆕
+    ...
+})
+```
+
+---
+
+#### 11.3 `app/agents/decision_agent.py` 变更
+
+**变更 1: `process()` 接收 CF 分数**
+```python
+collaborative_analysis = input_data.get("collaborative_analysis", {})  # 🆕
+```
+
+**变更 2: 注入 CF 分数到 decision_context**
+```python
+# 🆕 注入协同过滤分数 (来自 CollaborativeAgent)
+if collaborative_analysis and collaborative_analysis.get("collaborative_scores"):
+    decision_context["collaborative_scores"] = collaborative_analysis["collaborative_scores"]
+    decision_context["cf_weight"] = collaborative_analysis.get("cf_weight", 0.0)
+    logger.info(f"🤝 注入协同过滤分数: {collaborative_analysis.get('num_scored', 0)} 家餐厅, "
+                f"α={decision_context['cf_weight']:.3f}")
+```
+
+**变更 3: `_calculate_contextual_score()` 新增第8层**
+```python
+# ========== 🆕 Layer 8: 协同过滤分数融合 ==========
+cf_bonus = 0.0
+cf_scores = context.get("collaborative_scores", {})
+cf_weight = context.get("cf_weight", 0.0)
+if cf_scores and cf_weight > 0:
+    cf_raw = cf_scores.get(str(arm.restaurant_id), 0.0)
+    cf_bonus = cf_raw * cf_weight  # 最大 ~0.15
+
+final_score = base_score + variable_score * 0.3 + context_bonus + historical_score + cf_bonus
+#                                                                                    ^^^^^^^
+#                                                                                    🆕 新增
+```
+
+---
+
+#### 11.4 `app/agents/__init__.py` 变更
+
+```python
+# 新增导入和导出:
+from .collaborative_agent import CollaborativeAgent
+
+__all__ = [
+    "ContextAgent",
+    "ProfilerAgent",
+    "CollaborativeAgent",  # 🆕
+    "DecisionAgent",
+    "LangGraphOrchestrator",
+    "create_langgraph_orchestrator"
+]
+```
+
+---
+
+#### 11.5 `requirements.txt` 变更
+
+```diff
+- # ML 模型 - LightGBM + DeepFM Ensemble
++ # ML 模型 - LightGBM + DeepFM Ensemble + NCF 协同过滤
+  lightgbm>=4.0.0
+  scikit-learn>=1.3.0
+  --extra-index-url https://download.pytorch.org/whl/cpu
+  torch>=2.1.0+cpu
+
++ # FoodCF-Encoder 自训练嵌入模型 (GTE-Qwen2-1.5B base)
++ transformers>=4.38.0
++ sentencepiece>=0.1.99
+```
+
+---
+
+#### 11.6 `app/ml/train_all.py` 变更
+
+```python
+# 新增命令行参数 (NCF):
+parser.add_argument("--ncf-only", action="store_true", help="仅训练 NCF (协同过滤)")
+parser.add_argument("--ncf-epochs", type=int, default=20)
+parser.add_argument("--ncf-generate-mock", type=int, default=0)
+
+# 新增命令行参数 (FoodCF-Encoder):  🆕
+parser.add_argument("--encoder-only", action="store_true", help="仅训练 FoodCF-Encoder")
+parser.add_argument("--encoder-epochs", type=int, default=10)
+parser.add_argument("--encoder-generate-synthetic", type=int, default=0,
+                    help="生成 Encoder 合成训练数据条数 (E5-Mistral 范式)")
+
+# 新增 Step 3: NCF 训练
+if not args.lgb_only and not args.deepfm_only and not args.encoder_only:
+    logger.info("🤝 开始训练 NCF (协同过滤) ...")
+    from app.ml.train_ncf import train_ncf, generate_ncf_mock_data
+    if args.ncf_generate_mock > 0:
+        generate_ncf_mock_data(...)
+    if os.path.exists(ncf_data_path):
+        train_ncf(data_path=ncf_data_path, epochs=args.ncf_epochs)
+
+# 🆕 新增 Step 4: FoodCF-Encoder 微调训练
+if not args.lgb_only and not args.deepfm_only and not args.ncf_only:
+    logger.info("🧠 开始训练 FoodCF-Encoder (GTE-Qwen2-1.5B + NV-Embed + Matryoshka) ...")
+    from app.ml.train_foodcf_encoder import train_foodcf_encoder, generate_synthetic_data
+    if args.encoder_generate_synthetic > 0:
+        generate_synthetic_data(n_samples=args.encoder_generate_synthetic, ...)
+    if os.path.exists(encoder_data_path):
+        train_foodcf_encoder(data_path=encoder_data_path, epochs=args.encoder_epochs)
+```
+
+---
+
+#### 11.7 `app/ml/train_foodcf_encoder.py` 🆕 新增文件
+
+FoodCF-Encoder 三阶段微调训练脚本，完整实现「协同过滤使用的大模型」文档中描述的 GTE-Qwen2-1.5B 微调管线。
+
+**Stage 1 — 合成数据生成**:
+```python
+def generate_synthetic_data(n_samples=5000, output_path=None):
+    """
+    E5-Mistral (NAACL 2024) 范式: 生成 (query, positive, hard_negative) 三元组
+    - query: 用户画像描述 (RLMRec 风格)
+    - positive: 匹配餐厅描述
+    - hard_negative: 看似匹配但关键不适合的餐厅 (价格超标/菜系不符/限制冲突)
+    """
+```
+
+**Stage 2 — 指令感知对比学习 (InfoNCE)**:
+```python
+def _info_nce_loss(anchor, positive, negatives, temperature=0.07):
+    """
+    InfoNCE 对比学习损失
+    L = -log( exp(sim(a,p)/τ) / (exp(sim(a,p)/τ) + Σ exp(sim(a,n)/τ)) )
+    含 in-batch negatives + 显式 hard negative
+    """
+```
+
+**Stage 3 — Matryoshka 多维度正则**:
+```python
+def _matryoshka_info_nce_loss(anchor, positive, negatives, dims=[128,64,32]):
+    """
+    Matryoshka 表示学习损失 (Kusupati et al., NeurIPS 2022)
+    L_MRL = Σ_{d ∈ {128,64,32}} w_d · L_InfoNCE(h[:d])
+    权重: {128: 1.0, 64: 0.5, 32: 0.25}
+    """
+```
+
+**核心训练函数**:
+```python
+def train_foodcf_encoder(data_path, save_dir=None, epochs=10, batch_size=16,
+                         lr=2e-4, lora_rank=64, embed_dim=128,
+                         stage2_only=False, stage3_only=False, device="cpu"):
+    """
+    流程:
+    1. 加载 GTE-Qwen2-1.5B 基座 (Alibaba-NLP/gte-Qwen2-1.5B-instruct)
+    2. 构建 Latent Attention Pooling (用户塔 + 餐厅塔)
+    3. 应用 LoRA (rank=64, 可选, 需 peft 库)
+    4. 构建 TripletDataset (query/positive/hard_negative + 指令前缀)
+    5. 多任务训练:
+       - T1: InfoNCE 对比学习 (Stage 2)
+       - T2: 评分回归 MSE (权重 0.3)
+       - T3: Matryoshka 正则 (权重 0.1)
+    6. 保存: LoRA adapter + user_pooling.pt + restaurant_pooling.pt + tokenizer
+    """
+```
+
+---
+
+### 十二、技术选型与依赖
+
+| 组件         | 选型                                | 理由                                           |
+| ------------ | ----------------------------------- | ---------------------------------------------- |
+| 嵌入模型基座 | GTE-Qwen2-1.5B (阿里通义)           | MTEB 中文顶级、Decoder-only 架构、支持指令感知 |
+| 对比学习     | NV-Embed (Latent Attention Pooling) | NeurIPS 2024，已证明优于 mean pooling          |
+| 交互网络     | NCF (GMF+MLP)                       | PyTorch 实现,项目已有依赖                      |
+| 数据增强     | E5-Mistral 范式 (LLM 合成)          | NAACL 2024，解决领域标注数据不足               |
+| 多粒度表示   | Matryoshka (128d/64d/32d)           | 云端高精度+端侧低延迟两全                      |
+| 画像转文本   | RLMRec 风格                         | WWW 2024，结构化→自然语言，提升语义理解        |
+| 高效微调     | LoRA (rank=64) / 可选 QLoRA (4-bit) | 单卡 24GB 即可微调 1.5B 模型                   |
+
+**不引入任何新的基础设施中间件**，仅新增 Python 包依赖: `transformers`, `sentencepiece`（可选: `peft` 用于 LoRA 微调）。
+
+---
+
+### 十三、参考文献
+
+1. He et al., "Neural Collaborative Filtering", **WWW 2017**
+2. Wang et al., "Improving Text Embeddings with Large Language Models" (E5-Mistral), **NAACL 2024**
+3. Lee et al., "NV-Embed: Improved Techniques for Training LLMs as Generalist Embedding Models", **NeurIPS 2024**
+4. Ren et al., "Representation Learning with Large Language Models for Recommendation" (RLMRec), **WWW 2024**
+5. Kusupati et al., "Matryoshka Representation Learning", **NeurIPS 2022**; OpenAI 实践 **2024**
+6. Zheng et al., "LC-Rec: Large Language Models for Generative Recommendation", **ICDE 2024**
+7. Li et al., "Towards General Text Embeddings with Multi-stage Contrastive Learning" (GTE), **arXiv 2023**; Alibaba GTE-Qwen2 系列 **2024**
+8. Hu et al., "LoRA: Low-Rank Adaptation of Large Language Models", **ICLR 2022**; Dettmers et al., "QLoRA", **NeurIPS 2023**
+
+---
+
+### 十四、总结
+
+> 新增 `CollaborativeAgent` 作为第四个智能体，使用自训练领域专用嵌入模型 **FoodCF-Encoder** (GTE-Qwen2-1.5B 基座 + NV-Embed Latent Attention Pooling + Matryoshka 多粒度表示) 替代 LLM API 调用，结合 **Neural Collaborative Filtering** 双塔网络挖掘跨用户行为关联。
+>
+> FoodCF-Encoder 采用三阶段渐进式微调管线 (`train_foodcf_encoder.py`)：Stage 1 通过 E5-Mistral 范式生成合成三元组训练数据，Stage 2 进行指令感知 InfoNCE 对比学习 (含 Latent Attention Pooling + LoRA)，Stage 3 进行多任务 + Matryoshka 联合微调 ($\mathcal{L} = \mathcal{L}_{match} + 0.3\mathcal{L}_{rating} + 0.1\mathcal{L}_{MRL}$)。
+>
+> CF 分数通过 LangGraph 状态图注入 DecisionAgent 的多层评分公式作为第8层信号 (权重 α=0.15，冷启动自动衰减)，通过 ParallelOrchestrator 四路并行执行，不增加推荐延迟。
+>
+> 系统采用三级降级链 (微调模型→预训练→TF-IDF哈希) + NCF→余弦降级，保证在任何环境下都能运行，且完全不影响现有推荐功能。

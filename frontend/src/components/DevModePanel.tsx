@@ -6,9 +6,10 @@
  * 2. 心率滑动条 (60-180 bpm)
  * 3. 步数输入
  * 4. 活动状态选择
- * 5. 一键模拟"刚跑完步"
- * 6. 重置状态按钮
- * 7. 剩余时间倒计时
+ * 5. 环境光线模拟（预设按钮 + lux输入）
+ * 6. 一键模拟“刚跑完步”
+ * 7. 重置状态按钮
+ * 8. 剩余时间倒计时
  */
 
 import React, { useState } from 'react';
@@ -23,6 +24,7 @@ import {
     Animated,
 } from 'react-native';
 import { useHealthContext, ActivityStatus } from '../hooks/useHealthContext';
+import { lightLevelIcon, lightLevelLabel } from '../hooks/useAmbientLight';
 
 interface DevModePanelProps {
     visible: boolean;
@@ -32,6 +34,7 @@ interface DevModePanelProps {
 const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
     const health = useHealthContext();
     const [stepsInput, setStepsInput] = useState(String(health.dailySteps));
+    const [luxInput, setLuxInput] = useState(String(health.lightLux));
 
     // 活动状态选项
     const activityOptions: { label: string; value: ActivityStatus; icon: string }[] = [
@@ -50,11 +53,27 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
         { label: '高强度', value: 160, color: '#F44336' },
     ];
 
+    // 光线预设
+    const lightPresets = [
+        { label: '暗光', value: 20, icon: '🌙', color: '#5c6bc0' },
+        { label: '室内', value: 300, icon: '💡', color: '#ffc107' },
+        { label: '户外', value: 8000, icon: '🌤️', color: '#ff9800' },
+        { label: '强光', value: 40000, icon: '☀️', color: '#f44336' },
+    ];
+
     const handleStepsChange = (text: string) => {
         setStepsInput(text);
         const value = parseInt(text, 10);
         if (!isNaN(value) && value >= 0) {
             health.setSimulatedSteps(value);
+        }
+    };
+
+    const handleLuxChange = (text: string) => {
+        setLuxInput(text);
+        const value = parseInt(text, 10);
+        if (!isNaN(value) && value >= 0) {
+            health.setSimulatedLightLux(value);
         }
     };
 
@@ -100,6 +119,11 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
                             <Text style={styles.statusItem}>👟 {health.dailySteps} 步</Text>
                             <Text style={styles.statusItem}>
                                 {health.isPostWorkout ? '🏃 运动后' : '🧘 正常'}
+                            </Text>
+                        </View>
+                        <View style={[styles.statusRow, { marginTop: 6 }]}>
+                            <Text style={styles.statusItem}>
+                                {lightLevelIcon(health.lightLevel)} {lightLevelLabel(health.lightLevel)} ({health.lightLux} lux)
                             </Text>
                         </View>
                         {health.isPostWorkout && (
@@ -183,6 +207,46 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
                         </View>
                     </View>
 
+                    {/* 环境光线控制 */}
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>💡 环境光线 (lux)</Text>
+                        <View style={styles.presetRow}>
+                            {lightPresets.map((preset) => (
+                                <TouchableOpacity
+                                    key={preset.value}
+                                    style={[
+                                        styles.presetBtn,
+                                        health.lightLux === preset.value && styles.presetBtnActive,
+                                        { borderColor: preset.color },
+                                    ]}
+                                    onPress={() => {
+                                        health.setSimulatedLightLux(preset.value);
+                                        setLuxInput(String(preset.value));
+                                    }}
+                                >
+                                    <Text style={[
+                                        styles.presetBtnText,
+                                        health.lightLux === preset.value && { color: preset.color },
+                                    ]}>
+                                        {preset.icon}
+                                    </Text>
+                                    <Text style={styles.presetLabel}>{preset.label}</Text>
+                                    <Text style={[styles.presetLabel, { fontSize: 9 }]}>{preset.value} lux</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        <View style={[styles.inputRow, { marginTop: 8 }]}>
+                            <TextInput
+                                style={styles.input}
+                                value={luxInput}
+                                onChangeText={handleLuxChange}
+                                keyboardType="numeric"
+                                placeholder="输入 lux 值 (0-50000)"
+                            />
+                            <Text style={{ fontSize: 12, color: '#999', marginLeft: 6 }}>lux</Text>
+                        </View>
+                    </View>
+
                     {/* 分割线 */}
                     <View style={styles.divider} />
 
@@ -208,10 +272,13 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
                     {/* 传感器状态 */}
                     <View style={styles.sensorStatus}>
                         <Text style={styles.sensorText}>
-                            📱 传感器: {health.isPedometerAvailable ? '✅ 可用' : '❌ 不可用'}
+                            📱 传感器: 步数{health.isPedometerAvailable ? '✅' : '❌'} 光线{health.isLightSensorAvailable ? '✅' : '❌'}
                         </Text>
                         {health.pedometerError && (
                             <Text style={styles.errorText}>{health.pedometerError}</Text>
+                        )}
+                        {health.lightSensorError && (
+                            <Text style={styles.errorText}>{health.lightSensorError}</Text>
                         )}
                     </View>
                 </View>

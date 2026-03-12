@@ -1,5 +1,5 @@
 """
-一键训练脚本 — 同时训练 LightGBM + DeepFM
+一键训练脚本 — 同时训练 LightGBM + DeepFM + NCF + FoodCF-Encoder
 
 用法:
     cd backend/recommendation-service
@@ -7,6 +7,8 @@
     python -m app.ml.train_all --incremental             # LightGBM 增量训练
     python -m app.ml.train_all --lgb-only                # 仅训练 LightGBM
     python -m app.ml.train_all --deepfm-only             # 仅训练 DeepFM
+    python -m app.ml.train_all --ncf-only                # 仅训练 NCF (协同过滤)
+    python -m app.ml.train_all --encoder-only             # 仅训练 FoodCF-Encoder
     python -m app.ml.train_all --generate-mock 2000      # 先生成模拟数据再训练
 """
 
@@ -172,15 +174,24 @@ def generate_mock_data(n_samples: int = 2000, output_path: str = None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="一键训练 LightGBM + DeepFM")
+    parser = argparse.ArgumentParser(description="一键训练 LightGBM + DeepFM + NCF + FoodCF-Encoder")
     parser.add_argument("--data", default=os.path.join(DATA_DIR, "training_samples.jsonl"))
     parser.add_argument("--generate-mock", type=int, default=0,
                         help="生成模拟训练数据的样本数（0=不生成）")
     parser.add_argument("--lgb-only", action="store_true", help="仅训练 LightGBM")
     parser.add_argument("--deepfm-only", action="store_true", help="仅训练 DeepFM")
+    parser.add_argument("--ncf-only", action="store_true", help="仅训练 NCF (协同过滤)")
+    parser.add_argument("--encoder-only", action="store_true", help="仅训练 FoodCF-Encoder")
     parser.add_argument("--incremental", action="store_true", help="LightGBM 增量训练")
     parser.add_argument("--lgb-rounds", type=int, default=500)
     parser.add_argument("--deepfm-epochs", type=int, default=20)
+    parser.add_argument("--ncf-epochs", type=int, default=20)
+    parser.add_argument("--ncf-generate-mock", type=int, default=0,
+                        help="生成 NCF 模拟数据条数（0=不生成）")
+    parser.add_argument("--encoder-epochs", type=int, default=10,
+                        help="FoodCF-Encoder 微调轮数")
+    parser.add_argument("--encoder-generate-synthetic", type=int, default=0,
+                        help="生成 Encoder 合成训练数据条数 (E5-Mistral 范式, 0=不生成)")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -195,7 +206,7 @@ def main():
         return
 
     # Step 1: 训练 LightGBM
-    if not args.deepfm_only:
+    if not args.deepfm_only and not args.ncf_only and not args.encoder_only:
         logger.info("=" * 60)
         logger.info("🌲 开始训练 LightGBM ...")
         logger.info("=" * 60)
@@ -215,7 +226,7 @@ def main():
             traceback.print_exc()
 
     # Step 2: 训练 DeepFM
-    if not args.lgb_only:
+    if not args.lgb_only and not args.ncf_only and not args.encoder_only:
         logger.info("=" * 60)
         logger.info("🧠 开始训练 DeepFM ...")
         logger.info("=" * 60)
@@ -229,6 +240,61 @@ def main():
             )
         except Exception as e:
             logger.error(f"❌ DeepFM 训练失败: {e}")
+            import traceback
+            traceback.print_exc()
+
+    # Step 3: 训练 NCF (协同过滤)
+    if not args.lgb_only and not args.deepfm_only and not args.encoder_only:
+        logger.info("=" * 60)
+        logger.info("🤝 开始训练 NCF (协同过滤) ...")
+        logger.info("=" * 60)
+        try:
+            from app.ml.train_ncf import train_ncf, generate_ncf_mock_data
+            ncf_data_path = os.path.join(DATA_DIR, "ncf_training_data.jsonl")
+            # 可选: 生成 NCF 模拟数据
+            if args.ncf_generate_mock > 0:
+                generate_ncf_mock_data(
+                    n_users=max(20, args.ncf_generate_mock // 30),
+                    n_restaurants=max(50, args.ncf_generate_mock // 5),
+                    output_path=ncf_data_path,
+                )
+            if os.path.exists(ncf_data_path):
+                ncf_path = os.path.join(MODEL_DIR, "ncf_model.pth")
+                train_ncf(
+                    data_path=ncf_data_path,
+                    save_path=ncf_path,
+                    epochs=args.ncf_epochs,
+                )
+            else:
+                logger.info("ℹ️ NCF 训练数据不存在，跳过 (使用 --ncf-generate-mock 2000 生成)")
+        except Exception as e:
+            logger.error(f"❌ NCF 训练失败: {e}")
+            import traceback
+            traceback.print_exc()
+
+    # Step 4: 训练 FoodCF-Encoder (GTE-Qwen2-1.5B 微调)
+    if not args.lgb_only and not args.deepfm_only and not args.ncf_only:
+        logger.info("=" * 60)
+        logger.info("🧠 开始训练 FoodCF-Encoder (GTE-Qwen2-1.5B + NV-Embed + Matryoshka) ...")
+        logger.info("=" * 60)
+        try:
+            from app.ml.train_foodcf_encoder import train_foodcf_encoder, generate_synthetic_data
+            encoder_data_path = os.path.join(DATA_DIR, "encoder_train.jsonl")
+            # 可选: 生成合成训练数据 (E5-Mistral 范式)
+            if args.encoder_generate_synthetic > 0:
+                generate_synthetic_data(
+                    n_samples=args.encoder_generate_synthetic,
+                    output_path=encoder_data_path,
+                )
+            if os.path.exists(encoder_data_path):
+                train_foodcf_encoder(
+                    data_path=encoder_data_path,
+                    epochs=args.encoder_epochs,
+                )
+            else:
+                logger.info("ℹ️ Encoder 训练数据不存在，跳过 (使用 --encoder-generate-synthetic 5000 生成)")
+        except Exception as e:
+            logger.error(f"❌ FoodCF-Encoder 训练失败: {e}")
             import traceback
             traceback.print_exc()
 

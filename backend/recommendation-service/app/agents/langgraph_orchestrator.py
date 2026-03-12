@@ -38,6 +38,7 @@ except ImportError:
 from .context_agent import ContextAgent, create_context_agent
 from .profiler_agent import ProfilerAgent, create_profiler_agent
 from .decision_agent import DecisionAgent, create_decision_agent
+from .collaborative_agent import CollaborativeAgent, create_collaborative_agent
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,7 @@ class WorkflowState(TypedDict, total=False):
     # 智能体处理结果
     context_analysis: Dict[str, Any]
     profile_analysis: Dict[str, Any]
+    collaborative_analysis: Dict[str, Any]  # CollaborativeAgent 协同过滤结果
     decision_result: Dict[str, Any]
     
     # 前端传入的上下文（用于决策排序）
@@ -121,6 +123,7 @@ class LangGraphOrchestrator:
             weather_service, map_service, calendar_service
         )
         self.profiler_agent = create_profiler_agent(user_service)
+        self.collaborative_agent = create_collaborative_agent()
         self.decision_agent = create_decision_agent(mab_strategy)
         
         # 构建工作流图
@@ -146,6 +149,7 @@ class LangGraphOrchestrator:
         # 添加节点
         workflow.add_node("context_analysis", self._context_node)
         workflow.add_node("profile_analysis", self._profile_node)
+        workflow.add_node("collaborative_analysis", self._collaborative_node)
         workflow.add_node("decision_making", self._decision_node)
         
         # 设置入口点
@@ -166,10 +170,14 @@ class LangGraphOrchestrator:
             "profile_analysis",
             self._route_after_profile,
             {
+                "collaborative_analysis": "collaborative_analysis",
                 "decision_making": "decision_making",
                 "end": END
             }
         )
+        
+        # 协同过滤 → 决策
+        workflow.add_edge("collaborative_analysis", "decision_making")
         
         # 决策节点直接到终点
         workflow.add_edge("decision_making", END)
@@ -250,20 +258,54 @@ class LangGraphOrchestrator:
                 "errors": errors
             }
     
+    async def _collaborative_node(self, state: WorkflowState) -> Dict[str, Any]:
+        """
+        协同过滤节点
+        
+        执行 CollaborativeAgent，基于 FoodCF-Encoder + NCF 计算跨用户协同过滤分数。
+        """
+        logger.info("Executing collaborative_analysis node")
+        
+        try:
+            result = await self.collaborative_agent.process({
+                "restaurants": state.get("restaurants", []),
+                "profile_analysis": state.get("profile_analysis", {}),
+                "user_id": state.get("user_id", "guest"),
+            })
+            
+            node_history = state.get("node_history", [])
+            node_history.append("collaborative_analysis")
+            
+            return {
+                "collaborative_analysis": result,
+                "current_node": "collaborative_analysis",
+                "node_history": node_history,
+            }
+        except Exception as e:
+            logger.warning(f"Collaborative analysis failed (degraded): {e}")
+            errors = state.get("errors", [])
+            errors.append(f"collaborative_analysis: {str(e)}")
+            return {
+                "collaborative_analysis": {"success": True, "collaborative_scores": {}, "cf_weight": 0.0},
+                "errors": errors,
+            }
+    
     async def _decision_node(self, state: WorkflowState) -> Dict[str, Any]:
         """
         决策节点
         
         执行 DecisionAgent，使用 MAB 算法进行最终推荐决策。
+        注入 CollaborativeAgent 的协同过滤分数。
         """
         logger.info("Executing decision_making node")
         
         try:
-            # 调用决策智能体
+            # 调用决策智能体 (注入协同过滤分数)
             result = await self.decision_agent.process({
                 "restaurants": state.get("restaurants", []),
                 "context_analysis": state.get("context_analysis", {}),
                 "profile_analysis": state.get("profile_analysis", {}),
+                "collaborative_analysis": state.get("collaborative_analysis", {}),
                 "user_query": state.get("user_query", ""),
                 "top_k": state.get("top_k", 10),
                 "health_context": state.get("health_context", {}),
@@ -331,6 +373,9 @@ class LangGraphOrchestrator:
     def _route_after_profile(self, state: WorkflowState) -> str:
         """
         用户画像后的路由决策
+        
+        正常流程: profile → collaborative → decision
+        无餐厅: profile → end
         """
         profile = state.get("profile_analysis", {})
         
@@ -339,7 +384,7 @@ class LangGraphOrchestrator:
             logger.warning("No restaurants to recommend")
             return "end"
         
-        return "decision_making"
+        return "collaborative_analysis"
     
     def _extract_city(self, location: str) -> str:
         """从位置字符串提取城市"""
@@ -450,7 +495,11 @@ class LangGraphOrchestrator:
         profile_result = await self._profile_node(state)
         state.update(profile_result)
         
-        # 3. 决策
+        # 3. 协同过滤
+        collaborative_result = await self._collaborative_node(state)
+        state.update(collaborative_result)
+        
+        # 4. 决策
         decision_result = await self._decision_node(state)
         state.update(decision_result)
         
@@ -474,6 +523,7 @@ class LangGraphOrchestrator:
         return {
             "context_agent": self.context_agent.get_state().to_dict(),
             "profiler_agent": self.profiler_agent.get_state().to_dict(),
+            "collaborative_agent": self.collaborative_agent.get_state().to_dict(),
             "decision_agent": self.decision_agent.get_state().to_dict()
         }
 
