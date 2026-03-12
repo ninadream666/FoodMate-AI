@@ -102,7 +102,7 @@ const HomeScreen = ({ navigation }: any) => {
 
         // 🧠 初始化 Vosk 和 端侧大模型 (SLM)
         voiceInferenceService.init().catch(e => console.error("语音/大模型初始化失败:", e));
-        
+
         // 不要立即调用loadData，等待LocationDisplay提供位置
     }, []);
 
@@ -221,7 +221,7 @@ const HomeScreen = ({ navigation }: any) => {
     };
 
     const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-        const R = 6371e3; 
+        const R = 6371e3;
         const φ1 = lat1 * Math.PI / 180;
         const φ2 = lat2 * Math.PI / 180;
         const Δφ = (lat2 - lat1) * Math.PI / 180;
@@ -232,7 +232,7 @@ const HomeScreen = ({ navigation }: any) => {
             Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-        return R * c; 
+        return R * c;
     };
 
     const shouldReload = (newLocation: any) => {
@@ -273,7 +273,7 @@ const HomeScreen = ({ navigation }: any) => {
         try {
             setRealtimeText('请说话...');
             setIsListening(true);
-            
+
             await voiceInferenceService.startListening(
                 (partialText) => {
                     if (partialText) setRealtimeText(partialText);
@@ -320,7 +320,7 @@ const HomeScreen = ({ navigation }: any) => {
             const currentWeather = weatherDataRef.current;
 
             console.log('📍 语音请求使用的真实坐标:', loc);
-            
+
             // 3. 将大模型提取出的纯净结构化数据交由端云协同服务
             const result = await edgeSynergyService.processVoiceIntent(parsedConstraints, loc, currentWeather);
 
@@ -329,10 +329,12 @@ const HomeScreen = ({ navigation }: any) => {
                 Alert.alert(
                     '健康守护拦截',
                     result.message || '周边暂无严格符合您健康约束的餐品，已为您恢复默认推荐。',
-                    [{ text: '好的', onPress: () => {
-                        setIsSynergyMode(false);
-                        loadData(currentLocation);
-                    }}]
+                    [{
+                        text: '好的', onPress: () => {
+                            setIsSynergyMode(false);
+                            loadData(currentLocation);
+                        }
+                    }]
                 );
             } else {
                 // 成功获取到协同推荐结果
@@ -363,7 +365,7 @@ const HomeScreen = ({ navigation }: any) => {
             console.warn('⚠️ loadData执行超时，强制重置loading状态');
             setLoading(false);
             setRefreshing(false);
-        }, 30000); 
+        }, 30000);
 
         try {
             console.log('🏁 loadData开始执行，设置loading=true');
@@ -378,8 +380,8 @@ const HomeScreen = ({ navigation }: any) => {
                     console.log('📍 使用已有位置:', location.address);
                 } else {
                     console.log('⏳ 等待位置更新...');
-                    setLoading(false); 
-                    return; 
+                    setLoading(false);
+                    return;
                 }
             }
 
@@ -413,7 +415,7 @@ const HomeScreen = ({ navigation }: any) => {
 
             const recommendParams = {
                 userId: currentUser?.id || 'guest',
-                latitude: location.latitude, 
+                latitude: location.latitude,
                 longitude: location.longitude,
                 address: location.address,
                 healthContext: {
@@ -422,6 +424,8 @@ const HomeScreen = ({ navigation }: any) => {
                     heartRate: health.heartRate,
                     activityStatus: health.activityStatus,
                     isPostWorkout: health.isPostWorkout,
+                    lightLux: health.lightLux,
+                    lightLevel: health.lightLevel,
                 },
                 weatherContext: weatherData ? {
                     condition: weatherData.condition,
@@ -436,9 +440,9 @@ const HomeScreen = ({ navigation }: any) => {
 
             console.log('🚀 发送推荐请求参数:', recommendParams);
             const response = await recommendationService.getV2Recommendations(recommendParams);
-            
+
             const list = response.recommendations || response.restaurants || (Array.isArray(response) ? response : []);
-            
+
             if (!list || list.length === 0) {
                 console.log('📭 推荐为空，使用兜底数据');
                 const fallback = await merchantService.getRecommendedMerchants();
@@ -446,7 +450,7 @@ const HomeScreen = ({ navigation }: any) => {
             } else {
                 console.log('✅ 获取到智能推荐数据:', list.length, '条');
                 setRestaurants(list);
-                setHasInitialData(true); 
+                setHasInitialData(true);
             }
 
         } catch (error) {
@@ -459,17 +463,17 @@ const HomeScreen = ({ navigation }: any) => {
                 setRestaurants([]);
             }
         } finally {
-            clearTimeout(timeoutId); 
+            clearTimeout(timeoutId);
             console.log('🏁 数据加载完成，重置loading状态');
             setLoading(false);
             setRefreshing(false);
-            setLastLoadTime(Date.now()); 
+            setLastLoadTime(Date.now());
         }
     };
 
     const handleRefresh = () => {
         setRefreshing(true);
-        loadData(currentLocation); 
+        loadData(currentLocation);
     };
 
     const handleLogout = async () => {
@@ -493,10 +497,10 @@ const HomeScreen = ({ navigation }: any) => {
     const pickImage = async (type: 'camera' | 'gallery') => {
         const options: any = {
             mediaType: 'photo',
-            includeBase64: true, 
-            maxWidth: 800,       
-            maxHeight: 800,      
-            quality: 0.6,        
+            includeBase64: true,
+            maxWidth: 800,
+            maxHeight: 800,
+            quality: 0.6,
         };
 
         const callback = (response: any) => {
@@ -507,7 +511,7 @@ const HomeScreen = ({ navigation }: any) => {
             }
             if (response.assets && response.assets.length > 0) {
                 const asset = response.assets[0];
-                
+
                 if (asset.fileSize) {
                     const sizeInKB = asset.fileSize / 1024;
                     const sizeInMB = sizeInKB / 1024;
@@ -517,9 +521,9 @@ const HomeScreen = ({ navigation }: any) => {
                     }
                 }
 
-                setTempImage(asset); 
-                setSelectedTags([]); 
-                setPreferencesModalVisible(true); 
+                setTempImage(asset);
+                setSelectedTags([]);
+                setPreferencesModalVisible(true);
             }
         };
 
@@ -564,7 +568,7 @@ const HomeScreen = ({ navigation }: any) => {
                     if (isCurrentDefault && isNewRealGPS) {
                         setCurrentLocation(loc);
                         try {
-                            await loadData(loc); 
+                            await loadData(loc);
                         } catch (error) {
                             setLoading(false);
                         }
@@ -577,7 +581,7 @@ const HomeScreen = ({ navigation }: any) => {
                     if (currentLocation && hasInitialData) {
                         const latDiff = Math.abs(loc.latitude - currentLocation.latitude);
                         const lonDiff = Math.abs(loc.longitude - currentLocation.longitude);
-                        const smallChange = latDiff < 0.001 && lonDiff < 0.001; 
+                        const smallChange = latDiff < 0.001 && lonDiff < 0.001;
 
                         if (smallChange && timeSinceLastLoad < 30000) {
                             return;
@@ -622,14 +626,14 @@ const HomeScreen = ({ navigation }: any) => {
 
             <TouchableOpacity style={styles.visionCard} onPress={startNutriVision}>
                 <View style={styles.visionIconContainer}>
-                    <Text style={{fontSize: 24}}>📸</Text>
+                    <Text style={{ fontSize: 24 }}>📸</Text>
                 </View>
-                <View style={{flex: 1}}>
+                <View style={{ flex: 1 }}>
                     <Text style={styles.visionTitle}>拍一拍：实景菜单营养透视</Text>
                     <Text style={styles.visionSubtitle}>AI 识别热量、过敏原，定制健康推荐</Text>
                 </View>
                 <View style={styles.visionArrow}>
-                    <Text style={{color: '#fff'}}>→</Text>
+                    <Text style={{ color: '#fff' }}>→</Text>
                 </View>
             </TouchableOpacity>
 
@@ -661,6 +665,16 @@ const HomeScreen = ({ navigation }: any) => {
                         >
                             <Text style={{ color: '#c2185b', fontWeight: 'bold', fontSize: 14 }}>💪 模拟刚跑完步</Text>
                             <Text style={{ color: '#c2185b', fontSize: 10, marginTop: 2 }}>心率145 / 步数12000</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => {
+                                health.setDevMode(true);
+                                health.setSimulatedLightLux(20);
+                            }}
+                            style={{ flex: 1, padding: 12, backgroundColor: '#ede7f6', borderRadius: 8, alignItems: 'center' }}
+                        >
+                            <Text style={{ color: '#5e35b1', fontWeight: 'bold', fontSize: 14 }}>🌙 模拟暗光场景</Text>
+                            <Text style={{ color: '#5e35b1', fontSize: 10, marginTop: 2 }}>20 lux / 夜间室内</Text>
                         </TouchableOpacity>
                     </View>
                     <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -720,8 +734,8 @@ const HomeScreen = ({ navigation }: any) => {
                 <TouchableOpacity style={styles.searchButton}>
                     <Text style={{ color: '#fff' }}>🔍</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                    style={[styles.micButton, isListening && styles.micButtonActive]} 
+                <TouchableOpacity
+                    style={[styles.micButton, isListening && styles.micButtonActive]}
                     onPress={startVoiceAssistant}
                 >
                     <Text style={{ color: isListening ? '#fff' : '#e85a2d', fontSize: 18 }}>
@@ -791,8 +805,8 @@ const HomeScreen = ({ navigation }: any) => {
             {/* --- 新增: 极其酷炫的端云协同双阶段沉浸式动画 Modal --- */}
             <Modal visible={synergyPhase > 0} transparent={true} animationType="fade">
                 <View style={styles.synModalBg}>
-                    <SafeAreaView style={{flex: 1}}>
-                        
+                    <SafeAreaView style={{ flex: 1 }}>
+
                         {/* 顶部安全徽章 */}
                         <View style={styles.synHeader}>
                             <View style={styles.synBadge}>
@@ -805,13 +819,13 @@ const HomeScreen = ({ navigation }: any) => {
                             <View style={styles.synPhaseContainer}>
                                 <View style={styles.synPhoneFrame}>
                                     <Animated.View style={[styles.synScanLine, { transform: [{ translateY: scanTranslateY }] }]} />
-                                    
+
                                     <View style={styles.synCenterNode}>
                                         <Animated.View style={[styles.synPulseRing, { transform: [{ scale: pulseScale }], opacity: pulseOpacity }]} />
                                         <View style={styles.synChipBox}>
-                                            <Text style={{fontSize: 50}}>🧠</Text>
+                                            <Text style={{ fontSize: 50 }}>🧠</Text>
                                             <View style={styles.synShieldMini}>
-                                                <Text style={{fontSize: 14}}>🛡️</Text>
+                                                <Text style={{ fontSize: 14 }}>🛡️</Text>
                                             </View>
                                         </View>
                                     </View>
@@ -820,7 +834,7 @@ const HomeScreen = ({ navigation }: any) => {
                                 <View style={styles.synTextContainer}>
                                     <Text style={styles.synMainTitle}>🧠 端侧大模型正在分析</Text>
                                     <Text style={styles.synMainTitle}>意图与隐私约束...</Text>
-                                    
+
                                     <View style={styles.synStatusPill}>
                                         <View style={styles.synDot} />
                                         <Text style={styles.synStatusPillText}>Analyzing intent...</Text>
@@ -833,10 +847,10 @@ const HomeScreen = ({ navigation }: any) => {
                         {/* 阶段 2: 云端上传 */}
                         {synergyPhase === 2 && (
                             <View style={styles.synPhaseContainer}>
-                                
+
                                 <Animated.View style={[styles.synCloudTop, { transform: [{ translateY: floatTranslateY }] }]}>
                                     <View style={styles.synCloudBox}>
-                                        <Text style={{fontSize: 60}}>☁️</Text>
+                                        <Text style={{ fontSize: 60 }}>☁️</Text>
                                     </View>
                                 </Animated.View>
 
@@ -847,7 +861,7 @@ const HomeScreen = ({ navigation }: any) => {
 
                                 <View style={styles.synPhoneFrameSmall}>
                                     <View style={styles.synUnlockBox}>
-                                        <Text style={{fontSize: 34}}>🔓</Text>
+                                        <Text style={{ fontSize: 34 }}>🔓</Text>
                                     </View>
                                     <Text style={styles.synLocalSafeText}>LOCAL SAFE</Text>
                                 </View>
@@ -855,9 +869,9 @@ const HomeScreen = ({ navigation }: any) => {
                                 <View style={styles.synTextContainer}>
                                     <Text style={styles.synMainTitle}>☁️ 脱敏请求已发送</Text>
                                     <Text style={styles.synMainTitleDark}>云端 Agent 正在规划推荐...</Text>
-                                    
+
                                     <View style={styles.synStatusPillSafe}>
-                                        <Text style={{fontSize: 14, marginRight: 4}}>🛡️</Text>
+                                        <Text style={{ fontSize: 14, marginRight: 4 }}>🛡️</Text>
                                         <Text style={styles.synStatusPillTextSafe}>Privacy Protected / 隐私保护中</Text>
                                     </View>
                                 </View>
@@ -877,17 +891,17 @@ const HomeScreen = ({ navigation }: any) => {
             >
                 <View style={styles.modalCenteredView}>
                     <View style={styles.voiceModalView}>
-                        <ActivityIndicator size="large" color="#e85a2d" style={{marginBottom: 20}} />
+                        <ActivityIndicator size="large" color="#e85a2d" style={{ marginBottom: 20 }} />
                         <Text style={styles.modalTitle}>正在聆听您的需求...</Text>
-                        
-                        <View style={{minHeight: 40, justifyContent: 'center', marginVertical: 10}}>
-                            <Text style={{color: '#e85a2d', fontSize: 18, fontWeight: 'bold', textAlign: 'center'}}>
+
+                        <View style={{ minHeight: 40, justifyContent: 'center', marginVertical: 10 }}>
+                            <Text style={{ color: '#e85a2d', fontSize: 18, fontWeight: 'bold', textAlign: 'center' }}>
                                 "{realtimeText}"
                             </Text>
                         </View>
 
                         <Text style={styles.modalSubtitle}>例如：“我生理期，推荐点热的甜品”</Text>
-                        <Text style={{color: '#999', fontSize: 12, marginTop: 10}}>（语音及意图分析完全在手机本地进行，极度保护隐私）</Text>
+                        <Text style={{ color: '#999', fontSize: 12, marginTop: 10 }}>（语音及意图分析完全在手机本地进行，极度保护隐私）</Text>
                     </View>
                 </View>
             </Modal>
@@ -902,7 +916,7 @@ const HomeScreen = ({ navigation }: any) => {
                     <View style={styles.modalView}>
                         <Text style={styles.modalTitle}>有些忌口或偏好吗？</Text>
                         <Text style={styles.modalSubtitle}>选择标签，让 AI 帮您避雷 (可多选)</Text>
-                        
+
                         <View style={styles.tagsContainer}>
                             {HEALTH_TAGS.map((tag) => (
                                 <TouchableOpacity
@@ -922,13 +936,13 @@ const HomeScreen = ({ navigation }: any) => {
                         </View>
 
                         <View style={styles.modalActions}>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={[styles.modalBtn, styles.modalBtnCancel]}
                                 onPress={() => setPreferencesModalVisible(false)}
                             >
                                 <Text style={styles.modalBtnTextCancel}>取消</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={[styles.modalBtn, styles.modalBtnConfirm]}
                                 onPress={confirmAnalysis}
                             >
@@ -946,7 +960,7 @@ const HomeScreen = ({ navigation }: any) => {
                     console.log('📍 查看推荐餐食，刷新推荐列表...');
                     setShowActiveRecommendation(false);
                     if (currentLocation) {
-                        loadData(currentLocation, true); 
+                        loadData(currentLocation, true);
                     }
                 }}
             />
@@ -964,7 +978,7 @@ const HomeScreen = ({ navigation }: any) => {
                     console.log('🌤️ 接受天气推荐，刷新推荐列表...');
                     setShowWeatherAlert(false);
                     if (currentLocation) {
-                        loadData(currentLocation, true); 
+                        loadData(currentLocation, true);
                     }
                 }}
             />
@@ -1071,7 +1085,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         zIndex: 1000,
     },
-    
+
     // --- 新增: 端云协同 Modal 专属样式复刻 (Stitch Design) ---
     synModalBg: {
         flex: 1,

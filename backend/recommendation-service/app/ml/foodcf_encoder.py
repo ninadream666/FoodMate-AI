@@ -159,14 +159,33 @@ class FoodCFEncoder:
         logger.info("ℹ️ FoodCF-Encoder 降级为 TF-IDF 哈希嵌入模式")
 
     def _load_finetuned(self):
-        """加载微调后的模型"""
+        """加载微调后的模型（支持 LoRA adapter）"""
         import torch
         from transformers import AutoTokenizer, AutoModel
 
-        self._tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
-        self._base_model = AutoModel.from_pretrained(
-            self.model_path, trust_remote_code=True
-        ).to(self.device)
+        # 读取训练配置
+        config_path = os.path.join(self.model_path, "config.json")
+        import json
+        with open(config_path, "r") as f:
+            train_config = json.load(f)
+
+        base_model_name = train_config.get("base_model", "Alibaba-NLP/gte-Qwen2-1.5B-instruct")
+        lora_applied = train_config.get("lora_applied", False)
+
+        self._tokenizer = AutoTokenizer.from_pretrained(self.model_path)
+
+        if lora_applied:
+            # LoRA 模式: 先加载基座，再合并 adapter
+            from peft import PeftModel
+            base = AutoModel.from_pretrained(base_model_name)
+            self._base_model = PeftModel.from_pretrained(base, self.model_path)
+            self._base_model = self._base_model.merge_and_unload()  # 合并权重，推理更快
+            self._base_model = self._base_model.to(self.device)
+        else:
+            self._base_model = AutoModel.from_pretrained(
+                base_model_name
+            ).to(self.device)
+
         self._base_model.eval()
 
         hidden_dim = self._base_model.config.hidden_size
@@ -202,9 +221,9 @@ class FoodCFEncoder:
         from transformers import AutoTokenizer, AutoModel
 
         model_name = "Alibaba-NLP/gte-Qwen2-1.5B-instruct"
-        self._tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        self._tokenizer = AutoTokenizer.from_pretrained(model_name)
         self._base_model = AutoModel.from_pretrained(
-            model_name, trust_remote_code=True
+            model_name
         ).to(self.device)
         self._base_model.eval()
 

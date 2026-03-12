@@ -330,8 +330,8 @@ def train_foodcf_encoder(
     # 2. 加载 GTE-Qwen2-1.5B 基座
     model_name = "Alibaba-NLP/gte-Qwen2-1.5B-instruct"
     logger.info(f"🔄 加载基座模型: {model_name}")
-    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-    base_model = AutoModel.from_pretrained(model_name, trust_remote_code=True).to(device)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    base_model = AutoModel.from_pretrained(model_name).to(device)
     hidden_dim = base_model.config.hidden_size
 
     # 3. 构建 Latent Attention Pooling (NV-Embed)

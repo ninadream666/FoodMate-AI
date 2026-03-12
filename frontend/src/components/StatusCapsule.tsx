@@ -5,8 +5,9 @@
  * 1. 显示天气状态
  * 2. 显示心率数据
  * 3. 运动后状态高亮
- * 4. 倒计时显示
- * 5. 连点5次打开开发者面板
+ * 4. 环境光线指示
+ * 5. 倒计时显示
+ * 6. 连点5次打开开发者面板
  * 
  * 设计：类似"灵动岛"风格的状态胶囊
  */
@@ -20,6 +21,7 @@ import {
     TouchableOpacity,
 } from 'react-native';
 import { useHealthContext } from '../hooks/useHealthContext';
+import { lightLevelIcon, lightLevelLabel } from '../hooks/useAmbientLight';
 import DevModePanel from './DevModePanel';
 
 interface StatusCapsuleProps {
@@ -216,6 +218,22 @@ const StatusCapsule: React.FC<StatusCapsuleProps> = ({
                     </View>
                 )}
 
+                {/* 分隔符 */}
+                <View style={[
+                    styles.divider,
+                    health.isPostWorkout && styles.dividerActive,
+                ]} />
+
+                {/* 环境光线指示 */}
+                <View style={styles.lightIndicator}>
+                    <Text style={styles.lightIcon}>
+                        {lightLevelIcon(health.lightLevel)}
+                    </Text>
+                    <Text style={styles.lightText}>
+                        {lightLevelLabel(health.lightLevel)}
+                    </Text>
+                </View>
+
                 {/* 开发者模式标记 */}
                 {health.isDevMode && (
                     <View style={styles.devBadge}>
@@ -319,6 +337,23 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     stepsText: {
+        fontSize: 11,
+        color: '#666',
+    },
+    lightIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#e9ecef',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 10,
+        marginLeft: 4,
+    },
+    lightIcon: {
+        fontSize: 12,
+        marginRight: 3,
+    },
+    lightText: {
         fontSize: 11,
         color: '#666',
     },
