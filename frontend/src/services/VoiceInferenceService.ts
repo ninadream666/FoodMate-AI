@@ -1,7 +1,7 @@
 /**
- * VoiceInferenceService.ts - 离线语音与端侧大模型引擎
- * * 阶段一：使用 react-native-vosk 进行离线语音实时转文字（带智能思考静音检测）
- * * 阶段二：使用 llama.rn 加载端侧轻量级大模型（如 Qwen-0.5B），将文本提纯为 JSON 隐私约束
+ * VoiceInferenceService.ts - 离线语音与端侧大模型引擎 (多轮对话增强版)
+ * 阶段一：使用 react-native-vosk 进行离线语音实时转文字
+ * 阶段二：使用 llama.rn 加载微调后的端侧大模型，支持多轮对话的状态追踪(DST)
  * 绝对保护隐私，录音不出端。
  */
 
@@ -9,6 +9,12 @@ import Vosk from 'react-native-vosk';
 import { initLlama, LlamaContext } from 'llama.rn';
 import { PermissionsAndroid, Platform, NativeModules, DeviceEventEmitter, NativeEventEmitter } from 'react-native';
 import RNFS from 'react-native-fs';
+
+// 定义对话历史接口
+interface DialogueMessage {
+    role: 'user' | 'assistant';
+    content: string;
+}
 
 class VoiceInferenceService {
     private vosk: typeof Vosk | null = null;
@@ -19,6 +25,12 @@ class VoiceInferenceService {
     private isRecording = false;
     private silenceTimer: NodeJS.Timeout | null = null;
     
+    // 多轮对话核心状态
+    private dialogueHistory: DialogueMessage[] = [];
+    
+    // 训练时的精确 System Prompt (必须一字不差)
+    private readonly SYSTEM_PROMPT = "你是一个运行在手机端侧的外卖意图提取助手。请提取用户的点餐需求，输出严格的JSON格式。如果用户没有明确提到价格或特定的健康约束，对应字段必须为空数组 [] 或 null。";
+
     // 回调函数
     private onPartialCallback: ((text: string) => void) | null = null;
     private onCompleteCallback: ((text: string) => void) | null = null;
@@ -54,9 +66,10 @@ class VoiceInferenceService {
         // --- 2. 独立初始化 Llama 大模型引擎 ---
         try {
             await new Promise(resolve => setTimeout(resolve, 1500));
-            console.log('🧠 [LLM] 准备加载端侧大模型...');
+            console.log('🧠 [LLM] 准备加载微调后的端侧大模型...');
 
-            const modelFileName = 'qwen2.5-0.5b-instruct-q4.gguf';
+            // 【修改这里】：换成我们最新的 1500 条 Q8 冠军模型
+            const modelFileName = 'model_1500_q8.gguf';
             const destPath = `${RNFS.DocumentDirectoryPath}/${modelFileName}`;
             const exists = await RNFS.exists(destPath);
             
@@ -70,7 +83,7 @@ class VoiceInferenceService {
                 model: destPath,
                 use_mlock: false, 
                 use_mmap: true,  
-                n_ctx: 512, 
+                n_ctx: 1024, // 增加上下文长度以支持多轮对话
             });
             console.log('✅ [LLM] 大模型加载完毕，随时待命！');
         } catch (error) {
@@ -86,23 +99,28 @@ class VoiceInferenceService {
     }
 
     /**
+     * 清空多轮对话状态 (例如：点餐完成、或用户手动重置时调用)
+     */
+    public clearSession() {
+        this.dialogueHistory = [];
+        console.log('🧹 [LLM] 多轮对话记忆已清空，开启全新点餐 Session。');
+    }
+
+    /**
      * 终极事件拦截网：同时监听所有可能的 React Native 底层通信通道
      */
     private setupBulletproofEventListeners() {
         const processPartial = (source: string, e: any) => {
             if (!this.isRecording) return;
-            console.log(`📡 [事件拦截-${source}-Partial]:`, JSON.stringify(e));
             const text = this.extractVoskText(e);
             if (text.length > 0) {
-                console.log(`🎯 [捕获有效文字-${source}]:`, text);
                 this.lastPartialText = text; 
-                this.resetSilenceTimer(2000); // 说话期间不断重置2秒倒计时
+                this.resetSilenceTimer(2000);
                 if (this.onPartialCallback) this.onPartialCallback(text);
             }
         };
 
         const processFinal = (source: string, e: any) => {
-            console.log(`📡 [事件拦截-${source}-Final]:`, JSON.stringify(e));
             const text = this.extractVoskText(e);
             if (text.length > 0) {
                 this.accumulatedText += text + " ";
@@ -110,7 +128,6 @@ class VoiceInferenceService {
             }
         };
 
-        // 通道 1: NativeEventEmitter (新架构标准专属通道)
         if (NativeModules.Vosk) {
             const nativeEmitter = new NativeEventEmitter(NativeModules.Vosk);
             nativeEmitter.addListener('onPartialResult', (e) => processPartial('NativeEmitter', e));
@@ -118,12 +135,10 @@ class VoiceInferenceService {
             nativeEmitter.addListener('onFinalResult', (e) => processFinal('NativeEmitter', e));
         }
 
-        // 通道 2: DeviceEventEmitter (旧架构硬编码全局通道)
         DeviceEventEmitter.addListener('onPartialResult', (e) => processPartial('DeviceEmitter', e));
         DeviceEventEmitter.addListener('onResult', (e) => processFinal('DeviceEmitter', e));
         DeviceEventEmitter.addListener('onFinalResult', (e) => processFinal('DeviceEmitter', e));
 
-        // 通道 3: Vosk 官方 JS 包装器内部通道
         if (this.vosk && typeof (this.vosk as any).onPartialResult === 'function') {
             (this.vosk as any).onPartialResult((e: any) => processPartial('Wrapper', e));
             (this.vosk as any).onResult((e: any) => processFinal('Wrapper', e));
@@ -189,17 +204,11 @@ class VoiceInferenceService {
         if (this.silenceTimer) clearTimeout(this.silenceTimer);
 
         const stopResult = await this.vosk?.stop();
-        console.log('🎤 [Vosk-底层原始数据-Stop返回值]:', JSON.stringify(stopResult));
-
         const extractedStopText = this.extractVoskText(stopResult);
         
         let finalText = this.accumulatedText.trim();
-        if (!finalText && this.lastPartialText.trim()) {
-            finalText = this.lastPartialText.trim();
-        }
-        if (!finalText && extractedStopText.length > 0) {
-            finalText = extractedStopText;
-        }
+        if (!finalText && this.lastPartialText.trim()) finalText = this.lastPartialText.trim();
+        if (!finalText && extractedStopText.length > 0) finalText = extractedStopText;
         
         console.log('🎤 [Vosk-结束] 最终识别结果:', `[${finalText}]`);
 
@@ -208,47 +217,41 @@ class VoiceInferenceService {
         }
     }
 
+    /**
+     * 构建支持多轮上下文的 ChatML Prompt
+     */
+    private buildMultiTurnPrompt(newText: string): string {
+        let prompt = `<|im_start|>system\n${this.SYSTEM_PROMPT}\n<|im_end|>\n`;
+        
+        // 追加历史对话记录
+        for (const msg of this.dialogueHistory) {
+            prompt += `<|im_start|>${msg.role}\n${msg.content}\n<|im_end|>\n`;
+        }
+        
+        // 追加最新一轮的用户输入，并开启 assistant 生成槽
+        prompt += `<|im_start|>user\n${newText}\n<|im_end|>\n<|im_start|>assistant\n{`;
+        return prompt;
+    }
+
     public async processIntent(text: string): Promise<string> {
         if (!this.llamaContext) {
-            console.warn('⚠️ [LLM] 大模型未就绪或加载失败，使用兜底降级策略处理文本');
-            return JSON.stringify({
-                query: text,
-                forbidden_ingredients: [],
-                required_temperature: [],
-                preferred_tags: [],
-                max_price: null
-            });
+            console.warn('⚠️ [LLM] 大模型未就绪，使用兜底逻辑');
+            return JSON.stringify({ query: text, forbidden_ingredients: [], required_temperature: [], preferred_tags: [], max_price: null });
         }
 
-        console.log('🧠 [LLM] 开始端侧意图提纯，原始文本:', text);
+        console.log(`🧠 [LLM] 端侧意图提纯 (第 ${this.dialogueHistory.length / 2 + 1} 轮)，原始文本:`, text);
 
-        const prompt = `<|im_start|>system
-你是一个运行在手机端侧的外卖意图提取助手。
-请提取用户的点餐需求，输出严格的JSON格式，不要输出其他任何字符。
-【重要警告】：如果用户没有明确提到价格或特定的健康约束，对应字段必须为空数组 [] 或 null！绝不能照抄模板中的例子！
-
-输出格式模板：
-{
-  "query": "提取的食物名或意图（如：吃火锅、喝奶茶）",
-  "forbidden_ingredients": [], 
-  "required_temperature": [],
-  "preferred_tags": [],
-  "max_price": null 
-}
-<|im_end|>
-<|im_start|>user
-文本内容：${text}
-<|im_end|>
-<|im_start|>assistant
-{`;
+        // 1. 构建包含多轮上下文的 Prompt
+        const prompt = this.buildMultiTurnPrompt(text);
 
         try {
             const result = await this.llamaContext.completion({
                 prompt: prompt,
-                n_predict: 150, 
+                n_predict: 200, 
                 temperature: 0.1, 
             });
 
+            // 2. 清洗结果 (因为我们给的 prompt 末尾强制带了 '{' 以约束 JSON 格式输出)
             let jsonStr = "{" + result.text;
             jsonStr = jsonStr.replace(/<\|im_end\|>/g, '').trim();
             const firstBrace = jsonStr.indexOf('{');
@@ -258,6 +261,18 @@ class VoiceInferenceService {
             }
 
             console.log('🛡️ [LLM] 端侧提纯结果:', jsonStr);
+
+            // 3. 将本轮的用户输入和 AI 输出加入记忆，供下一轮使用
+            this.dialogueHistory.push({ role: 'user', content: text });
+            
+            // 为了防止历史记录里的 JSON 出现格式错误污染下一次推理，最好存一下格式化后的
+            try {
+                const parsedResult = JSON.parse(jsonStr);
+                this.dialogueHistory.push({ role: 'assistant', content: JSON.stringify(parsedResult, null, 0) });
+            } catch (e) {
+                this.dialogueHistory.push({ role: 'assistant', content: jsonStr });
+            }
+
             return jsonStr;
 
         } catch (error) {

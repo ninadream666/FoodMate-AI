@@ -7,10 +7,11 @@ const DEVELOPMENT_CONFIG = {
     // 使用 adb reverse 映射后，Android 模拟器可以直接通过 localhost 访问宿主机服务
     // 真机测试时改为电脑的局域网IP地址。
     API_HOST: Platform.select({
-        android: 'http://192.168.2.175', 
-        ios: 'http://192.168.2.175',
-        default: 'http://192.168.2.175'
-    }),
+        android: 'http://127.0.0.1', 
+        ios: 'http://127.0.0.1',
+        default: 'http://127.0.0.1'
+    })
+    ,
 
     // 请求超时时间 (毫秒)
     TIMEOUT: 60000,
