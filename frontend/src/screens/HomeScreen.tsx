@@ -419,13 +419,61 @@ const HomeScreen = ({ navigation }: any) => {
                 longitude: location.longitude,
                 address: location.address,
                 healthContext: {
-                    dailySteps: health.dailySteps,
-                    recentSteps30min: health.recentSteps30min,
-                    heartRate: health.heartRate,
-                    activityStatus: health.activityStatus,
-                    isPostWorkout: health.isPostWorkout,
-                    lightLux: health.lightLux,
-                    lightLevel: health.lightLevel,
+                    // 基础活动数据
+                    daily_steps: health.dailySteps,
+                    recent_steps_30min: health.recentSteps30min,
+                    daily_distance: health.dailyDistance,
+                    daily_calories: health.dailyCalories,
+
+                    // 心率数据
+                    heart_rate: health.heartRate,
+                    resting_heart_rate: health.restingHeartRate,
+                    avg_heart_rate: health.avgHeartRate,
+                    max_heart_rate: health.maxHeartRate,
+                    min_heart_rate: health.minHeartRate,
+
+                    // 活动状态
+                    activity_status: health.activityStatus,
+                    is_post_workout: health.isPostWorkout,
+                    recent_workout_duration: health.recentWorkoutDuration,
+                    recent_workout_calories: health.recentWorkoutCalories,
+                    recent_workout_type: health.recentWorkoutType,
+
+                    // 压力数据
+                    pressure_value: health.pressureValue,
+                    avg_pressure: health.avgPressure,
+                    pressure_level: health.pressureLevel,
+
+                    // 睡眠数据
+                    last_sleep_duration: health.lastSleepDuration,
+                    last_sleep_duration_hours: health.lastSleepDurationHours,
+                    last_sleep_score: health.lastSleepScore,
+                    sleep_quality: health.sleepQuality,
+                    last_deep_sleep_duration: health.lastDeepSleepDuration,
+                    last_light_sleep_duration: health.lastLightSleepDuration,
+                    last_rem_sleep_duration: health.lastRemSleepDuration,
+
+                    // 血氧数据
+                    blood_oxygen: health.bloodOxygen,
+                    avg_blood_oxygen: health.avgBloodOxygen,
+                    blood_oxygen_status: health.bloodOxygenStatus,
+
+                    // 放松数据
+                    today_relax_duration: health.todayRelaxDuration,
+
+                    // 环境数据
+                    light_lux: health.lightLux,
+                    light_level: health.lightLevel,
+
+                    // 综合评估
+                    overall_health_status: health.overallHealthStatus,
+                    activity_level: health.activityLevel,
+                    needs_rest: health.needsRest,
+                    is_well_rested: health.isWellRested,
+
+                    // 设备信息
+                    has_wearable_device: health.hasWearableDevice,
+                    device_type: health.deviceType,
                 },
                 weatherContext: weatherData ? {
                     condition: weatherData.condition,

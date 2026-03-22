@@ -1,8 +1,35 @@
 pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
-plugins { 
-    id("com.facebook.react.settings") 
+plugins {
+    id("com.facebook.react.settings")
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+        // OPPO Health SDK Maven Repository (Releases)
+        maven {
+            url 'https://maven.columbus.heytapmobi.com/repository/heytap-health-releases/'
+            allowInsecureProtocol = true
+            credentials {
+                username "healthUser"
+                password "8174a9eac1264495b593a9d5ab221491"
+            }
+        }
+        // OPPO Health SDK Maven Repository (Snapshots)
+        maven {
+            url 'https://maven.columbus.heytapmobi.com/repository/heytap-health-snapshots/'
+            allowInsecureProtocol = true
+            credentials {
+                username "healthUser"
+                password "8174a9eac1264495b593a9d5ab221491"
+            }
+        }
     }
+}
+
 extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
 rootProject.name = 'NutriVisionMobile'
 include ':app'
