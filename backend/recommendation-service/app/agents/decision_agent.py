@@ -343,6 +343,93 @@ class ContextualBanditStrategy(MABStrategy):
             light_keywords = ["粥", "汤", "面", "轻食", "沙拉", "清淡", "日料", "健康"]
             if any(k in cuisine_str for k in light_keywords):
                 context_bonus += 0.15
+
+        # ========== 🆕 5.1 压力数据影响（OPPO健康SDK） ==========
+        pressure_value = health_ctx.get("pressure_value", 50)
+        pressure_level = health_ctx.get("pressure_level", "正常")
+        if pressure_value >= 70 or pressure_level in ["偏高", "中等"]:
+            # 高压力状态：推荐舒缓、治愈系食物
+            comfort_keywords = ["甜品", "奶茶", "咖啡", "下午茶", "蛋糕", "巧克力", "冰淇淋", "轻食", "沙拉", "粥"]
+            heavy_keywords = ["麻辣", "辣", "火锅", "烧烤", "油炸", "重口味"]
+            if any(k in cuisine_str for k in comfort_keywords):
+                context_bonus += 0.18
+                logger.info(f"😌 高压力状态({pressure_value})，推荐治愈系食物: {arm.name}")
+            elif any(k in cuisine_str for k in heavy_keywords):
+                context_bonus -= 0.08
+        elif pressure_value <= 30 or pressure_level == "放松":
+            # 放松状态：可以尝试更多种类
+            adventure_keywords = ["新疆", "泰国", "印度", "韩国", "日料", "西餐", "创意"]
+            if any(k in cuisine_str for k in adventure_keywords):
+                context_bonus += 0.08
+
+        # ========== 🆕 5.2 睡眠数据影响（OPPO健康SDK） ==========
+        sleep_duration_hours = health_ctx.get("last_sleep_duration_hours", 0)
+        sleep_quality = health_ctx.get("sleep_quality", "无数据")
+        sleep_score = health_ctx.get("last_sleep_score", 0)
+        needs_rest = health_ctx.get("needs_rest", False)
+
+        if sleep_duration_hours < 6 or sleep_quality == "较差" or sleep_score < 60 or needs_rest:
+            # 睡眠不足：推荐提神、能量补充食物
+            energy_keywords = ["咖啡", "茶", "蛋白", "牛肉", "鸡肉", "能量", "早餐", "粥", "汤", "面"]
+            heavy_keywords = ["火锅", "烧烤", "油炸", "夜宵", "酒"]
+            if any(k in cuisine_str for k in energy_keywords):
+                context_bonus += 0.15
+                logger.info(f"😴 睡眠不足({sleep_duration_hours:.1f}h)，推荐能量补充: {arm.name}")
+            elif any(k in cuisine_str for k in heavy_keywords):
+                context_bonus -= 0.10
+        elif sleep_duration_hours >= 7 and (sleep_quality in ["优秀", "良好"] or sleep_score >= 80):
+            # 睡眠充足：精神状态好，可以尝试更丰富的食物
+            is_well_rested = health_ctx.get("is_well_rested", True)
+            if is_well_rested and rating >= 4.3:
+                context_bonus += 0.06
+
+        # ========== 🆕 5.3 血氧数据影响（OPPO健康SDK） ==========
+        blood_oxygen = health_ctx.get("blood_oxygen", 98)
+        blood_oxygen_status = health_ctx.get("blood_oxygen_status", "正常")
+        if blood_oxygen < 95 or blood_oxygen_status in ["偏低", "低氧"]:
+            # 血氧偏低：推荐清淡、易消化、补铁食物
+            health_keywords = ["轻食", "沙拉", "粥", "汤", "蒸", "清淡", "蔬菜", "牛肉", "菠菜"]
+            avoid_keywords = ["油炸", "烧烤", "火锅", "麻辣", "重口味", "酒"]
+            if any(k in cuisine_str for k in health_keywords):
+                context_bonus += 0.15
+                logger.info(f"🫁 血氧偏低({blood_oxygen}%)，推荐清淡健康食物: {arm.name}")
+            elif any(k in cuisine_str for k in avoid_keywords):
+                context_bonus -= 0.12
+
+        # ========== 🆕 5.4 活动水平影响（OPPO健康SDK） ==========
+        daily_steps = health_ctx.get("daily_steps", 0)
+        daily_calories = health_ctx.get("daily_calories", 0)
+        activity_level = health_ctx.get("activity_level", "无数据")
+
+        if daily_steps >= 10000 or activity_level == "活跃" or daily_calories >= 400:
+            # 高活动量：需要补充能量
+            energy_keywords = ["蛋白", "肉", "牛肉", "鸡肉", "碳水", "米饭", "面", "能量", "健康"]
+            if any(k in cuisine_str for k in energy_keywords):
+                context_bonus += 0.12
+                logger.info(f"🏃 高活动量({daily_steps}步)，推荐能量补充: {arm.name}")
+        elif daily_steps < 2000 and activity_level in ["久坐", "轻度"]:
+            # 久坐状态：推荐清淡、低热量
+            light_keywords = ["轻食", "沙拉", "蔬菜", "清淡", "低脂", "健康"]
+            high_cal_keywords = ["火锅", "烤肉", "炸鸡", "汉堡", "披萨"]
+            if any(k in cuisine_str for k in light_keywords):
+                context_bonus += 0.10
+            elif any(k in cuisine_str for k in high_cal_keywords):
+                context_bonus -= 0.06
+
+        # ========== 🆕 5.5 综合健康状态评估（OPPO健康SDK） ==========
+        overall_health = health_ctx.get("overall_health_status", "无数据")
+        if overall_health == "需关注":
+            # 健康状态需关注：严格推荐健康食物
+            healthy_keywords = ["轻食", "沙拉", "蔬菜", "蒸", "清淡", "健康", "粥", "汤"]
+            unhealthy_keywords = ["油炸", "烧烤", "火锅", "麻辣", "重口味", "夜宵", "酒"]
+            if any(k in cuisine_str for k in healthy_keywords):
+                context_bonus += 0.20
+            elif any(k in cuisine_str for k in unhealthy_keywords):
+                context_bonus -= 0.15
+        elif overall_health == "优秀":
+            # 健康状态优秀：可以享受美食
+            if rating >= 4.5:
+                context_bonus += 0.05
         
         # ========== 🆕 6. 绝对意图匹配（最高优先级，实现"指名道姓"的推荐） ==========
         pure_query = context.get("pure_query", "").strip()
@@ -397,9 +484,20 @@ class ContextualBanditStrategy(MABStrategy):
         # 有上下文时，得分范围大约 0.38 ~ 1.0+；显示时映射为 60~100分
         final_score = base_score + variable_score * 0.3 + context_bonus + historical_score + cf_bonus
         
-        # 调试日志：有上下文加成时打印
+        # 调试日志：有上下文加成时打印（包含完整健康数据）
         if abs(context_bonus) > 0.01:
-            logger.info(f"📊 {arm.name}: base={base_score:.2f} var={variable_score*0.3:.2f} ctx={context_bonus:+.2f} → {final_score:.2f} (temp={temperature}, bad_weather={is_bad_weather}, post_workout={health_ctx.get('is_post_workout', False)}, light={light_level}, cuisine={cuisine_str[:10]})")
+            health_info = (
+                f"post_workout={health_ctx.get('is_post_workout', False)}, "
+                f"pressure={pressure_value}, "
+                f"sleep={sleep_duration_hours:.1f}h/{sleep_quality}, "
+                f"blood_o2={blood_oxygen}%, "
+                f"steps={daily_steps}, "
+                f"health={overall_health}"
+            )
+            logger.info(
+                f"📊 {arm.name}: base={base_score:.2f} var={variable_score*0.3:.2f} ctx={context_bonus:+.2f} → {final_score:.2f} "
+                f"(temp={temperature}, light={light_level}, {health_info}, cuisine={cuisine_str[:10]})"
+            )
         
         return max(0.0, min(1.0, final_score))
 
@@ -838,34 +936,45 @@ class DecisionAgent(BaseAgent):
                                context: Dict[str, Any],
                                rank: int,
                                score: float) -> str:
-        """快速生成推荐理由（规则版本，结合天气/日期/交通，作为AI的fallback）"""
+        """快速生成推荐理由（规则版本，结合天气/日期/交通/健康数据，作为AI的fallback）"""
         features = arm.features
         env = context.get("environment", {})
         weather = env.get("weather", {})
         temporal = env.get("temporal", {})
         traffic = env.get("traffic", {})
-        
+        health_ctx = context.get("health_context", {})
+
         temperature = weather.get("temperature", 20)
         weather_condition = weather.get("condition", "晴")
         is_bad_weather = weather.get("is_bad_weather", False)
-        
+
         meal_period = temporal.get("meal_period", "lunch")
         hour = temporal.get("hour", 12)
         is_weekend = temporal.get("is_weekend", False)
         is_holiday = temporal.get("is_holiday", False)
         festival = temporal.get("festival", "")
-        
+
         congestion_level = traffic.get("congestion_level", "畅通")
         congestion_index = traffic.get("congestion_index", 1.0)
-        
+
         rating = features.get("rating", 4.0) or 4.0
         distance = features.get("distance", 1000) or 1000
         delivery_time = features.get("delivery_time", 25) or 25
         cuisine = features.get("cuisine", features.get("cuisine_type", ""))
-        
+
+        # 健康数据
+        pressure_value = health_ctx.get("pressure_value", 50)
+        pressure_level = health_ctx.get("pressure_level", "正常")
+        sleep_duration = health_ctx.get("last_sleep_duration_hours", 0)
+        sleep_quality = health_ctx.get("sleep_quality", "无数据")
+        blood_oxygen = health_ctx.get("blood_oxygen", 98)
+        daily_steps = health_ctx.get("daily_steps", 0)
+        is_post_workout = health_ctx.get("is_post_workout", False)
+        overall_health = health_ctx.get("overall_health_status", "无数据")
+
         # 构建理由部分
         parts = []
-        
+
         # 1. 排名标识
         if rank == 1:
             parts.append("🏆今日首推")
@@ -927,7 +1036,38 @@ class DecisionAgent(BaseAgent):
         # 6. 配送速度
         if delivery_time <= 20:
             parts.append("⚡闪电配送")
-        
+
+        # ========== 7. 健康状态相关推荐理由（OPPO健康数据） ==========
+        # 运动后推荐
+        if is_post_workout:
+            healthy_keywords = ["轻食", "沙拉", "健康", "蛋白", "鸡胸"]
+            if any(k in cuisine for k in healthy_keywords):
+                parts.append("🏃运动后补充")
+
+        # 压力状态
+        if pressure_value >= 70 or pressure_level in ["偏高", "中等"]:
+            comfort_keywords = ["甜品", "奶茶", "咖啡", "蛋糕"]
+            if any(k in cuisine for k in comfort_keywords):
+                parts.append("😌舒缓心情")
+
+        # 睡眠不足
+        if sleep_duration < 6 or sleep_quality == "较差":
+            energy_keywords = ["咖啡", "茶", "蛋白", "能量"]
+            if any(k in cuisine for k in energy_keywords):
+                parts.append("☕提神醒脑")
+
+        # 高活动量
+        if daily_steps >= 10000:
+            energy_keywords = ["蛋白", "肉", "牛肉", "碳水"]
+            if any(k in cuisine for k in energy_keywords):
+                parts.append("💪能量补充")
+
+        # 健康状态需关注
+        if overall_health == "需关注":
+            healthy_keywords = ["轻食", "沙拉", "蔬菜", "蒸", "清淡"]
+            if any(k in cuisine for k in healthy_keywords):
+                parts.append("💚健康之选")
+
         # 组合理由（去重并限制数量）
         unique_parts = list(dict.fromkeys(parts))  # 保持顺序去重
         if unique_parts:
@@ -1036,6 +1176,44 @@ class DecisionAgent(BaseAgent):
                 user_context += "，注重品质"
             elif user_segment == "budget":
                 user_context += f"，预算{max_price}元内"
+
+            # 🆕 健康状态描述（OPPO健康SDK数据）
+            health_ctx = context.get("health_context", {})
+            health_analysis = []
+
+            # 运动状态
+            if health_ctx.get("is_post_workout", False):
+                health_analysis.append("🏃 刚运动完，需要补充能量和蛋白质")
+
+            # 压力状态
+            pressure_value = health_ctx.get("pressure_value", 50)
+            pressure_level = health_ctx.get("pressure_level", "正常")
+            if pressure_value >= 70 or pressure_level in ["偏高", "中等"]:
+                health_analysis.append(f"😰 压力偏高({pressure_value}分)，需要舒缓放松")
+            elif pressure_value <= 30 or pressure_level == "放松":
+                health_analysis.append("😌 心情放松，适合尝新")
+
+            # 睡眠状态
+            sleep_hours = health_ctx.get("last_sleep_duration_hours", 0)
+            sleep_quality = health_ctx.get("sleep_quality", "无数据")
+            if sleep_hours < 6 or sleep_quality == "较差":
+                health_analysis.append(f"😴 睡眠不足({sleep_hours:.1f}h)，需要提神补充能量")
+            elif sleep_hours >= 7 and sleep_quality in ["优秀", "良好"]:
+                health_analysis.append("😊 睡眠充足，精神状态好")
+
+            # 活动量
+            daily_steps = health_ctx.get("daily_steps", 0)
+            if daily_steps >= 10000:
+                health_analysis.append(f"🚶 今日活动量大({daily_steps}步)，需要能量补充")
+            elif daily_steps < 2000:
+                health_analysis.append("🪑 久坐状态，建议清淡饮食")
+
+            # 综合健康状态
+            overall_health = health_ctx.get("overall_health_status", "无数据")
+            if overall_health == "需关注":
+                health_analysis.append("⚠️ 健康状态需关注，建议健康饮食")
+
+            health_context_str = "\n• ".join(health_analysis) if health_analysis else "健康状态正常"
             
             # 为所有餐厅生成AI理由（最多10个）
             target_count = min(len(recommendations), 10)
@@ -1051,13 +1229,16 @@ class DecisionAgent(BaseAgent):
                 for i, r in enumerate(target_restaurants)
             ])
             
-            # 更智能的prompt，让DeepSeek理解完整上下文
-            prompt = f"""你是一个贴心的美食推荐助手。请根据当前环境为以下{target_count}家餐厅生成个性化推荐理由。
+            # 更智能的prompt，让DeepSeek理解完整上下文（包含健康数据）
+            prompt = f"""你是一个贴心的美食推荐助手。请根据当前环境和用户健康状态为以下{target_count}家餐厅生成个性化推荐理由。
 
 🌍 【当前环境】
 • 天气：{weather_condition}，{temperature}°C，湿度{humidity}%
 • 时间：{time_desc} {period_desc}（{hour}点）
 • 交通：{congestion_level}（拥堵指数{congestion_index:.1f}）
+
+💚 【健康状态】（来自OPPO健康监测）
+• {health_context_str}
 
 📊 【环境分析】
 • {weather_analysis[0]}
@@ -1068,14 +1249,18 @@ class DecisionAgent(BaseAgent):
 {restaurants_info}
 
 ✍️ 【输出要求】
-1. 每条理由25-45字，必须体现当前环境特点
+1. 每条理由25-45字，必须体现当前环境和健康状态特点
 2. 语气温暖亲切，适当使用1-2个emoji
-3. 根据环境智能匹配餐厅特点，例如：
+3. 根据环境和健康状态智能匹配餐厅特点，例如：
    - 🥶 低温天：火锅/热汤类提"暖身驱寒"
    - 🌧️ 雨天：强调"温暖治愈""配送快"
    - 🚗 拥堵时：近距离餐厅提"就在附近""快速送达"
    - 🎉 周末/节日：可提"犒劳自己""享受美食"
    - ☀️ 好天气：可提"心情愉悦""美食相伴"
+   - 🏃 运动后：轻食/蛋白类提"运动后补充""健康能量"
+   - 😰 压力大：甜品/奶茶类提"舒缓压力""治愈心情"
+   - 😴 睡眠不足：咖啡/能量类提"提神醒脑""补充活力"
+   - 🚶 活动量大：碳水/蛋白类提"能量补给""活力满满"
 4. 第1名可特别强调"今日首推"
 5. 严格按以下格式输出，每行一条：
 1. 理由内容
@@ -1358,9 +1543,57 @@ class DecisionAgent(BaseAgent):
             if meal_period == "lunch":
                 reasoning_parts.append("工作日午餐时段，为您优选出餐快、性价比高的餐厅")
 
+        # 🆕 健康状态因素（OPPO健康SDK）
+        health_ctx = context.get("health_context", {})
+        if health_ctx:
+            # 运动状态
+            if health_ctx.get("is_post_workout", False):
+                environment_summary.append("🏃 运动后")
+                reasoning_parts.append("检测到您刚运动完毕，为您推荐富含蛋白质、清淡易消化的健康餐食")
+                weight_explanations.append("⚖️ 健康食物权重+22%（运动后需补充蛋白质和能量）")
+
+            # 压力状态
+            pressure_value = health_ctx.get("pressure_value", 50)
+            pressure_level = health_ctx.get("pressure_level", "正常")
+            if pressure_value >= 70 or pressure_level in ["偏高", "中等"]:
+                environment_summary.append(f"😰 压力{pressure_level}")
+                reasoning_parts.append(f"检测到您当前压力偏高（{pressure_value}分），为您推荐舒缓心情的治愈系美食")
+                weight_explanations.append("⚖️ 治愈系食物权重+18%（高压状态需舒缓放松）")
+
+            # 睡眠状态
+            sleep_hours = health_ctx.get("last_sleep_duration_hours", 0)
+            sleep_quality = health_ctx.get("sleep_quality", "无数据")
+            if sleep_hours < 6 or sleep_quality == "较差":
+                environment_summary.append(f"😴 睡眠{sleep_hours:.1f}h")
+                reasoning_parts.append(f"检测到您昨晚睡眠不足（{sleep_hours:.1f}小时），为您推荐提神补充能量的餐食")
+                weight_explanations.append("⚖️ 能量补充类权重+15%（睡眠不足需提神醒脑）")
+
+            # 活动量
+            daily_steps = health_ctx.get("daily_steps", 0)
+            if daily_steps >= 10000:
+                environment_summary.append(f"🚶 {daily_steps}步")
+                reasoning_parts.append(f"今日步数已达{daily_steps}步，运动量较大，为您推荐能量补充类餐食")
+                weight_explanations.append("⚖️ 高热量营养餐权重+12%（高活动量需补充能量）")
+            elif daily_steps < 2000 and health_ctx.get("activity_level") in ["久坐", "轻度"]:
+                reasoning_parts.append("今日活动量较少，为您推荐清淡、低热量的健康餐食")
+                weight_explanations.append("⚖️ 清淡低热量权重+10%（久坐状态建议清淡饮食）")
+
+            # 血氧状态
+            blood_oxygen = health_ctx.get("blood_oxygen", 98)
+            blood_oxygen_status = health_ctx.get("blood_oxygen_status", "正常")
+            if blood_oxygen < 95 or blood_oxygen_status in ["偏低", "低氧"]:
+                reasoning_parts.append(f"检测到血氧偏低（{blood_oxygen}%），为您推荐清淡易消化、富含铁质的健康餐食")
+                weight_explanations.append("⚖️ 健康清淡权重+15%（血氧偏低需注意饮食）")
+
+            # 综合健康状态
+            overall_health = health_ctx.get("overall_health_status", "无数据")
+            if overall_health == "需关注":
+                reasoning_parts.append("综合健康状态需关注，已为您严格筛选健康营养的餐食选项")
+                weight_explanations.append("⚖️ 健康餐权重+20%（健康状态需关注，优先健康饮食）")
+
         # 用户行为历史因素
         if profile.get("cuisine_order_frequency"):
-            top_cuisines = sorted(profile["cuisine_order_frequency"].items(), 
+            top_cuisines = sorted(profile["cuisine_order_frequency"].items(),
                                    key=lambda x: x[1], reverse=True)[:2]
             if top_cuisines:
                 cuisine_str = "、".join([c[0] for c in top_cuisines])
