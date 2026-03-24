@@ -92,28 +92,52 @@ const AddressEditScreen = ({ navigation }: any) => {
     );
 };
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5', padding: 20 },
-    form: { backgroundColor: '#fff', borderRadius: 12, padding: 20 },
-    inputGroup: { marginBottom: 20 },
-    label: { fontSize: 14, color: '#333', marginBottom: 8, fontWeight: 'bold' },
-    required: { color: 'red' },
-    input: {
+    container: {
+        flex: 1,
+        backgroundColor: colors.background,
+        padding: spacing.xl,
+    },
+    form: {
+        backgroundColor: colors.cardBg,
+        borderRadius: borderRadius.xl,
+        padding: spacing.xl,
         borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
-        backgroundColor: '#fff'
+        borderColor: colors.cardBorder,
+    },
+    inputGroup: { marginBottom: spacing.xl },
+    label: {
+        fontSize: fontSize.md,
+        color: colors.textPrimary,
+        marginBottom: spacing.sm,
+        fontWeight: fontWeight.semibold,
+    },
+    required: { color: colors.error },
+    input: {
+        borderWidth: 1.5,
+        borderColor: colors.border,
+        borderRadius: borderRadius.lg,
+        padding: spacing.md,
+        fontSize: fontSize.lg,
+        backgroundColor: colors.surface,
+        color: colors.textPrimary,
     },
     saveBtn: {
-        backgroundColor: '#e85a2d',
-        borderRadius: 8,
-        paddingVertical: 14,
+        backgroundColor: colors.primary,
+        borderRadius: borderRadius.full,
+        paddingVertical: spacing.lg,
         alignItems: 'center',
-        marginTop: 10,
+        marginTop: spacing.md,
+        ...shadows.primary,
     },
-    saveText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+    saveText: {
+        color: colors.textOnPrimary,
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+    },
 });
 
 export default AddressEditScreen;

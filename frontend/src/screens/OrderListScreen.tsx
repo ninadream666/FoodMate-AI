@@ -177,58 +177,131 @@ const OrderListScreen = ({ navigation }: any) => {
     );
 };
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    list: { padding: 16 },
+    container: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
+    list: { padding: spacing.lg },
     card: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 12,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        shadowOffset: { width: 0, height: 2 }
+        backgroundColor: colors.cardBg,
+        borderRadius: borderRadius.xl,
+        padding: spacing.lg,
+        marginBottom: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
+        ...shadows.card,
     },
     cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: spacing.md,
     },
     merchantRow: { flexDirection: 'row', alignItems: 'center' },
-    merchantIcon: { fontSize: 18, marginRight: 8 },
-    merchantName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-    arrow: { fontSize: 14, color: '#999', marginLeft: 4 },
-    statusText: { fontSize: 14, fontWeight: 'bold' },
+    merchantIcon: { fontSize: 18, marginRight: spacing.sm },
+    merchantName: {
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
+    arrow: {
+        fontSize: fontSize.sm,
+        color: colors.textTertiary,
+        marginLeft: spacing.xs,
+    },
+    statusText: {
+        fontSize: fontSize.sm,
+        fontWeight: fontWeight.bold,
+    },
 
-    cardBody: { paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
-    timeText: { fontSize: 12, color: '#999', marginBottom: 8 },
-    infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    itemSummary: { fontSize: 14, color: '#666' },
-    totalPrice: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+    cardBody: {
+        paddingBottom: spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.divider,
+    },
+    timeText: {
+        fontSize: fontSize.xs,
+        color: colors.textTertiary,
+        marginBottom: spacing.sm,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    itemSummary: {
+        fontSize: fontSize.sm,
+        color: colors.textSecondary,
+    },
+    totalPrice: {
+        fontSize: fontSize.xl,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
 
-    cardFooter: { flexDirection: 'row', justifyContent: 'flex-end', paddingTop: 12, gap: 10 },
+    cardFooter: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        paddingTop: spacing.md,
+        gap: spacing.sm,
+    },
     btn: {
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 6,
-        borderWidth: 1,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.md,
+        borderRadius: borderRadius.lg,
+        borderWidth: 1.5,
         minWidth: 80,
         alignItems: 'center',
     },
-    cancelBtn: { borderColor: '#ddd', backgroundColor: '#fff' },
-    cancelBtnText: { color: '#666', fontSize: 12 },
+    cancelBtn: {
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+    },
+    cancelBtnText: {
+        color: colors.textSecondary,
+        fontSize: fontSize.xs,
+        fontWeight: fontWeight.medium,
+    },
 
-    detailBtn: { borderColor: '#e85a2d', backgroundColor: '#fff5f2' },
-    detailBtnText: { color: '#e85a2d', fontSize: 12, fontWeight: 'bold' },
+    detailBtn: {
+        borderColor: colors.primary,
+        backgroundColor: colors.primaryBg,
+        ...shadows.sm,
+    },
+    detailBtnText: {
+        color: colors.primary,
+        fontSize: fontSize.xs,
+        fontWeight: fontWeight.bold,
+    },
 
     emptyContainer: { alignItems: 'center', marginTop: 100 },
-    emptyText: { color: '#999', fontSize: 16, marginBottom: 20 },
-    goHomeBtn: { backgroundColor: '#e85a2d', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
-    goHomeText: { color: '#fff', fontWeight: 'bold' },
-    loading: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.5)' },
+    emptyText: {
+        color: colors.textTertiary,
+        fontSize: fontSize.lg,
+        marginBottom: spacing.xl,
+    },
+    goHomeBtn: {
+        backgroundColor: colors.primary,
+        paddingHorizontal: spacing.xxl,
+        paddingVertical: spacing.md,
+        borderRadius: borderRadius.full,
+        ...shadows.primary,
+    },
+    goHomeText: {
+        color: colors.textOnPrimary,
+        fontWeight: fontWeight.bold,
+        fontSize: fontSize.md,
+    },
+    loading: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(250, 249, 247, 0.92)',
+    },
 });
 
 export default OrderListScreen;

@@ -68,29 +68,130 @@ const PaymentSuccessScreen = ({ route, navigation }: any) => {
     );
 };
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    content: { padding: 20, paddingTop: 60, flex: 1, justifyContent: 'center' },
-    card: { backgroundColor: '#fff', borderRadius: 16, padding: 30, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 },
-    iconContainer: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#e6fffa', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-    checkIcon: { fontSize: 40, color: '#059669', fontWeight: 'bold' },
-    title: { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 8 },
-    subtitle: { fontSize: 16, color: '#666', marginBottom: 20 },
-    divider: { width: '100%', height: 1, backgroundColor: '#eee', marginVertical: 20 },
+    container: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
+    content: {
+        padding: spacing.xl,
+        paddingTop: 60,
+        flex: 1,
+        justifyContent: 'center',
+    },
+    card: {
+        backgroundColor: colors.surface,
+        borderRadius: borderRadius.xxl,
+        padding: spacing.xxxl,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
+        ...shadows.xl,
+    },
+    iconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: colors.successBg,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: spacing.xl,
+    },
+    checkIcon: {
+        fontSize: 40,
+        color: colors.success,
+        fontWeight: fontWeight.bold,
+    },
+    title: {
+        fontSize: fontSize.title,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+        marginBottom: spacing.sm,
+    },
+    subtitle: {
+        fontSize: fontSize.lg,
+        color: colors.textSecondary,
+        marginBottom: spacing.xl,
+    },
+    divider: {
+        width: '100%',
+        height: 1,
+        backgroundColor: colors.divider,
+        marginVertical: spacing.xl,
+    },
 
-    row: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', marginBottom: 12 },
-    label: { color: '#999', fontSize: 14 },
-    value: { color: '#333', fontSize: 14, fontWeight: 'bold' },
-    price: { color: '#e85a2d', fontSize: 16, fontWeight: 'bold' },
+    row: {
+        flexDirection: 'row',
+        width: '100%',
+        justifyContent: 'space-between',
+        marginBottom: spacing.md,
+    },
+    label: {
+        color: colors.textTertiary,
+        fontSize: fontSize.sm,
+    },
+    value: {
+        color: colors.textPrimary,
+        fontSize: fontSize.sm,
+        fontWeight: fontWeight.bold,
+    },
+    price: {
+        color: colors.primary,
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+    },
 
-    savingBox: { flexDirection: 'row', backgroundColor: '#f0fdf4', padding: 10, borderRadius: 8, width: '100%', alignItems: 'center', marginTop: 10 },
-    savingIcon: { marginRight: 8 },
-    savingText: { color: '#166534', fontSize: 12, fontWeight: 'bold' },
+    savingBox: {
+        flexDirection: 'row',
+        backgroundColor: colors.successBg,
+        padding: spacing.md,
+        borderRadius: borderRadius.lg,
+        width: '100%',
+        alignItems: 'center',
+        marginTop: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.frostedBorder,
+    },
+    savingIcon: { marginRight: spacing.sm },
+    savingText: {
+        color: colors.success,
+        fontSize: fontSize.sm,
+        fontWeight: fontWeight.bold,
+    },
 
-    primaryBtn: { width: '100%', height: 50, backgroundColor: '#e85a2d', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-    primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-    secondaryBtn: { width: '100%', height: 50, borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e85a2d' },
-    secondaryBtnText: { color: '#e85a2d', fontSize: 16, fontWeight: 'bold' },
+    primaryBtn: {
+        width: '100%',
+        height: 54,
+        backgroundColor: colors.primary,
+        borderRadius: borderRadius.full,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: spacing.md,
+        ...shadows.primary,
+    },
+    primaryBtnText: {
+        color: colors.textOnPrimary,
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+    },
+    secondaryBtn: {
+        width: '100%',
+        height: 54,
+        borderRadius: borderRadius.full,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1.5,
+        borderColor: colors.primary,
+        backgroundColor: colors.surface,
+    },
+    secondaryBtnText: {
+        color: colors.primary,
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+    },
 });
 
 export default PaymentSuccessScreen;

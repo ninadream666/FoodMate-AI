@@ -156,70 +156,75 @@ const NutriVisionLoading: React.FC<NutriVisionLoadingProps> = ({ imageUri, onCan
     );
 };
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#000' },
+    container: { flex: 1, backgroundColor: colors.textPrimary },
     backgroundImage: { width: '100%', height: '100%', position: 'absolute' },
-    whiteOverlay: { 
-        ...StyleSheet.absoluteFillObject, 
-        backgroundColor: 'rgba(255,255,255,0.85)' // 白色蒙层
+    whiteOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: colors.frostedBgStrong // 磨砂白色蒙层
     },
-    header: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        paddingHorizontal: 16,
-        paddingTop: 10
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: spacing.lg,
+        paddingTop: spacing.md
     },
     closeBtn: {
         width: 40, height: 40,
-        backgroundColor: 'rgba(0,0,0,0.05)',
-        borderRadius: 20,
+        backgroundColor: colors.cardBg,
+        borderRadius: borderRadius.full,
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
     },
-    closeIcon: { fontSize: 20, color: '#333' },
-    headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
-    
+    closeIcon: { fontSize: fontSize.xl, color: colors.textPrimary },
+    headerTitle: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.textPrimary },
+
     centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginBottom: 50 },
     scannerWrapper: { width: 300, height: 300, justifyContent: 'center', alignItems: 'center' },
-    
+
     pulseRing: {
         position: 'absolute',
         width: 280, height: 280, borderRadius: 140,
-        borderWidth: 2, borderColor: 'rgba(232, 90, 45, 0.2)',
+        borderWidth: 2, borderColor: colors.primaryBg,
     },
     radarContainer: {
         width: 200, height: 200, borderRadius: 100,
-        borderWidth: 2, borderColor: '#e85a2d',
+        borderWidth: 2, borderColor: colors.primary,
         overflow: 'hidden', justifyContent: 'center', alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.5)',
-        elevation: 10, shadowColor: '#e85a2d', shadowOpacity: 0.3, shadowRadius: 10
+        backgroundColor: colors.frostedBg,
+        ...shadows.lg,
     },
     radarSweep: {
         width: '100%', height: '100%', position: 'absolute',
     },
     radarGradient: {
-        width: '100%', height: '50%', 
-        backgroundColor: 'rgba(232, 90, 45, 0.15)', // 扫描扇形颜色
-        borderBottomWidth: 2, borderBottomColor: '#e85a2d'
+        width: '100%', height: '50%',
+        backgroundColor: colors.primaryBg, // 扫描扇形颜色
+        borderBottomWidth: 2, borderBottomColor: colors.primary
     },
     centerIcon: { zIndex: 10 },
-    
-    statusContainer: { marginTop: 40, alignItems: 'center' },
-    loadingText: { fontSize: 20, fontWeight: 'bold', color: '#e85a2d', marginBottom: 10 },
-    dotsContainer: { flexDirection: 'row', gap: 6 },
-    dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#e85a2d' },
-    
-    bottomContainer: { padding: 30, paddingBottom: 50 },
-    progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, alignItems: 'flex-end' },
-    progressLabel: { fontSize: 14, color: '#666', fontWeight: '500' },
-    progressPercent: { fontSize: 12, color: '#e85a2d', fontWeight: 'bold' },
-    progressBarBg: { height: 6, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 3, overflow: 'hidden' },
-    progressBarFill: { height: '100%', backgroundColor: '#e85a2d', borderRadius: 3 },
-    
-    poweredBy: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 24, opacity: 0.6 },
-    poweredByIcon: { fontSize: 14, marginRight: 4 },
-    poweredByText: { fontSize: 12, color: '#666' }
+
+    statusContainer: { marginTop: spacing.xxxl, alignItems: 'center' },
+    loadingText: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.primary, marginBottom: spacing.md },
+    dotsContainer: { flexDirection: 'row', gap: spacing.sm },
+    dot: { width: 6, height: 6, borderRadius: borderRadius.xs, backgroundColor: colors.primary },
+
+    bottomContainer: { padding: spacing.xxxl, paddingBottom: 50 },
+    progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm, alignItems: 'flex-end' },
+    progressLabel: { fontSize: fontSize.md, color: colors.textSecondary, fontWeight: fontWeight.medium },
+    progressPercent: { fontSize: fontSize.sm, color: colors.primary, fontWeight: fontWeight.bold },
+    progressBarBg: { height: 6, backgroundColor: colors.border, borderRadius: borderRadius.xs, overflow: 'hidden' },
+    progressBarFill: { height: '100%', backgroundColor: colors.primary, borderRadius: borderRadius.xs },
+
+    poweredBy: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: spacing.xxl, opacity: 0.6 },
+    poweredByIcon: { fontSize: fontSize.md, marginRight: spacing.xs },
+    poweredByText: { fontSize: fontSize.sm, color: colors.textSecondary }
 });
 
 export default NutriVisionLoading;

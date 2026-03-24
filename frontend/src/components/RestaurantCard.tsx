@@ -1,6 +1,8 @@
 // src/components/RestaurantCard.tsx
+// 北欧风格磨砂卡片设计
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
 
 // 默认图片列表
 const defaultImages = [
@@ -47,22 +49,40 @@ const RestaurantCard = ({ restaurant, onPress }: Props) => {
         return '#6b7280'; // 灰色 - 较低
     };
 
+    // 获取评分背景色（北欧风格柔和色调）
+    const getScoreBgColor = (s: number) => {
+        if (s >= 90) return colors.successBg;
+        if (s >= 80) return colors.warningBg;
+        if (s >= 70) return colors.primaryBg;
+        return colors.surfaceFrosted;
+    };
+
+    // 获取评分文字色
+    const getScoreTextColor = (s: number) => {
+        if (s >= 90) return colors.success;
+        if (s >= 80) return colors.warning;
+        if (s >= 70) return colors.primary;
+        return colors.textSecondary;
+    };
+
     return (
         <TouchableOpacity
             style={styles.card}
             onPress={() => onPress(restaurant)}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
         >
-            {/* 顶部图片区域 */}
+            {/* 顶部图片区域 - 圆角裁剪 */}
             <View style={styles.imageContainer}>
                 <Image
                     source={{ uri: imageUrl }}
                     style={styles.image}
                     resizeMode="cover"
                 />
-                {/* 评分角标 - 使用动态颜色 */}
-                <View style={[styles.scoreBadge, { backgroundColor: getScoreColor(score) }]}>
-                    <Text style={styles.scoreText}>{Math.round(score)}分</Text>
+                {/* 评分角标 - 磨砂玻璃效果 */}
+                <View style={[styles.scoreBadge, { backgroundColor: getScoreBgColor(score) }]}>
+                    <Text style={[styles.scoreText, { color: getScoreTextColor(score) }]}>
+                        {Math.round(score)}分
+                    </Text>
                 </View>
             </View>
 
@@ -71,16 +91,26 @@ const RestaurantCard = ({ restaurant, onPress }: Props) => {
                 <Text style={styles.name} numberOfLines={1}>{name}</Text>
 
                 <View style={styles.metaRow}>
-                    <Text style={styles.ratingText}>⭐ {typeof rating === 'number' ? rating.toFixed(1) : rating}</Text>
-                    <Text style={styles.metaText}> • {typeof deliveryTime === 'number' ? `${deliveryTime}分钟` : deliveryTime}</Text>
-                    <Text style={styles.metaText}> • {distanceDisplay}</Text>
+                    <Text style={styles.ratingText}>
+                        {typeof rating === 'number' ? rating.toFixed(1) : rating}
+                    </Text>
+                    <Text style={styles.metaText}>
+                        {typeof deliveryTime === 'number' ? `${deliveryTime}分钟` : deliveryTime}
+                    </Text>
+                    <Text style={styles.metaText}>{distanceDisplay}</Text>
+                    {/* 免费配送标签 */}
+                    {restaurant.freeDelivery && (
+                        <View style={styles.deliveryTag}>
+                            <Text style={styles.deliveryTagText}>免配送费</Text>
+                        </View>
+                    )}
                 </View>
 
-                {/* 推荐理由 - 使用 AI 生成的理由 */}
+                {/* 推荐理由 - 北欧风格磨砂卡片 */}
                 {recommendationReason ? (
                     <View style={styles.reasonContainer}>
                         <Text style={styles.reasonText} numberOfLines={2}>
-                            💡 {recommendationReason}
+                            {recommendationReason}
                         </Text>
                     </View>
                 ) : null}
@@ -90,71 +120,98 @@ const RestaurantCard = ({ restaurant, onPress }: Props) => {
 };
 
 const styles = StyleSheet.create({
+    // 北欧风磨砂卡片 - 参考图片3的设计
     card: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        marginBottom: 16,
-        // 阴影
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3, // Android 阴影
+        backgroundColor: colors.cardBg,
+        borderRadius: borderRadius.xl,
+        marginBottom: spacing.lg,
         overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
+        ...shadows.card,  // 可点击元素才有阴影
     },
     imageContainer: {
-        height: 150,
+        height: 160,
         width: '100%',
         position: 'relative',
+        backgroundColor: colors.backgroundGradientEnd,
+        borderTopLeftRadius: borderRadius.xl,
+        borderTopRightRadius: borderRadius.xl,
+        overflow: 'hidden',
     },
     image: {
         width: '100%',
         height: '100%',
     },
+    // 评分角标 - 磨砂玻璃效果
     scoreBadge: {
         position: 'absolute',
-        top: 8,
-        right: 8,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
+        top: spacing.md,
+        right: spacing.md,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderRadius: borderRadius.lg,
+        backgroundColor: colors.frostedBgStrong,
+        borderWidth: 1,
+        borderColor: colors.frostedBorder,
     },
     scoreText: {
-        color: '#ffffff', // 白色文字，配合动态背景色
-        fontWeight: 'bold',
-        fontSize: 12,
+        color: colors.textPrimary,
+        fontWeight: fontWeight.bold,
+        fontSize: fontSize.sm,
     },
     infoContainer: {
-        padding: 12,
+        padding: spacing.lg,
+        backgroundColor: colors.surface,
     },
     name: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 6,
+        fontSize: fontSize.xl,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+        marginBottom: spacing.sm,
     },
     metaRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: spacing.md,
+        flexWrap: 'wrap',
     },
     ratingText: {
-        color: '#FFD700', // 金色星星
-        fontWeight: 'bold',
-        fontSize: 14,
+        color: colors.warning,
+        fontWeight: fontWeight.bold,
+        fontSize: fontSize.md,
     },
     metaText: {
-        color: '#666',
-        fontSize: 12,
+        color: colors.textSecondary,
+        fontSize: fontSize.sm,
+        marginLeft: spacing.sm,
     },
+    // 配送标签 - 北欧柔和绿色
+    deliveryTag: {
+        backgroundColor: colors.successBg,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: borderRadius.sm,
+        marginLeft: spacing.sm,
+    },
+    deliveryTagText: {
+        color: colors.secondary,
+        fontSize: fontSize.xs,
+        fontWeight: fontWeight.medium,
+    },
+    // AI推荐理由容器 - 柔和的磨砂效果
     reasonContainer: {
-        backgroundColor: '#fff5f2', // 浅橙色背景
-        padding: 6,
-        borderRadius: 4,
+        backgroundColor: colors.primaryBg,
+        padding: spacing.md,
+        borderRadius: borderRadius.md,
+        borderWidth: 1,
+        borderColor: colors.frostedBorder,
     },
     reasonText: {
-        color: '#e85a2d',
-        fontSize: 12,
+        color: colors.primary,
+        fontSize: fontSize.sm,
+        lineHeight: 20,
+        fontWeight: fontWeight.medium,
     },
 });
 

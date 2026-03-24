@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
 
 const defaultImage = 'https://lh3.googleusercontent.com/aida-public/AB6AXuAsKKNZeioee-JViVf_SBcbT3rBBvZu4DRFaNV6zHlXtXEjC2CNTIsAmJI7F9lgIkkqvLI7GQ6aPH6dVIVSJYKiHlfzeJz8XvF7xFAKjKqhEaRfTu-NLionE8GH6f18T0nyhqQZK-DJTCPCdctLKhSoQdXHd52-CSkDC81U5LPnZtqdpW9a81FBB9suOIFC2VSfFJpnsmbj7pDYXC2LSYX9H8h_XhM49_8PrKxP1JwsEgNlm_YYWEv_4lAJqN8e8_e-8meysrlbEIft';
 
@@ -32,55 +33,63 @@ const MenuListItem = ({ dish, onAdd }: Props) => {
     );
 };
 
+// 北欧磨砂风格样式
 const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-        backgroundColor: '#fff',
+        padding: spacing.lg,
+        marginHorizontal: spacing.lg,
+        marginVertical: spacing.sm,
+        backgroundColor: colors.cardBg,
+        borderRadius: borderRadius.lg,
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
     },
+    // 圆角图片 - 磨砂风格
     image: {
-        width: 80,
-        height: 80,
-        borderRadius: 8,
-        backgroundColor: '#eee',
+        width: 72,
+        height: 72,
+        borderRadius: borderRadius.md,
+        backgroundColor: colors.backgroundGradientEnd,
     },
     info: {
         flex: 1,
-        marginLeft: 12,
+        marginLeft: spacing.md,
         justifyContent: 'center',
     },
     name: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 4,
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.semibold,
+        color: colors.textPrimary,
+        marginBottom: spacing.xs,
     },
     desc: {
-        fontSize: 12,
-        color: '#999',
-        marginBottom: 8,
+        fontSize: fontSize.sm,
+        color: colors.textTertiary,
+        marginBottom: spacing.sm,
+        lineHeight: 18,
     },
     price: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#e85a2d',
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        color: colors.primary,
     },
+    // 添加按钮 - 可点击元素带阴影
     addButton: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#e85a2d',
+        width: 36,
+        height: 36,
+        borderRadius: borderRadius.full,
+        backgroundColor: colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
+        ...shadows.primary,
     },
     addText: {
-        color: '#fff',
-        fontSize: 24,
-        lineHeight: 26,
-        marginTop: -2,
+        color: colors.textOnPrimary,
+        fontSize: 22,
+        lineHeight: 24,
+        fontWeight: fontWeight.medium,
     },
 });
 

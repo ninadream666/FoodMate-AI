@@ -33,72 +33,73 @@ const CartBar = ({ cartItems, onViewCart }: Props) => {
     );
 };
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
 const styles = StyleSheet.create({
     container: {
         position: 'absolute',
-        bottom: 20,
-        left: 16,
-        right: 16,
-        height: 60,
-        backgroundColor: '#333',
-        borderRadius: 30,
+        bottom: spacing.xl,
+        left: spacing.lg,
+        right: spacing.lg,
+        height: 64,
+        backgroundColor: colors.textPrimary,
+        borderRadius: borderRadius.full,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        // 阴影
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
+        paddingHorizontal: spacing.xl,
+        ...shadows.xl,
     },
     cartIconContainer: {
         position: 'relative',
-        marginRight: 16,
+        marginRight: spacing.lg,
     },
     icon: {
         fontSize: 24,
-        color: '#fff',
+        color: colors.textOnPrimary,
     },
     badge: {
         position: 'absolute',
         top: -8,
         right: -8,
-        backgroundColor: '#e85a2d',
-        borderRadius: 10,
-        minWidth: 18,
-        height: 18,
+        backgroundColor: colors.primary,
+        borderRadius: borderRadius.full,
+        minWidth: 20,
+        height: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 4,
+        paddingHorizontal: spacing.xs,
+        borderWidth: 2,
+        borderColor: colors.textPrimary,
     },
     badgeText: {
-        color: '#fff',
-        fontSize: 10,
-        fontWeight: 'bold',
+        color: colors.textOnPrimary,
+        fontSize: fontSize.xs,
+        fontWeight: fontWeight.bold,
     },
     priceInfo: {
         flex: 1,
     },
     totalPrice: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
+        color: colors.textOnPrimary,
+        fontSize: fontSize.xl,
+        fontWeight: fontWeight.bold,
     },
     subText: {
-        color: '#999',
-        fontSize: 10,
+        color: colors.textTertiary,
+        fontSize: fontSize.xs,
     },
     checkoutBtn: {
-        backgroundColor: '#e85a2d',
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 20,
+        backgroundColor: colors.primary,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.lg,
+        borderRadius: borderRadius.full,
+        ...shadows.sm,
     },
     checkoutText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 14,
+        color: colors.textOnPrimary,
+        fontWeight: fontWeight.bold,
+        fontSize: fontSize.sm,
     },
 });
 

@@ -381,40 +381,173 @@ const OrderConfirmScreen = ({ route, navigation }: any) => {
     );
 };
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    content: { padding: 16, paddingBottom: 100 },
-    card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16 },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-    cardTitle: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-    linkText: { color: '#e85a2d', fontSize: 14 },
-    addrText: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 4 },
-    contactText: { fontSize: 14, color: '#666' },
-    placeholderText: { color: '#e85a2d', fontSize: 16, textAlign: 'center', padding: 10 },
+    container: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
+    content: { padding: spacing.lg, paddingBottom: 100 },
+    card: {
+        backgroundColor: colors.cardBg,
+        borderRadius: borderRadius.xl,
+        padding: spacing.lg,
+        marginBottom: spacing.lg,
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: spacing.sm,
+    },
+    cardTitle: {
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
+    linkText: {
+        color: colors.primary,
+        fontSize: fontSize.sm,
+        fontWeight: fontWeight.semibold,
+    },
+    addrText: {
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+        marginBottom: spacing.xs,
+    },
+    contactText: {
+        fontSize: fontSize.sm,
+        color: colors.textSecondary,
+    },
+    placeholderText: {
+        color: colors.primary,
+        fontSize: fontSize.lg,
+        textAlign: 'center',
+        padding: spacing.md,
+        fontWeight: fontWeight.semibold,
+    },
 
-    restaurantName: { fontSize: 16, fontWeight: 'bold', marginBottom: 12, color: '#333' },
-    itemRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-    itemName: { fontSize: 14, color: '#333' },
-    itemQty: { fontSize: 12, color: '#999', marginTop: 2 },
-    itemPrice: { fontSize: 14, fontWeight: 'bold', color: '#333' },
+    restaurantName: {
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        marginBottom: spacing.md,
+        color: colors.textPrimary,
+    },
+    itemRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: spacing.md,
+    },
+    itemName: {
+        fontSize: fontSize.md,
+        color: colors.textPrimary,
+    },
+    itemQty: {
+        fontSize: fontSize.xs,
+        color: colors.textTertiary,
+        marginTop: spacing.xs,
+    },
+    itemPrice: {
+        fontSize: fontSize.md,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
 
-    divider: { height: 1, backgroundColor: '#eee', marginVertical: 8 },
-    feeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-    feeLabel: { fontSize: 14, color: '#666' },
-    feeValue: { fontSize: 14, color: '#333' },
-    totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
-    totalLabel: { fontSize: 16, fontWeight: 'bold' },
-    totalValue: { fontSize: 20, fontWeight: 'bold', color: '#e85a2d' },
+    divider: {
+        height: 1,
+        backgroundColor: colors.divider,
+        marginVertical: spacing.sm,
+    },
+    feeRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: spacing.sm,
+    },
+    feeLabel: {
+        fontSize: fontSize.sm,
+        color: colors.textSecondary,
+    },
+    feeValue: {
+        fontSize: fontSize.sm,
+        color: colors.textPrimary,
+        fontWeight: fontWeight.medium,
+    },
+    totalRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: spacing.xs,
+    },
+    totalLabel: {
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
+    totalValue: {
+        fontSize: fontSize.xxl,
+        fontWeight: fontWeight.bold,
+        color: colors.primary,
+    },
 
-    input: { backgroundColor: '#f9f9f9', borderRadius: 8, padding: 12, marginTop: 8, height: 80, textAlignVertical: 'top' },
+    input: {
+        backgroundColor: colors.surfaceFrosted,
+        borderRadius: borderRadius.lg,
+        padding: spacing.md,
+        marginTop: spacing.sm,
+        height: 80,
+        textAlignVertical: 'top',
+        borderWidth: 1,
+        borderColor: colors.border,
+        fontSize: fontSize.md,
+        color: colors.textPrimary,
+    },
 
-    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', flexDirection: 'row', padding: 16, borderTopWidth: 1, borderTopColor: '#eee', alignItems: 'center' },
+    footer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: colors.surface,
+        flexDirection: 'row',
+        padding: spacing.lg,
+        borderTopWidth: 1,
+        borderTopColor: colors.borderLight,
+        alignItems: 'center',
+        ...shadows.sm,
+    },
     footerInfo: { flex: 1 },
-    footerTotalLabel: { fontSize: 12, color: '#666' },
-    footerTotalValue: { fontSize: 24, fontWeight: 'bold', color: '#e85a2d' },
-    payBtn: { backgroundColor: '#e85a2d', paddingHorizontal: 32, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center' },
-    disabledBtn: { backgroundColor: '#ccc' },
-    payBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+    footerTotalLabel: {
+        fontSize: fontSize.xs,
+        color: colors.textSecondary,
+    },
+    footerTotalValue: {
+        fontSize: fontSize.title,
+        fontWeight: fontWeight.bold,
+        color: colors.primary,
+    },
+    payBtn: {
+        backgroundColor: colors.primary,
+        paddingHorizontal: spacing.xxxl,
+        height: 50,
+        borderRadius: borderRadius.full,
+        justifyContent: 'center',
+        alignItems: 'center',
+        ...shadows.primary,
+    },
+    disabledBtn: {
+        backgroundColor: colors.textDisabled,
+        shadowOpacity: 0,
+        elevation: 0,
+    },
+    payBtnText: {
+        color: colors.textOnPrimary,
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+    },
 });
 
 export default OrderConfirmScreen;
