@@ -103,15 +103,55 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
     );
 };
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff' },
-    restaurantHeader: { marginBottom: 10 },
-    banner: { width: '100%', height: 150, backgroundColor: '#eee' },
-    headerInfo: { padding: 16, borderBottomWidth: 8, borderBottomColor: '#f5f5f5' },
-    resName: { fontSize: 24, fontWeight: 'bold', marginBottom: 8, color: '#333' },
-    resMeta: { color: '#666', fontSize: 14 },
-    header: { backgroundColor: '#f9f9f9', padding: 12, paddingLeft: 16 },
-    headerText: { fontSize: 16, fontWeight: 'bold', color: '#333' },
+    container: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
+    restaurantHeader: {
+        marginBottom: spacing.md,
+    },
+    banner: {
+        width: '100%',
+        height: 200,
+        backgroundColor: colors.backgroundGradientEnd,
+    },
+    headerInfo: {
+        padding: spacing.xl,
+        backgroundColor: colors.surface,
+        borderBottomWidth: spacing.sm,
+        borderBottomColor: colors.background,
+        marginTop: -spacing.xl,
+        marginHorizontal: spacing.lg,
+        borderRadius: borderRadius.xl,
+        ...shadows.md,
+    },
+    resName: {
+        fontSize: fontSize.xxl,
+        fontWeight: fontWeight.bold,
+        marginBottom: spacing.sm,
+        color: colors.textPrimary,
+    },
+    resMeta: {
+        color: colors.textSecondary,
+        fontSize: fontSize.md,
+        fontWeight: fontWeight.medium,
+    },
+    // 分类标题 - 北欧风格
+    header: {
+        backgroundColor: colors.backgroundGradientEnd,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.xl,
+        marginTop: spacing.sm,
+    },
+    headerText: {
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
 });
 
 export default RestaurantDetailScreen;

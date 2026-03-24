@@ -298,169 +298,325 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
     );
 };
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    
-    // 导航栏
+    container: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
+
+    // 导航栏 - 北欧磨砂效果
     navBar: {
-        backgroundColor: 'rgba(255,255,255,0.9)',
-        paddingHorizontal: 16,
-        paddingBottom: 10,
+        backgroundColor: colors.frostedBgStrong,
+        paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.md,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         borderBottomWidth: 1,
-        borderBottomColor: '#eee'
+        borderBottomColor: colors.borderLight,
     },
-    navBackBtn: { padding: 8 },
-    navTitle: { fontSize: 18, fontWeight: 'bold', color: '#181311' },
+    navBackBtn: { padding: spacing.sm },
+    navTitle: {
+        fontSize: fontSize.xl,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
 
-    scrollContent: { padding: 16 },
+    scrollContent: { padding: spacing.lg },
 
-    // 概览卡片
+    // 概览卡片 - 北欧磨砂风格
     summaryCard: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
+        backgroundColor: colors.cardBg,
+        borderRadius: borderRadius.xl,
         overflow: 'hidden',
-        marginBottom: 24,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        shadowOffset: { width: 0, height: 2 }
+        marginBottom: spacing.xxl,
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
+        ...shadows.card,
     },
     summaryImageContainer: {
         height: 160,
-        backgroundColor: '#eee',
-        position: 'relative'
+        backgroundColor: colors.backgroundGradientEnd,
+        position: 'relative',
     },
     summaryImage: { width: '100%', height: '100%' },
     imageOverlay: {
         position: 'absolute',
-        bottom: 10,
-        right: 10,
+        bottom: spacing.md,
+        right: spacing.md,
     },
     viewOriginalBtn: {
         flexDirection: 'row',
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 20,
+        backgroundColor: 'rgba(45, 51, 57, 0.7)',
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.md,
+        borderRadius: borderRadius.full,
         alignItems: 'center',
-        gap: 6
+        gap: spacing.sm,
     },
-    viewOriginalText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
-    aiSummaryBox: { padding: 16 },
-    aiHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-    aiTitle: { fontSize: 16, fontWeight: 'bold', color: '#181311' },
-    aiText: { fontSize: 14, color: '#666', lineHeight: 22 },
+    viewOriginalText: {
+        color: colors.textOnPrimary,
+        fontSize: fontSize.xs,
+        fontWeight: fontWeight.bold,
+    },
+    aiSummaryBox: { padding: spacing.lg },
+    aiHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        marginBottom: spacing.sm,
+    },
+    aiTitle: {
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
+    aiText: {
+        fontSize: fontSize.sm,
+        color: colors.textSecondary,
+        lineHeight: 22,
+    },
 
-    // 推荐区
-    section: { marginBottom: 24 },
-    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 4, marginBottom: 12 },
-    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#181311' },
-    recsScroll: { marginHorizontal: -16, paddingHorizontal: 16 },
-    recCard: {
-        width: 180,
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 12,
-        marginRight: 12,
-        borderWidth: 1,
-        borderColor: '#f0f0f0'
-    },
-    recCardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-    recName: { fontSize: 14, fontWeight: 'bold', color: '#333', flex: 1 },
-    recBadge: { 
-        backgroundColor: '#e8f5e9', 
-        alignSelf: 'flex-start', 
-        paddingHorizontal: 8, 
-        paddingVertical: 2, 
-        borderRadius: 4,
-        marginBottom: 8
-    },
-    recBadgeText: { color: '#2e7d32', fontSize: 10, fontWeight: 'bold' },
-    recDesc: { fontSize: 11, color: '#888' },
-
-    // 列表项
-    menuItemCard: {
-        backgroundColor: '#fff',
-        padding: 16,
-        borderRadius: 12,
+    // 推荐区 - 北欧风格
+    section: { marginBottom: spacing.xxl },
+    sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 10,
-        elevation: 1
+        paddingHorizontal: spacing.xs,
+        marginBottom: spacing.md,
     },
-    itemHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-    itemName: { fontSize: 15, fontWeight: 'bold', color: '#333' },
-    warningBadge: { backgroundColor: '#fff3e0', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-    warningText: { fontSize: 10, color: '#e65100', fontWeight: 'bold' },
-    itemIngredients: { fontSize: 12, color: '#999', maxWidth: 200 },
-    itemRight: { alignItems: 'flex-end' },
-    itemCalories: { fontSize: 14, fontWeight: 'bold' },
+    sectionTitle: {
+        fontSize: fontSize.xl,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
+    recsScroll: {
+        marginHorizontal: -spacing.lg,
+        paddingHorizontal: spacing.lg,
+    },
+    recCard: {
+        width: 180,
+        backgroundColor: colors.cardBg,
+        borderRadius: borderRadius.lg,
+        padding: spacing.md,
+        marginRight: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
+    },
+    recCardTop: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: spacing.sm,
+    },
+    recName: {
+        fontSize: fontSize.sm,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+        flex: 1,
+    },
+    recBadge: {
+        backgroundColor: colors.successBg,
+        alignSelf: 'flex-start',
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: borderRadius.sm,
+        marginBottom: spacing.sm,
+    },
+    recBadgeText: {
+        color: colors.success,
+        fontSize: fontSize.xs,
+        fontWeight: fontWeight.bold,
+    },
+    recDesc: {
+        fontSize: fontSize.xs,
+        color: colors.textTertiary,
+    },
 
-    // 底部按钮
+    // 列表项 - 北欧磨砂卡片
+    menuItemCard: {
+        backgroundColor: colors.cardBg,
+        padding: spacing.lg,
+        borderRadius: borderRadius.lg,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
+    },
+    itemHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        marginBottom: spacing.xs,
+    },
+    itemName: {
+        fontSize: fontSize.md,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
+    warningBadge: {
+        backgroundColor: colors.warningBg,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: borderRadius.sm,
+    },
+    warningText: {
+        fontSize: fontSize.xs,
+        color: colors.warning,
+        fontWeight: fontWeight.bold,
+    },
+    itemIngredients: {
+        fontSize: fontSize.xs,
+        color: colors.textTertiary,
+        maxWidth: 200,
+    },
+    itemRight: { alignItems: 'flex-end' },
+    itemCalories: {
+        fontSize: fontSize.sm,
+        fontWeight: fontWeight.bold,
+    },
+
+    // 底部按钮 - 北欧风格
     bottomBar: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: '#fff',
-        padding: 16,
+        backgroundColor: colors.surface,
+        padding: spacing.lg,
         flexDirection: 'row',
-        gap: 12,
+        gap: spacing.md,
         borderTopWidth: 1,
-        borderTopColor: '#f0f0f0'
+        borderTopColor: colors.borderLight,
+        ...shadows.sm,
     },
     btnSecondary: {
         flex: 1,
-        height: 48,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#ddd',
+        height: 50,
+        borderRadius: borderRadius.lg,
+        borderWidth: 1.5,
+        borderColor: colors.border,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8
+        gap: spacing.sm,
+        backgroundColor: colors.surface,
     },
-    btnSecondaryText: { color: '#333', fontWeight: 'bold' },
+    btnSecondaryText: {
+        color: colors.textPrimary,
+        fontWeight: fontWeight.semibold,
+        fontSize: fontSize.sm,
+    },
     btnPrimary: {
         flex: 1.5,
-        height: 48,
-        borderRadius: 8,
-        backgroundColor: '#e85a2d',
+        height: 50,
+        borderRadius: borderRadius.lg,
+        backgroundColor: colors.primary,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
-        shadowColor: '#e85a2d',
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-        shadowOffset: { width: 0, height: 2 }
+        gap: spacing.sm,
+        ...shadows.primary,
     },
-    btnPrimaryText: { color: '#fff', fontWeight: 'bold' },
+    btnPrimaryText: {
+        color: colors.textOnPrimary,
+        fontWeight: fontWeight.bold,
+        fontSize: fontSize.sm,
+    },
 
     // 错误页
-    errorText: { fontSize: 16, color: '#666', textAlign: 'center', paddingHorizontal: 40, marginBottom: 20 },
-    retryBtn: { paddingVertical: 10, paddingHorizontal: 30, backgroundColor: '#e85a2d', borderRadius: 20 },
-    retryText: { color: '#fff', fontWeight: 'bold' },
+    errorText: {
+        fontSize: fontSize.lg,
+        color: colors.textSecondary,
+        textAlign: 'center',
+        paddingHorizontal: 40,
+        marginBottom: spacing.xl,
+    },
+    retryBtn: {
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.xxxl,
+        backgroundColor: colors.primary,
+        borderRadius: borderRadius.full,
+        ...shadows.primary,
+    },
+    retryText: {
+        color: colors.textOnPrimary,
+        fontWeight: fontWeight.bold,
+    },
 
-    // Modal Styles
-    modalContainer: { flex: 1, backgroundColor: 'black', justifyContent: 'center' },
-    modalCloseBtn: { position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 10 },
+    // Modal Styles - 北欧风格
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'black',
+        justifyContent: 'center',
+    },
+    modalCloseBtn: {
+        position: 'absolute',
+        top: 50,
+        right: 20,
+        zIndex: 10,
+        padding: spacing.md,
+    },
     fullImage: { width: '100%', height: '100%' },
-    
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-    detailCard: { width: '80%', backgroundColor: '#fff', borderRadius: 16, padding: 20, elevation: 5 },
-    detailHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-    detailTitle: { fontSize: 20, fontWeight: 'bold', color: '#333', flex: 1 },
-    detailRow: { flexDirection: 'row', marginBottom: 10 },
-    detailLabel: { width: 80, fontWeight: 'bold', color: '#666' },
-    detailValue: { flex: 1, color: '#333' },
-    detailCloseBtn: { marginTop: 20, backgroundColor: '#f5f5f5', padding: 12, borderRadius: 8, alignItems: 'center' },
-    detailCloseText: { color: '#666', fontWeight: 'bold' }
+
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: colors.overlay,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    detailCard: {
+        width: '85%',
+        backgroundColor: colors.surface,
+        borderRadius: borderRadius.xxl,
+        padding: spacing.xl,
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
+        ...shadows.xl,
+    },
+    detailHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: spacing.xl,
+    },
+    detailTitle: {
+        fontSize: fontSize.xxl,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+        flex: 1,
+    },
+    detailRow: {
+        flexDirection: 'row',
+        marginBottom: spacing.md,
+    },
+    detailLabel: {
+        width: 80,
+        fontWeight: fontWeight.bold,
+        color: colors.textSecondary,
+        fontSize: fontSize.sm,
+    },
+    detailValue: {
+        flex: 1,
+        color: colors.textPrimary,
+        fontSize: fontSize.sm,
+    },
+    detailCloseBtn: {
+        marginTop: spacing.xl,
+        backgroundColor: colors.backgroundGradientEnd,
+        padding: spacing.md,
+        borderRadius: borderRadius.lg,
+        alignItems: 'center',
+    },
+    detailCloseText: {
+        color: colors.textSecondary,
+        fontWeight: fontWeight.semibold,
+    },
 });
 
 export default NutriVisionResultScreen;

@@ -121,48 +121,193 @@ const OrderTrackingScreen = ({ route, navigation }: any) => {
     );
 };
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    mapContainer: { height: 200, backgroundColor: '#ddd', justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-    mapPlaceholder: { alignItems: 'center' },
-    mapText: { fontSize: 24, marginBottom: 8 },
-    mapSubText: { color: '#666' },
-    etaContainer: { position: 'absolute', bottom: 20, right: 20, backgroundColor: '#fff', padding: 12, borderRadius: 8, elevation: 4 },
-    etaTitle: { fontSize: 12, color: '#999' },
-    etaTime: { fontSize: 20, fontWeight: 'bold', color: '#333' },
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
 
-    card: { backgroundColor: '#fff', marginHorizontal: 16, marginTop: 12, padding: 16, borderRadius: 12, elevation: 2 },
-    sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 16, color: '#333' },
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
+    mapContainer: {
+        height: 200,
+        backgroundColor: colors.backgroundGradientEnd,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: spacing.md,
+    },
+    mapPlaceholder: { alignItems: 'center' },
+    mapText: {
+        fontSize: fontSize.title,
+        marginBottom: spacing.sm,
+    },
+    mapSubText: {
+        color: colors.textSecondary,
+        fontSize: fontSize.sm,
+    },
+    etaContainer: {
+        position: 'absolute',
+        bottom: spacing.xl,
+        right: spacing.xl,
+        backgroundColor: colors.surface,
+        padding: spacing.md,
+        borderRadius: borderRadius.lg,
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
+        ...shadows.md,
+    },
+    etaTitle: {
+        fontSize: fontSize.xs,
+        color: colors.textTertiary,
+    },
+    etaTime: {
+        fontSize: fontSize.xxl,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
+
+    card: {
+        backgroundColor: colors.cardBg,
+        marginHorizontal: spacing.lg,
+        marginTop: spacing.md,
+        padding: spacing.lg,
+        borderRadius: borderRadius.xl,
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
+    },
+    sectionTitle: {
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        marginBottom: spacing.lg,
+        color: colors.textPrimary,
+    },
 
     // Timeline styles
-    timeline: { marginLeft: 8 },
-    stepRow: { flexDirection: 'row', minHeight: 60 },
+    timeline: { marginLeft: spacing.sm },
+    stepRow: {
+        flexDirection: 'row',
+        minHeight: 60,
+    },
     stepIndicator: { alignItems: 'center', width: 30 },
-    dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#ddd', zIndex: 1 },
-    activeDot: { backgroundColor: '#e85a2d' },
-    line: { width: 2, flex: 1, backgroundColor: '#ddd', marginVertical: 4 },
-    activeLine: { backgroundColor: '#e85a2d' },
-    stepContent: { flex: 1, marginLeft: 10, marginTop: -4 },
-    stepTitle: { fontSize: 14, color: '#999', marginBottom: 4 },
-    activeText: { color: '#333', fontWeight: 'bold', fontSize: 16 },
-    stepTime: { fontSize: 12, color: '#999' },
+    dot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: colors.border,
+        zIndex: 1,
+    },
+    activeDot: {
+        backgroundColor: colors.primary,
+    },
+    line: {
+        width: 2,
+        flex: 1,
+        backgroundColor: colors.border,
+        marginVertical: spacing.xs,
+    },
+    activeLine: {
+        backgroundColor: colors.primary,
+    },
+    stepContent: {
+        flex: 1,
+        marginLeft: spacing.md,
+        marginTop: -4,
+    },
+    stepTitle: {
+        fontSize: fontSize.sm,
+        color: colors.textTertiary,
+        marginBottom: spacing.xs,
+    },
+    activeText: {
+        color: colors.textPrimary,
+        fontWeight: fontWeight.bold,
+        fontSize: fontSize.lg,
+    },
+    stepTime: {
+        fontSize: fontSize.xs,
+        color: colors.textTertiary,
+    },
 
     // Rider styles
-    riderRow: { flexDirection: 'row', alignItems: 'center' },
-    avatar: { width: 50, height: 50, borderRadius: 25, marginRight: 12, backgroundColor: '#eee' },
-    riderName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-    riderTag: { fontSize: 12, color: '#e85a2d', marginTop: 2 },
-    callBtn: { padding: 8, borderWidth: 1, borderColor: '#e85a2d', borderRadius: 20 },
-    callText: { color: '#e85a2d', fontSize: 12, fontWeight: 'bold' },
+    riderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    avatar: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        marginRight: spacing.md,
+        backgroundColor: colors.backgroundGradientEnd,
+    },
+    riderName: {
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
+    riderTag: {
+        fontSize: fontSize.xs,
+        color: colors.primary,
+        marginTop: spacing.xs,
+        fontWeight: fontWeight.medium,
+    },
+    callBtn: {
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.md,
+        borderWidth: 1.5,
+        borderColor: colors.primary,
+        borderRadius: borderRadius.full,
+        backgroundColor: colors.primaryBg,
+        ...shadows.sm,
+    },
+    callText: {
+        color: colors.primary,
+        fontSize: fontSize.xs,
+        fontWeight: fontWeight.bold,
+    },
 
     // Order Detail styles
-    orderItem: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-    itemName: { flex: 1, color: '#333' },
-    itemQty: { width: 40, textAlign: 'center', color: '#666' },
-    itemPrice: { width: 60, textAlign: 'right', color: '#333' },
-    totalRow: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 12, marginTop: 8 },
-    totalLabel: { fontSize: 16, fontWeight: 'bold' },
-    totalValue: { fontSize: 18, fontWeight: 'bold', color: '#e85a2d' },
+    orderItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: spacing.md,
+    },
+    itemName: {
+        flex: 1,
+        color: colors.textPrimary,
+        fontSize: fontSize.md,
+    },
+    itemQty: {
+        width: 40,
+        textAlign: 'center',
+        color: colors.textSecondary,
+        fontSize: fontSize.sm,
+    },
+    itemPrice: {
+        width: 60,
+        textAlign: 'right',
+        color: colors.textPrimary,
+        fontSize: fontSize.md,
+        fontWeight: fontWeight.medium,
+    },
+    totalRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        borderTopWidth: 1,
+        borderTopColor: colors.divider,
+        paddingTop: spacing.md,
+        marginTop: spacing.sm,
+    },
+    totalLabel: {
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
+    totalValue: {
+        fontSize: fontSize.xl,
+        fontWeight: fontWeight.bold,
+        color: colors.primary,
+    },
 });
 
 export default OrderTrackingScreen;

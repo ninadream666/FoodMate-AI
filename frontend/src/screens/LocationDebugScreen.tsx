@@ -460,21 +460,21 @@ export default function LocationDebugScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={[styles.button, { backgroundColor: '#FF6B35' }]}
+                    style={[styles.button, styles.emergencyButton]}
                     onPress={testEmergencyLocation}
                 >
                     <Text style={styles.buttonText}>🚨 紧急定位测试</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={[styles.button, { backgroundColor: '#28a745' }]}
+                    style={[styles.button, styles.successButton]}
                     onPress={testBasicLocation}
                 >
                     <Text style={styles.buttonText}>🔧 最基础定位</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={[styles.button, { backgroundColor: '#dc3545' }]}
+                    style={[styles.button, styles.dangerButton]}
                     onPress={forceStopLocation}
                 >
                     <Text style={styles.buttonText}>🛑 强制停止定位</Text>
@@ -534,101 +534,122 @@ export default function LocationDebugScreen() {
     );
 }
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: colors.background,
     },
     section: {
-        backgroundColor: '#ffffff',
-        margin: 10,
-        padding: 15,
-        borderRadius: 8,
+        backgroundColor: colors.cardBg,
+        margin: spacing.md,
+        padding: spacing.lg,
+        borderRadius: borderRadius.lg,
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
     },
     title: {
-        fontSize: 20,
-        fontWeight: 'bold',
+        fontSize: fontSize.xl,
+        fontWeight: fontWeight.bold,
         textAlign: 'center',
-        marginBottom: 15,
-        color: '#333333',
+        marginBottom: spacing.lg,
+        color: colors.textPrimary,
     },
     sectionTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 10,
-        color: '#333333',
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        marginBottom: spacing.md,
+        color: colors.textPrimary,
     },
     infoRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 10,
+        marginBottom: spacing.md,
         alignItems: 'center',
     },
     label: {
-        fontSize: 14,
-        color: '#666666',
+        fontSize: fontSize.md,
+        color: colors.textSecondary,
     },
     value: {
-        fontSize: 14,
-        fontWeight: '500',
+        fontSize: fontSize.md,
+        fontWeight: fontWeight.medium,
     },
     success: {
-        color: '#28a745',
+        color: colors.success,
     },
     error: {
-        color: '#dc3545',
+        color: colors.error,
     },
     button: {
-        backgroundColor: '#007AFF',
-        padding: 12,
-        borderRadius: 6,
+        backgroundColor: colors.primary,
+        padding: spacing.md,
+        borderRadius: borderRadius.lg,
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: spacing.md,
+        ...shadows.sm,
     },
     buttonText: {
-        color: '#ffffff',
-        fontSize: 16,
-        fontWeight: '500',
+        color: colors.textOnPrimary,
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.medium,
     },
     location: {
-        fontSize: 14,
+        fontSize: fontSize.md,
         fontFamily: 'monospace',
-        backgroundColor: '#f8f9fa',
-        padding: 10,
-        borderRadius: 6,
+        backgroundColor: colors.surface,
+        padding: spacing.md,
+        borderRadius: borderRadius.md,
         lineHeight: 20,
+        color: colors.textPrimary,
+        borderWidth: 1,
+        borderColor: colors.border,
     },
     historyItem: {
-        backgroundColor: '#f8f9fa',
-        padding: 8,
-        borderRadius: 4,
-        marginBottom: 5,
+        backgroundColor: colors.surface,
+        padding: spacing.sm,
+        borderRadius: borderRadius.sm,
+        marginBottom: spacing.xs,
+        borderWidth: 1,
+        borderColor: colors.borderLight,
     },
     historyText: {
-        fontSize: 12,
+        fontSize: fontSize.sm,
         fontFamily: 'monospace',
+        color: colors.textSecondary,
     },
     errorSection: {
-        backgroundColor: '#f8d7da',
-        margin: 10,
-        padding: 15,
-        borderRadius: 8,
-        borderColor: '#dc3545',
+        backgroundColor: colors.errorBg,
+        margin: spacing.md,
+        padding: spacing.lg,
+        borderRadius: borderRadius.lg,
+        borderColor: colors.error,
         borderWidth: 1,
     },
     errorTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#721c24',
-        marginBottom: 5,
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        color: colors.error,
+        marginBottom: spacing.xs,
     },
     errorText: {
-        fontSize: 14,
-        color: '#721c24',
+        fontSize: fontSize.md,
+        color: colors.error,
     },
     helpText: {
-        fontSize: 14,
+        fontSize: fontSize.md,
         lineHeight: 20,
-        color: '#666666',
+        color: colors.textSecondary,
+    },
+    emergencyButton: {
+        backgroundColor: colors.warning,
+    },
+    successButton: {
+        backgroundColor: colors.success,
+    },
+    dangerButton: {
+        backgroundColor: colors.error,
     },
 });
