@@ -1,21 +1,26 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { memo } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+import OptimizedImage from './OptimizedImage';
 
-const defaultImage = 'https://lh3.googleusercontent.com/aida-public/AB6AXuAsKKNZeioee-JViVf_SBcbT3rBBvZu4DRFaNV6zHlXtXEjC2CNTIsAmJI7F9lgIkkqvLI7GQ6aPH6dVIVSJYKiHlfzeJz8XvF7xFAKjKqhEaRfTu-NLionE8GH6f18T0nyhqQZK-DJTCPCdctLKhSoQdXHd52-CSkDC81U5LPnZtqdpW9a81FBB9suOIFC2VSfFJpnsmbj7pDYXC2LSYX9H8h_XhM49_8PrKxP1JwsEgNlm_YYWEv_4lAJqN8e8_e-8meysrlbEIft';
+// 使用更简短的默认图片 URL
+const defaultImage = 'https://images.unsplash.com/photo-1T546069901-ba9599a7e63c?w=200';
 
 interface Props {
     dish: any;
     onAdd: (dish: any) => void;
 }
 
-const MenuListItem = ({ dish, onAdd }: Props) => {
+const MenuListItem = memo(({ dish, onAdd }: Props) => {
     return (
         <View style={styles.container}>
-            {/* 左侧图片 */}
-            <Image
-                source={{ uri: dish.imageUrl || defaultImage }}
+            {/* 左侧图片 - 使用优化的图片组件 */}
+            <OptimizedImage
+                uri={dish.imageUrl || defaultImage}
+                width={150}
                 style={styles.image}
+                priority="low"
+                fallbackUri={defaultImage}
             />
 
             {/* 中间信息 */}
@@ -31,26 +36,26 @@ const MenuListItem = ({ dish, onAdd }: Props) => {
             </TouchableOpacity>
         </View>
     );
-};
+});
 
-// 北欧磨砂风格样式
+// 磨砂风格样式（Image3 卡片 + Image2 阴影原则）
 const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         padding: spacing.lg,
         marginHorizontal: spacing.lg,
         marginVertical: spacing.sm,
-        backgroundColor: colors.cardBg,
-        borderRadius: borderRadius.lg,
+        backgroundColor: colors.cardBgSolid,
+        borderRadius: borderRadius.xl,
         alignItems: 'center',
         borderWidth: 1,
         borderColor: colors.cardBorder,
     },
-    // 圆角图片 - 磨砂风格
+    // 圆角图片 - 磨砂风格（Image3 ClipRRect）
     image: {
-        width: 72,
-        height: 72,
-        borderRadius: borderRadius.md,
+        width: 76,
+        height: 76,
+        borderRadius: borderRadius.lg,
         backgroundColor: colors.backgroundGradientEnd,
     },
     info: {
@@ -75,7 +80,7 @@ const styles = StyleSheet.create({
         fontWeight: fontWeight.bold,
         color: colors.primary,
     },
-    // 添加按钮 - 可点击元素带阴影
+    // 添加按钮 - 可点击元素带阴影（Image2 原则）
     addButton: {
         width: 36,
         height: 36,

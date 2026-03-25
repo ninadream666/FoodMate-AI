@@ -8,8 +8,10 @@ import com.fooddelivery.merchant.entity.Merchant;
 import com.fooddelivery.merchant.repository.MerchantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -27,7 +29,7 @@ public class MerchantService {
         // 适配 Repository: findByOwnerUserId 返回 List
         List<Merchant> existing = merchantRepository.findByOwnerUserId(userId);
         if (!existing.isEmpty()) {
-            throw new RuntimeException("User already has a registered restaurant");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Current user already has a registered restaurant");
         }
 
         Merchant merchant = new Merchant();
@@ -45,7 +47,7 @@ public class MerchantService {
         // 使用 OrderByIdAsc 确保返回顺序确定，始终返回 ID 最小的店铺（即最早创建的）
         List<Merchant> merchants = merchantRepository.findByOwnerUserIdOrderByIdAsc(userId);
         if (merchants.isEmpty()) {
-            throw new RuntimeException("Merchant not found for user: " + userId);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Merchant not found for user: " + userId);
         }
         // 暂时限制一个用户一个餐厅，取第一个
         return mapToDto(merchants.get(0));
@@ -53,7 +55,8 @@ public class MerchantService {
 
     public MerchantDto getMerchantById(Long merchantId) {
         Merchant merchant = merchantRepository.findById(merchantId)
-                .orElseThrow(() -> new RuntimeException("Merchant not found: " + merchantId));
+                .orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Merchant not found: " + merchantId));
         return mapToDto(merchant);
     }
 

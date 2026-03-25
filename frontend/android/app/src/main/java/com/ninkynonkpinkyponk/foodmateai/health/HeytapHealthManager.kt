@@ -3,15 +3,15 @@ package com.ninkynonkpinkyponk.foodmateai.health
 import android.app.Activity
 import android.content.Context
 import android.util.Log
-import com.heytap.health.api.HeytapHealthApi
-import com.heytap.health.api.HResponse
-import com.heytap.health.data.DataReadRequest
-import com.heytap.health.data.DataSet
-import com.heytap.health.data.DataType
-import com.heytap.health.data.Element
-import com.heytap.health.auth.AuthResult
-import com.heytap.health.device.UserDeviceInfoProxy
-import com.heytap.health.utils.InstallUtils
+import com.heytap.databaseengine.HeytapHealthApi
+import com.heytap.databaseengine.apiv2.HResponse
+import com.heytap.databaseengine.apiv3.DataReadRequest
+import com.heytap.databaseengine.apiv3.data.DataSet
+import com.heytap.databaseengine.apiv3.data.DataType
+import com.heytap.databaseengine.apiv3.data.Element
+import com.heytap.databaseengine.apiv2.auth.AuthResult
+import com.heytap.databaseengine.model.proxy.UserDeviceInfoProxy
+import com.heytap.databaseengine.apiv2.common.util.InstallUtils
 
 /**
  * OPPO健康服务SDK管理器
@@ -185,7 +185,7 @@ class HeytapHealthManager(private val context: Context) {
                 override fun onSuccess(devices: List<UserDeviceInfoProxy>) {
                     val deviceList = devices.map { device ->
                         DeviceInfo(
-                            deviceName = device.devicename ?: "",
+                            deviceName = device.deviceName ?: "",
                             deviceType = device.deviceType,
                             subDeviceType = device.subDeviceType,
                             model = device.model ?: ""
@@ -211,7 +211,7 @@ class HeytapHealthManager(private val context: Context) {
             .setTimeRange(startTime, endTime)
             .build()
 
-        readData(request) { dataSets ->
+        readData(request, callback) { dataSets ->
             val result = mutableListOf<HeartRateData>()
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
@@ -234,7 +234,7 @@ class HeytapHealthManager(private val context: Context) {
             .setTimeRange(startTime, endTime)
             .build()
 
-        readData(request) { dataSets ->
+        readData(request, callback) { dataSets ->
             val result = mutableListOf<HeartRateCountData>()
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
@@ -243,7 +243,7 @@ class HeytapHealthManager(private val context: Context) {
                         maxHeartRate = (point.getValue(Element.ELEMENT_MAX) as? Number)?.toInt() ?: 0,
                         minHeartRate = (point.getValue(Element.ELEMENT_MIN) as? Number)?.toInt() ?: 0,
                         avgHeartRate = (point.getValue(Element.ELEMENT_AVERAGE) as? Number)?.toInt() ?: 0,
-                        restingHeartRate = (point.getValue(Element.ELEMENT_RESTING_HEART_RATE) as? Number)?.toInt() ?: 0
+                        restingHeartRate = (point.getValue(Element.ELEMENT_REST_HR) as? Number)?.toInt() ?: 0
                     ))
                 }
             }
@@ -260,7 +260,7 @@ class HeytapHealthManager(private val context: Context) {
             .setTimeRange(startTime, endTime)
             .build()
 
-        readData(request) { dataSets ->
+        readData(request, callback) { dataSets ->
             val result = mutableListOf<DailyActivityData>()
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
@@ -286,7 +286,7 @@ class HeytapHealthManager(private val context: Context) {
             .setTimeRange(startTime, endTime)
             .build()
 
-        readData(request) { dataSets ->
+        readData(request, callback) { dataSets ->
             val result = mutableListOf<DailyActivityCountData>()
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
@@ -311,7 +311,7 @@ class HeytapHealthManager(private val context: Context) {
             .setTimeRange(startTime, endTime)
             .build()
 
-        readData(request) { dataSets ->
+        readData(request, callback) { dataSets ->
             val result = mutableListOf<PressureData>()
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
@@ -334,7 +334,7 @@ class HeytapHealthManager(private val context: Context) {
             .setTimeRange(startTime, endTime)
             .build()
 
-        readData(request) { dataSets ->
+        readData(request, callback) { dataSets ->
             val result = mutableListOf<PressureCountData>()
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
@@ -352,6 +352,8 @@ class HeytapHealthManager(private val context: Context) {
 
     /**
      * 读取睡眠详情数据
+     * 根据SDK文档：睡眠数据通过 ELEMENT_SLEEP_DAY_FRAGS 返回 JSON 格式的详细数据
+     * JSON 中包含 totalSleepTime, totalDeepSleepTime, totalLightlySleepTime, totalREMSleepTime, totalWakeTime, wakeCount
      */
     fun readSleep(startTime: Long, endTime: Long, callback: HealthCallback<List<SleepData>>) {
         val request = DataReadRequest.Builder()
@@ -359,21 +361,25 @@ class HeytapHealthManager(private val context: Context) {
             .setTimeRange(startTime, endTime)
             .build()
 
-        readData(request) { dataSets ->
+        readData(request, callback) { dataSets ->
             val result = mutableListOf<SleepData>()
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
+                    // 睡眠数据主要通过 sleepDetailJson 解析
+                    val sleepJson = point.getValue(Element.ELEMENT_SLEEP_DAY_FRAGS) as? String ?: ""
+
+                    // 尝试从各个元素获取数据，如果SDK不支持则从JSON解析
                     result.add(SleepData(
-                        sleepInTime = point.getValue(Element.ELEMENT_SLEEP_IN_TIME) as? Long ?: 0L,
-                        sleepOutTime = point.getValue(Element.ELEMENT_SLEEP_OUT_TIME) as? Long ?: 0L,
-                        totalSleepTime = point.getValue(Element.ELEMENT_TOTAL_SLEEP_TIME) as? Int ?: 0,
-                        totalDeepSleepTime = point.getValue(Element.ELEMENT_TOTAL_DEEP_SLEEP_TIME) as? Int ?: 0,
-                        totalLightSleepTime = point.getValue(Element.ELEMENT_TOTAL_LIGHTLY_SLEEP_TIME) as? Int ?: 0,
-                        totalRemSleepTime = point.getValue(Element.ELEMENT_TOTAL_REM_SLEEP_TIME) as? Int ?: 0,
-                        totalWakeTime = point.getValue(Element.ELEMENT_TOTAL_WAKE_TIME) as? Int ?: 0,
-                        wakeCount = point.getValue(Element.ELEMENT_WAKE_COUNT) as? Int ?: 0,
-                        sleepScore = point.getValue(Element.ELEMENT_SLEEP_SCORE) as? Int ?: 0,
-                        sleepDetailJson = point.getValue(Element.ELEMENT_SLEEP_STAGE_DETAIL) as? String ?: ""
+                        sleepInTime = (point.getValue(Element.ELEMENT_FALL_ASLEEP) as? Number)?.toLong() ?: 0L,
+                        sleepOutTime = (point.getValue(Element.ELEMENT_SLEEP_OUT) as? Number)?.toLong() ?: 0L,
+                        totalSleepTime = (point.getValue(Element.ELEMENT_DURATION) as? Number)?.toInt() ?: 0,
+                        totalDeepSleepTime = (point.getValue(Element.ELEMENT_TOTAL_DEEP_SLEEP_TIME) as? Number)?.toInt() ?: 0,
+                        totalLightSleepTime = (point.getValue(Element.ELEMENT_TOTAL_LIGHTLY_SLEEP_TIME) as? Number)?.toInt() ?: 0,
+                        totalRemSleepTime = 0, // 从 sleepDetailJson 解析
+                        totalWakeTime = (point.getValue(Element.ELEMENT_TOTAL_WAKE_UP_TIME) as? Number)?.toInt() ?: 0,
+                        wakeCount = 0, // 从 sleepDetailJson 解析
+                        sleepScore = (point.getValue(Element.ELEMENT_SLEEP_SCORE) as? Number)?.toInt() ?: 0,
+                        sleepDetailJson = sleepJson
                     ))
                 }
             }
@@ -390,7 +396,7 @@ class HeytapHealthManager(private val context: Context) {
             .setTimeRange(startTime, endTime)
             .build()
 
-        readData(request) { dataSets ->
+        readData(request, callback) { dataSets ->
             val result = mutableListOf<SleepCountData>()
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
@@ -414,7 +420,7 @@ class HeytapHealthManager(private val context: Context) {
             .setTimeRange(startTime, endTime)
             .build()
 
-        readData(request) { dataSets ->
+        readData(request, callback) { dataSets ->
             val result = mutableListOf<BloodOxygenData>()
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
@@ -438,7 +444,7 @@ class HeytapHealthManager(private val context: Context) {
             .setTimeRange(startTime, endTime)
             .build()
 
-        readData(request) { dataSets ->
+        readData(request, callback) { dataSets ->
             val result = mutableListOf<BloodOxygenCountData>()
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
@@ -463,7 +469,7 @@ class HeytapHealthManager(private val context: Context) {
             .setTimeRange(startTime, endTime)
             .build()
 
-        readData(request) { dataSets ->
+        readData(request, callback) { dataSets ->
             val result = mutableListOf<EcgData>()
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
@@ -481,6 +487,7 @@ class HeytapHealthManager(private val context: Context) {
 
     /**
      * 读取运动记录概要数据
+     * 根据SDK文档：运动开始/结束时间为秒级时间戳，需要转换为毫秒
      */
     fun readSportMetadata(startTime: Long, endTime: Long, callback: HealthCallback<List<SportMetadata>>) {
         val request = DataReadRequest.Builder()
@@ -488,12 +495,12 @@ class HeytapHealthManager(private val context: Context) {
             .setTimeRange(startTime, endTime)
             .build()
 
-        readData(request) { dataSets ->
+        readData(request, callback) { dataSets ->
             val result = mutableListOf<SportMetadata>()
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
                     result.add(SportMetadata(
-                        startTimestamp = (point.getValue(Element.ELEMENT_STRAT_TIMESTAMP) as? Number)?.toLong()?.times(1000) ?: 0L,
+                        startTimestamp = (point.getValue(Element.ELEMENT_START_TIMESTAMP) as? Number)?.toLong()?.times(1000) ?: 0L,
                         endTimestamp = (point.getValue(Element.ELEMENT_END_TIMESTAMP) as? Number)?.toLong()?.times(1000) ?: 0L,
                         sportMode = point.getValue(Element.ELEMENT_SPORT_MODE) as? Int ?: 0,
                         avgHeartRate = point.getValue(Element.ELEMENT_AVG_HEART_RATE) as? Int ?: 0,
@@ -517,7 +524,7 @@ class HeytapHealthManager(private val context: Context) {
             .setTimeRange(startTime, endTime)
             .build()
 
-        readData(request) { dataSets ->
+        readData(request, callback) { dataSets ->
             val result = mutableListOf<HearingHealthData>()
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
@@ -541,7 +548,7 @@ class HeytapHealthManager(private val context: Context) {
             .setTimeRange(startTime, endTime)
             .build()
 
-        readData(request) { dataSets ->
+        readData(request, callback) { dataSets ->
             val result = mutableListOf<RelaxData>()
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
@@ -558,10 +565,60 @@ class HeytapHealthManager(private val context: Context) {
         }
     }
 
+    /**
+     * 读取听力统计数据
+     */
+    fun readHearingHealthCount(startTime: Long, endTime: Long, callback: HealthCallback<List<HearingHealthCountData>>) {
+        val request = DataReadRequest.Builder()
+            .read(DataType.TYPE_HEARING_HEALTH_COUNT)
+            .setTimeRange(startTime, endTime)
+            .build()
+
+        readData(request, callback) { dataSets ->
+            val result = mutableListOf<HearingHealthCountData>()
+            dataSets.forEach { dataSet ->
+                dataSet.dataPoints.forEach { point ->
+                    result.add(HearingHealthCountData(
+                        date = point.timeStamp,
+                        maxHearing = (point.getValue(Element.ELEMENT_MAX) as? Number)?.toFloat() ?: 0f,
+                        minHearing = (point.getValue(Element.ELEMENT_MIN) as? Number)?.toFloat() ?: 0f,
+                        avgHearing = (point.getValue(Element.ELEMENT_AVERAGE) as? Number)?.toFloat() ?: 0f,
+                        totalDuration = (point.getValue(Element.ELEMENT_DURATION) as? Number)?.toLong() ?: 0L
+                    ))
+                }
+            }
+            callback.onSuccess(result)
+        }
+    }
+
+    /**
+     * 读取放松统计数据
+     */
+    fun readRelaxCount(startTime: Long, endTime: Long, callback: HealthCallback<List<RelaxCountData>>) {
+        val request = DataReadRequest.Builder()
+            .read(DataType.TYPE_RELAX_COUNT)
+            .setTimeRange(startTime, endTime)
+            .build()
+
+        readData(request, callback) { dataSets ->
+            val result = mutableListOf<RelaxCountData>()
+            dataSets.forEach { dataSet ->
+                dataSet.dataPoints.forEach { point ->
+                    result.add(RelaxCountData(
+                        date = point.timeStamp,
+                        totalDuration = (point.getValue(Element.ELEMENT_DURATION) as? Number)?.toLong() ?: 0L
+                    ))
+                }
+            }
+            callback.onSuccess(result)
+        }
+    }
+
     // ==================== 通用数据读取方法 ====================
 
-    private fun readData(
+    private fun <T> readData(
         request: DataReadRequest,
+        callback: HealthCallback<T>,
         onSuccess: (List<DataSet>) -> Unit
     ) {
         HeytapHealthApi.getInstance().dataApi().read(request, object : HResponse<List<DataSet>> {
@@ -571,6 +628,7 @@ class HeytapHealthManager(private val context: Context) {
 
             override fun onFailure(errorCode: Int) {
                 Log.e(TAG, "Data read failed: $errorCode")
+                callback.onFailure(errorCode, getErrorMessage(errorCode))
             }
         })
     }

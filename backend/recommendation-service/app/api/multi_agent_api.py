@@ -75,12 +75,10 @@ async def multi_agent_recommendation(
         result = await multi_agent_recommendation_service.get_recommendations(request)
         
         if result.total_count == 0:
-            raise HTTPException(
-                status_code=404,
-                detail="未找到符合条件的餐厅"
-            )
-        
-        logger.info(f"多智能体推荐完成，返回{result.total_count}家餐厅")
+            logger.warning("多智能体推荐结果为空，返回空列表")
+        else:
+            logger.info(f"多智能体推荐完成，返回{result.total_count}家餐厅")
+
         return result
         
     except HTTPException:

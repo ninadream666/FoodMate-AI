@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd:*)",
+      "Bash(dir:*)",
+      "Bash(powershell -Command \"Get-ChildItem -Path ''D:\\FoodMate-AI'' | Select-Object -ExpandProperty Name\")",
+      "WebFetch(domain:www.xiaohongshu.com)",
+      "Bash(./gradlew assembleDebug:*)",
+      "Bash(./gradlew app:dependencies:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(unzip:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(powershell:*)",
+      "Bash(.gradlew.bat assembleDebug:*)",
+      "Bash(./gradlew.bat assembleDebug:*)"
+    ]
+  }
+}

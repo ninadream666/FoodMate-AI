@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import {
     View,
     Text,
@@ -31,6 +31,7 @@ import WeatherAlertModal from '../components/WeatherAlertModal'; // 天气感知
 import DevModePanel from '../components/DevModePanel'; // 开发者面板
 import { useHealthContext } from '../hooks/useHealthContext'; // 健康上下文
 import weatherService, { WeatherData } from '../services/weatherService'; // 天气服务
+import { debounce, cacheService } from '../utils/cacheUtils'; // 防抖和缓存工具
 
 const HomeScreen = ({ navigation }: any) => {
     const [restaurants, setRestaurants] = useState<any[]>([]);
@@ -41,6 +42,7 @@ const HomeScreen = ({ navigation }: any) => {
     const [currentLocation, setCurrentLocation] = useState<any>(null);
     const [lastLoadTime, setLastLoadTime] = useState(0); // 记录上次加载时间
     const [hasInitialData, setHasInitialData] = useState(false); // 标记是否已有初始数据
+    const isLoadingRef = useRef(false); // 防止重复请求的 ref
 
     // --- 新增: 端云协同与语音状态 ---
     const [isSynergyMode, setIsSynergyMode] = useState(false); // 是否处于端云协同推荐模式
@@ -352,65 +354,74 @@ const HomeScreen = ({ navigation }: any) => {
         }
     };
 
-    // 修改后的数据加载逻辑
-    const loadData = async (providedLocation = null, skipWeatherFetch = false) => {
-        console.log('🏁 loadData 函数被调用! 参数:', providedLocation ? '有位置' : '无位置', '跳过天气:', skipWeatherFetch);
-
-        if (loading || synergyPhase > 0) {
-            console.log('⏳ 正在加载中，跳过重复请求');
+    // 修改后的数据加载逻辑（带缓存和防重复请求）
+    const loadData = useCallback(async (providedLocation = null, skipWeatherFetch = false, forceRefresh = false) => {
+        // 防止重复请求
+        if (isLoadingRef.current || synergyPhase > 0) {
+            if (__DEV__) console.log('⏳ 正在加载中，跳过重复请求');
             return;
         }
+
+        isLoadingRef.current = true;
 
         const timeoutId = setTimeout(() => {
             console.warn('⚠️ loadData执行超时，强制重置loading状态');
             setLoading(false);
             setRefreshing(false);
+            isLoadingRef.current = false;
         }, 30000);
 
         try {
-            console.log('🏁 loadData开始执行，设置loading=true');
             setLoading(true);
-            setIsSynergyMode(false); // 每次常规刷新时退出协同模式
+            setIsSynergyMode(false);
 
             let location: any = providedLocation;
 
             if (!location) {
                 if (currentLocation) {
                     location = currentLocation;
-                    console.log('📍 使用已有位置:', location.address);
                 } else {
-                    console.log('⏳ 等待位置更新...');
                     setLoading(false);
+                    isLoadingRef.current = false;
                     return;
                 }
             }
 
-            console.log('📍 使用位置详情:', {
-                latitude: location.latitude,
-                longitude: location.longitude,
-                address: location.address,
-                accuracy: location.accuracy
-            });
-
-            console.log('👤 用户状态检查:', { hasUser: !!user, userId: user?.id });
-
             setCurrentLocation(location);
 
-            if (!skipWeatherFetch) {
-                fetchWeather(location.latitude, location.longitude);
-            } else {
-                console.log('🌤️ 跳过天气获取（保留模拟天气）');
-            }
-
-            if (Math.abs(location.latitude - 39.9042) < 0.001 && Math.abs(location.longitude - 116.4074) < 0.001) {
-                console.warn('⚠️ 警告：使用的是默认北京位置，不是真实位置');
-            }
+            // 并行请求：天气和推荐数据同时发起
+            const weatherPromise = !skipWeatherFetch
+                ? fetchWeather(location.latitude, location.longitude)
+                : Promise.resolve(weatherData);
 
             let currentUser = user;
             if (!currentUser) {
-                console.log('⏳ 用户信息还未加载，尝试重新获取...');
                 currentUser = await authService.getCurrentUser();
                 setUser(currentUser);
+            }
+
+            // 生成缓存键
+            const cacheKey = {
+                lat: Math.round(location.latitude * 100) / 100, // 精度到小数点后2位
+                lng: Math.round(location.longitude * 100) / 100,
+                userId: currentUser?.id || 'guest',
+            };
+
+            // 尝试从缓存获取推荐数据（非强制刷新时）
+            if (!forceRefresh) {
+                const cachedRecommendations = await cacheService.get('recommendations', cacheKey);
+                if (cachedRecommendations && cachedRecommendations.length > 0) {
+                    if (__DEV__) console.log('✅ 使用缓存的推荐数据:', cachedRecommendations.length, '条');
+                    setRestaurants(cachedRecommendations);
+                    setHasInitialData(true);
+                    setLoading(false);
+                    setRefreshing(false);
+                    isLoadingRef.current = false;
+                    clearTimeout(timeoutId);
+                    // 后台静默更新天气
+                    weatherPromise.catch(() => {});
+                    return;
+                }
             }
 
             const recommendParams = {
@@ -419,32 +430,23 @@ const HomeScreen = ({ navigation }: any) => {
                 longitude: location.longitude,
                 address: location.address,
                 healthContext: {
-                    // 基础活动数据
                     daily_steps: health.dailySteps,
                     recent_steps_30min: health.recentSteps30min,
                     daily_distance: health.dailyDistance,
                     daily_calories: health.dailyCalories,
-
-                    // 心率数据
                     heart_rate: health.heartRate,
                     resting_heart_rate: health.restingHeartRate,
                     avg_heart_rate: health.avgHeartRate,
                     max_heart_rate: health.maxHeartRate,
                     min_heart_rate: health.minHeartRate,
-
-                    // 活动状态
                     activity_status: health.activityStatus,
                     is_post_workout: health.isPostWorkout,
                     recent_workout_duration: health.recentWorkoutDuration,
                     recent_workout_calories: health.recentWorkoutCalories,
                     recent_workout_type: health.recentWorkoutType,
-
-                    // 压力数据
                     pressure_value: health.pressureValue,
                     avg_pressure: health.avgPressure,
                     pressure_level: health.pressureLevel,
-
-                    // 睡眠数据
                     last_sleep_duration: health.lastSleepDuration,
                     last_sleep_duration_hours: health.lastSleepDurationHours,
                     last_sleep_score: health.lastSleepScore,
@@ -452,26 +454,16 @@ const HomeScreen = ({ navigation }: any) => {
                     last_deep_sleep_duration: health.lastDeepSleepDuration,
                     last_light_sleep_duration: health.lastLightSleepDuration,
                     last_rem_sleep_duration: health.lastRemSleepDuration,
-
-                    // 血氧数据
                     blood_oxygen: health.bloodOxygen,
                     avg_blood_oxygen: health.avgBloodOxygen,
                     blood_oxygen_status: health.bloodOxygenStatus,
-
-                    // 放松数据
                     today_relax_duration: health.todayRelaxDuration,
-
-                    // 环境数据
                     light_lux: health.lightLux,
                     light_level: health.lightLevel,
-
-                    // 综合评估
                     overall_health_status: health.overallHealthStatus,
                     activity_level: health.activityLevel,
                     needs_rest: health.needsRest,
                     is_well_rested: health.isWellRested,
-
-                    // 设备信息
                     has_wearable_device: health.hasWearableDevice,
                     device_type: health.deviceType,
                 },
@@ -486,19 +478,21 @@ const HomeScreen = ({ navigation }: any) => {
                 } : undefined,
             };
 
-            console.log('🚀 发送推荐请求参数:', recommendParams);
+            if (__DEV__) console.log('🚀 发送推荐请求');
             const response = await recommendationService.getV2Recommendations(recommendParams);
 
             const list = response.recommendations || response.restaurants || (Array.isArray(response) ? response : []);
 
             if (!list || list.length === 0) {
-                console.log('📭 推荐为空，使用兜底数据');
+                if (__DEV__) console.log('📭 推荐为空，使用兜底数据');
                 const fallback = await merchantService.getRecommendedMerchants();
                 setRestaurants(fallback);
             } else {
-                console.log('✅ 获取到智能推荐数据:', list.length, '条');
+                if (__DEV__) console.log('✅ 获取到智能推荐数据:', list.length, '条');
                 setRestaurants(list);
                 setHasInitialData(true);
+                // 缓存推荐结果
+                await cacheService.set('recommendations', cacheKey, list);
             }
 
         } catch (error) {
@@ -512,17 +506,25 @@ const HomeScreen = ({ navigation }: any) => {
             }
         } finally {
             clearTimeout(timeoutId);
-            console.log('🏁 数据加载完成，重置loading状态');
             setLoading(false);
             setRefreshing(false);
             setLastLoadTime(Date.now());
+            isLoadingRef.current = false;
         }
-    };
+    }, [currentLocation, user, health, weatherData, synergyPhase]);
 
-    const handleRefresh = () => {
+    // 防抖版本的 loadData，用于位置变化时调用
+    const debouncedLoadData = useMemo(
+        () => debounce((location: any) => {
+            loadData(location, false, false);
+        }, 500),
+        [loadData]
+    );
+
+    const handleRefresh = useCallback(() => {
         setRefreshing(true);
-        loadData(currentLocation);
-    };
+        loadData(currentLocation, false, true); // 强制刷新，跳过缓存
+    }, [currentLocation, loadData]);
 
     const handleLogout = async () => {
         await authService.logout();
@@ -604,41 +606,34 @@ const HomeScreen = ({ navigation }: any) => {
     const renderHeader = () => (
         <View style={styles.headerContainer}>
             <LocationDisplay
-                onLocationChange={async (loc) => {
-                    console.log('🔄 位置更新:', loc);
-
+                onLocationChange={(loc) => {
+                    // 使用防抖处理位置变化
                     const isCurrentDefault = currentLocation &&
                         Math.abs(currentLocation.latitude - 39.9042) < 0.001 &&
                         Math.abs(currentLocation.longitude - 116.4074) < 0.001;
                     const isNewRealGPS = loc &&
                         !(Math.abs(loc.latitude - 39.9042) < 0.001 && Math.abs(loc.longitude - 116.4074) < 0.001);
 
+                    // 首次从默认位置切换到真实位置，立即加载
                     if (isCurrentDefault && isNewRealGPS) {
                         setCurrentLocation(loc);
-                        try {
-                            await loadData(loc);
-                        } catch (error) {
-                            setLoading(false);
-                        }
+                        loadData(loc);
                         return;
                     }
 
-                    const now = Date.now();
-                    const timeSinceLastLoad = now - lastLoadTime;
-
+                    // 微小变化时直接忽略
                     if (currentLocation && hasInitialData) {
                         const latDiff = Math.abs(loc.latitude - currentLocation.latitude);
                         const lonDiff = Math.abs(loc.longitude - currentLocation.longitude);
-                        const smallChange = latDiff < 0.001 && lonDiff < 0.001;
-
-                        if (smallChange && timeSinceLastLoad < 30000) {
+                        if (latDiff < 0.001 && lonDiff < 0.001) {
                             return;
                         }
                     }
 
                     setCurrentLocation(loc);
+                    // 使用防抖处理位置变化触发的数据加载
                     if (shouldReload(loc)) {
-                        loadData(loc);
+                        debouncedLoadData(loc);
                     }
                 }}
                 showRefresh={true}
@@ -662,9 +657,9 @@ const HomeScreen = ({ navigation }: any) => {
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                     <TouchableOpacity
                         onPress={() => navigation.navigate('OrderList')}
-                        style={{ padding: 8 }}
+                        style={{ padding: spacing.sm }}
                     >
-                        <Text style={{ color: '#333', fontWeight: 'bold' }}>📜 订单</Text>
+                        <Text style={{ color: colors.textPrimary, fontWeight: fontWeight.semibold, fontSize: fontSize.sm }}>📜 订单</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
                         <Text style={styles.logoutText}>退出</Text>
@@ -686,46 +681,46 @@ const HomeScreen = ({ navigation }: any) => {
             </TouchableOpacity>
 
             {__DEV__ && (
-                <View style={{ marginBottom: 12 }}>
-                    <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                <View style={{ marginBottom: spacing.md }}>
+                    <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}>
                         <TouchableOpacity
                             onPress={() => {
                                 setShowDevPanel(true);
                             }}
-                            style={{ flex: 1, padding: 10, backgroundColor: '#fff3e0', borderRadius: 8, alignItems: 'center' }}
+                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.primarySoft, borderRadius: borderRadius.lg, alignItems: 'center' }}
                         >
-                            <Text style={{ color: '#e85a2d', fontWeight: 'bold' }}>🏃 健康模拟</Text>
+                            <Text style={{ color: colors.primary, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🏃 健康模拟</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => navigation.navigate('LocationDebug')}
-                            style={{ flex: 1, padding: 10, backgroundColor: '#e3f2fd', borderRadius: 8, alignItems: 'center' }}
+                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.infoBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
                         >
-                            <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>🔍 位置调试</Text>
+                            <Text style={{ color: colors.info, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🔍 位置调试</Text>
                         </TouchableOpacity>
                     </View>
-                    <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                    <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}>
                         <TouchableOpacity
                             onPress={() => {
                                 health.simulateJustFinishedWorkout();
                                 setShowActiveRecommendation(true);
                             }}
-                            style={{ flex: 1, padding: 12, backgroundColor: '#fce4ec', borderRadius: 8, alignItems: 'center' }}
+                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.errorBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
                         >
-                            <Text style={{ color: '#c2185b', fontWeight: 'bold', fontSize: 14 }}>💪 模拟刚跑完步</Text>
-                            <Text style={{ color: '#c2185b', fontSize: 10, marginTop: 2 }}>心率145 / 步数12000</Text>
+                            <Text style={{ color: colors.error, fontWeight: fontWeight.bold, fontSize: fontSize.md }}>💪 模拟刚跑完步</Text>
+                            <Text style={{ color: colors.error, fontSize: fontSize.xs, marginTop: 2 }}>心率145 / 步数12000</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => {
                                 health.setDevMode(true);
                                 health.setSimulatedLightLux(20);
                             }}
-                            style={{ flex: 1, padding: 12, backgroundColor: '#ede7f6', borderRadius: 8, alignItems: 'center' }}
+                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.infoBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
                         >
-                            <Text style={{ color: '#5e35b1', fontWeight: 'bold', fontSize: 14 }}>🌙 模拟暗光场景</Text>
-                            <Text style={{ color: '#5e35b1', fontSize: 10, marginTop: 2 }}>20 lux / 夜间室内</Text>
+                            <Text style={{ color: colors.accent, fontWeight: fontWeight.bold, fontSize: fontSize.md }}>🌙 模拟暗光场景</Text>
+                            <Text style={{ color: colors.accent, fontSize: fontSize.xs, marginTop: 2 }}>20 lux / 夜间室内</Text>
                         </TouchableOpacity>
                     </View>
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <View style={{ flexDirection: 'row', gap: spacing.sm }}>
                         <TouchableOpacity
                             onPress={() => {
                                 const rainWeather: WeatherData = {
@@ -743,9 +738,9 @@ const HomeScreen = ({ navigation }: any) => {
                                 setWeatherData(rainWeather);
                                 setShowWeatherAlert(true);
                             }}
-                            style={{ flex: 1, padding: 10, backgroundColor: '#e8f5e9', borderRadius: 8, alignItems: 'center' }}
+                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.successBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
                         >
-                            <Text style={{ color: '#388e3c', fontWeight: 'bold' }}>🌧️ 模拟大雨</Text>
+                            <Text style={{ color: colors.success, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🌧️ 模拟大雨</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => {
@@ -764,9 +759,9 @@ const HomeScreen = ({ navigation }: any) => {
                                 setWeatherData(hotWeather);
                                 setShowWeatherAlert(true);
                             }}
-                            style={{ flex: 1, padding: 10, backgroundColor: '#ffebee', borderRadius: 8, alignItems: 'center' }}
+                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.errorBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
                         >
-                            <Text style={{ color: '#d32f2f', fontWeight: 'bold' }}>🥵 模拟高温</Text>
+                            <Text style={{ color: colors.error, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🥵 模拟高温</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -786,7 +781,7 @@ const HomeScreen = ({ navigation }: any) => {
                     style={[styles.micButton, isListening && styles.micButtonActive]}
                     onPress={startVoiceAssistant}
                 >
-                    <Text style={{ color: isListening ? '#fff' : '#e85a2d', fontSize: 18 }}>
+                    <Text style={{ color: isListening ? colors.textOnPrimary : colors.primary, fontSize: 18 }}>
                         {isListening ? '👂' : '🎤'}
                     </Text>
                 </TouchableOpacity>
@@ -846,7 +841,7 @@ const HomeScreen = ({ navigation }: any) => {
             {/* 常规 Loading 遮罩 */}
             {loading && !refreshing && synergyPhase === 0 && (
                 <View style={styles.loadingOverlay}>
-                    <ActivityIndicator size="large" color="#e85a2d" />
+                    <ActivityIndicator size="large" color={colors.primary} />
                 </View>
             )}
 
@@ -939,17 +934,17 @@ const HomeScreen = ({ navigation }: any) => {
             >
                 <View style={styles.modalCenteredView}>
                     <View style={styles.voiceModalView}>
-                        <ActivityIndicator size="large" color="#e85a2d" style={{ marginBottom: 20 }} />
+                        <ActivityIndicator size="large" color={colors.primary} style={{ marginBottom: spacing.xl }} />
                         <Text style={styles.modalTitle}>正在聆听您的需求...</Text>
 
-                        <View style={{ minHeight: 40, justifyContent: 'center', marginVertical: 10 }}>
-                            <Text style={{ color: '#e85a2d', fontSize: 18, fontWeight: 'bold', textAlign: 'center' }}>
-                                "{realtimeText}"
+                        <View style={{ minHeight: 40, justifyContent: 'center', marginVertical: spacing.md }}>
+                            <Text style={{ color: colors.primary, fontSize: fontSize.xl, fontWeight: fontWeight.bold, textAlign: 'center' }}>
+                                “{realtimeText}”
                             </Text>
                         </View>
 
-                        <Text style={styles.modalSubtitle}>例如：“我生理期，推荐点热的甜品”</Text>
-                        <Text style={{ color: '#999', fontSize: 12, marginTop: 10 }}>（语音及意图分析完全在手机本地进行，极度保护隐私）</Text>
+                        <Text style={styles.modalSubtitle}>例如：”我生理期，推荐点热的甜品”</Text>
+                        <Text style={{ color: colors.textTertiary, fontSize: fontSize.sm, marginTop: spacing.md }}>（语音及意图分析完全在手机本地进行，极度保护隐私）</Text>
                     </View>
                 </View>
             </Modal>
@@ -1040,37 +1035,39 @@ import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '..
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: colors.background,  // 温暖米白背景
+        backgroundColor: colors.background,
     },
     listContent: {
         padding: spacing.lg,
-        paddingBottom: 40,
+        paddingBottom: 48,
     },
     headerContainer: {
-        marginBottom: spacing.xl,
+        marginBottom: spacing.section,
     },
     welcomeRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: spacing.lg,
+        marginBottom: spacing.xl,
+        paddingTop: spacing.sm,
     },
     welcomeText: {
         fontSize: fontSize.md,
-        color: colors.textSecondary,
+        color: colors.textTertiary,
         fontWeight: fontWeight.medium,
+        letterSpacing: 0.3,
     },
     userName: {
-        fontSize: fontSize.xxxl,
+        fontSize: fontSize.title,
         fontWeight: fontWeight.bold,
         color: colors.textPrimary,
         marginTop: spacing.xs,
     },
     logoutBtn: {
-        paddingHorizontal: spacing.md,
+        paddingHorizontal: spacing.lg,
         paddingVertical: spacing.sm,
-        backgroundColor: colors.primaryBg,
-        borderRadius: borderRadius.lg,
+        backgroundColor: colors.primarySoft,
+        borderRadius: borderRadius.full,
         borderWidth: 1,
         borderColor: colors.frostedBorder,
     },
@@ -1079,48 +1076,48 @@ const styles = StyleSheet.create({
         fontWeight: fontWeight.semibold,
         fontSize: fontSize.sm,
     },
-    // 搜索栏 - 北欧风磨砂效果
+    // 搜索栏 - 磨砂效果 + 圆角
     searchContainer: {
         flexDirection: 'row',
         gap: spacing.sm,
-        marginBottom: spacing.md,
+        marginBottom: spacing.lg,
     },
     searchInput: {
         flex: 1,
-        backgroundColor: colors.surfaceFrosted,
-        borderRadius: borderRadius.xl,
+        backgroundColor: colors.backgroundSection,
+        borderRadius: borderRadius.full,
         paddingHorizontal: spacing.xl,
-        height: 52,
+        height: 50,
         borderWidth: 1,
         borderColor: colors.border,
         fontSize: fontSize.md,
         color: colors.textPrimary,
     },
     searchButton: {
-        width: 52,
-        height: 52,
+        width: 50,
+        height: 50,
         backgroundColor: colors.primary,
-        borderRadius: borderRadius.xl,
+        borderRadius: borderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         ...shadows.primary,
     },
     micButton: {
-        width: 52,
-        height: 52,
+        width: 50,
+        height: 50,
         backgroundColor: colors.surface,
-        borderRadius: borderRadius.xl,
+        borderRadius: borderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1.5,
-        borderColor: colors.primary,
+        borderColor: colors.primaryLight,
     },
     micButtonActive: {
         backgroundColor: colors.primary,
         borderColor: colors.primary,
         ...shadows.primary,
     },
-    // 隐私协同Banner - 北欧风格
+    // 隐私协同Banner
     synergyBanner: {
         backgroundColor: colors.successBg,
         padding: spacing.md,
@@ -1149,13 +1146,13 @@ const styles = StyleSheet.create({
     },
     loadingOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(250, 249, 247, 0.92)',  // 温暖米白遮罩
+        backgroundColor: 'rgba(250, 250, 248, 0.92)',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 1000,
     },
 
-    // --- 端云协同 Modal - 北欧风格 ---
+    // --- 端云协同 Modal ---
     synModalBg: {
         flex: 1,
         backgroundColor: colors.background,
@@ -1167,8 +1164,8 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     synBadge: {
-        backgroundColor: colors.primaryBg,
-        paddingHorizontal: spacing.md,
+        backgroundColor: colors.primarySoft,
+        paddingHorizontal: spacing.lg,
         paddingVertical: spacing.sm,
         borderRadius: borderRadius.full,
     },
@@ -1190,7 +1187,7 @@ const styles = StyleSheet.create({
         height: 340,
         backgroundColor: colors.surface,
         borderRadius: 44,
-        borderWidth: 3,
+        borderWidth: 2,
         borderColor: colors.border,
         ...shadows.xl,
         overflow: 'hidden',
@@ -1203,7 +1200,7 @@ const styles = StyleSheet.create({
         top: 0,
         width: '100%',
         height: 52,
-        backgroundColor: 'rgba(232, 90, 45, 0.3)',
+        backgroundColor: 'rgba(242, 120, 75, 0.25)',
         zIndex: 10,
     },
     synCenterNode: {
@@ -1216,7 +1213,7 @@ const styles = StyleSheet.create({
         width: 130,
         height: 130,
         borderRadius: 65,
-        backgroundColor: 'rgba(232, 90, 45, 0.15)',
+        backgroundColor: 'rgba(242, 120, 75, 0.12)',
     },
     synChipBox: {
         backgroundColor: colors.background,
@@ -1256,7 +1253,7 @@ const styles = StyleSheet.create({
     synStatusPill: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.primaryBg,
+        backgroundColor: colors.primarySoft,
         paddingHorizontal: spacing.lg,
         paddingVertical: spacing.sm,
         borderRadius: borderRadius.full,
@@ -1303,7 +1300,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.primary,
         borderStyle: 'dashed',
-        opacity: 0.25,
+        opacity: 0.2,
     },
     synDataPacket: {
         width: 18,
@@ -1319,7 +1316,7 @@ const styles = StyleSheet.create({
         height: 220,
         backgroundColor: colors.surface,
         borderRadius: 36,
-        borderWidth: 3,
+        borderWidth: 2,
         borderColor: colors.border,
         ...shadows.xl,
         justifyContent: 'center',
@@ -1329,7 +1326,7 @@ const styles = StyleSheet.create({
     synUnlockBox: {
         width: 68,
         height: 68,
-        backgroundColor: colors.primaryBg,
+        backgroundColor: colors.primarySoft,
         borderRadius: 34,
         justifyContent: 'center',
         alignItems: 'center',
@@ -1358,10 +1355,10 @@ const styles = StyleSheet.create({
         fontSize: fontSize.sm,
     },
 
-    // --- Modal Styles - 北欧磨砂风格 ---
+    // --- Modal Styles - 磨砂风格 ---
     voiceModalView: {
         width: '90%',
-        backgroundColor: colors.frostedBg,
+        backgroundColor: colors.frostedBgStrong,
         borderRadius: borderRadius.xxl,
         padding: spacing.xxl,
         alignItems: 'center',
@@ -1369,20 +1366,20 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.frostedBorder,
     },
-    // NutriVision卡片 - 磨砂玻璃风格
+    // NutriVision卡片 - 主色渐变风格
     visionCard: {
         backgroundColor: colors.primary,
-        borderRadius: borderRadius.xl,
+        borderRadius: borderRadius.xxl,
         padding: spacing.lg,
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: spacing.lg,
+        marginBottom: spacing.xl,
         ...shadows.primary,
     },
     visionIconContainer: {
         width: 48,
         height: 48,
-        backgroundColor: 'rgba(255,255,255,0.25)',
+        backgroundColor: 'rgba(255,255,255,0.22)',
         borderRadius: borderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
@@ -1394,13 +1391,13 @@ const styles = StyleSheet.create({
         fontWeight: fontWeight.bold,
     },
     visionSubtitle: {
-        color: 'rgba(255,255,255,0.9)',
+        color: 'rgba(255,255,255,0.88)',
         fontSize: fontSize.sm,
         marginTop: spacing.xs,
     },
     visionArrow: {
         marginLeft: spacing.sm,
-        backgroundColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: 'rgba(255,255,255,0.18)',
         width: 32,
         height: 32,
         borderRadius: borderRadius.full,
@@ -1467,12 +1464,12 @@ const styles = StyleSheet.create({
     },
     modalBtn: {
         flex: 1,
-        borderRadius: borderRadius.xl,
+        borderRadius: borderRadius.xxl,
         paddingVertical: spacing.md,
         alignItems: 'center',
     },
     modalBtnCancel: {
-        backgroundColor: colors.backgroundGradientEnd,
+        backgroundColor: colors.backgroundSection,
     },
     modalBtnConfirm: {
         backgroundColor: colors.primary,

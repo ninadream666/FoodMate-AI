@@ -1,18 +1,28 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { memo } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+import OptimizedImage from './OptimizedImage';
+
+// 默认图片
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=150';
 
 interface Props {
     item: any;
     onUpdate: (id: number, quantity: number) => void;
 }
 
-const CartItem = ({ item, onUpdate }: Props) => {
+const CartItem = memo(({ item, onUpdate }: Props) => {
     return (
         <View style={styles.container}>
-            {/* 圆角图片 - 磨砂风格 */}
+            {/* 圆角图片 - 使用优化的图片组件 */}
             <View style={styles.imageWrapper}>
-                <Image source={{ uri: item.imageUrl || item.image }} style={styles.image} />
+                <OptimizedImage
+                    uri={item.imageUrl || item.image || DEFAULT_IMAGE}
+                    width={128}
+                    style={styles.image}
+                    priority="low"
+                    fallbackUri={DEFAULT_IMAGE}
+                />
             </View>
 
             {/* 商品信息 */}
@@ -43,7 +53,7 @@ const CartItem = ({ item, onUpdate }: Props) => {
             </View>
         </View>
     );
-};
+});
 
 // 北欧磨砂卡片风格
 const styles = StyleSheet.create({
