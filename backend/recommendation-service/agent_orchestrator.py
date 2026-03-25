@@ -56,14 +56,14 @@ class SmartRecommendationOrchestrator:
         # 检查是否使用 DeepSeek
         self.use_deepseek = os.getenv("USE_DEEPSEEK", "false").lower() == "true"
         deepseek_key = os.getenv("DEEPSEEK_API_KEY")
-        
+
         if self.use_deepseek and deepseek_key:
             # 使用 DeepSeek API
             self.openai_client = openai.AsyncOpenAI(
                 api_key=deepseek_key,
                 base_url="https://api.deepseek.com"
             )
-            self.model_name = model_name or "deepseek-chat"
+            self.model_name = model_name or os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
             logger.info(f"✅ 使用 DeepSeek API，模型: {self.model_name}")
         else:
             # 使用 OpenAI API

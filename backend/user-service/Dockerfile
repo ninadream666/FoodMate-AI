@@ -2,15 +2,17 @@
 FROM maven:3.9-eclipse-temurin-21 AS builder
 WORKDIR /app
 
+COPY maven-settings.xml /app/maven-settings.xml
+
 # 1. 安装公共依赖
 COPY food-platform-common /app/food-platform-common
-RUN mvn -f /app/food-platform-common/pom.xml clean install -DskipTests
+RUN mvn -s /app/maven-settings.xml -f /app/food-platform-common/pom.xml clean install -DskipTests
 
 # 2. 构建服务
 COPY user-service/pom.xml /app/user-service/
 COPY user-service/src /app/user-service/src
 WORKDIR /app/user-service
-RUN mvn clean package -DskipTests
+RUN mvn -s /app/maven-settings.xml clean package -DskipTests
 
 # 运行阶段
 FROM eclipse-temurin:21-jre-alpine

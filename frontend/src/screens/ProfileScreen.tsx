@@ -85,10 +85,10 @@ const ProfileScreen = ({ navigation }: any) => {
         </TouchableOpacity>
     );
 
-    if (loading) return <ActivityIndicator style={{ marginTop: 50 }} size="large" color="#e85a2d" />;
+    if (loading) return <ActivityIndicator style={{ marginTop: 50 }} size="large" color={colors.primary} />;
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
             {/* 头部信息 */}
             <View style={styles.header}>
                 <Image

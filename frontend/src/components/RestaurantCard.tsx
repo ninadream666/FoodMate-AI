@@ -1,14 +1,15 @@
 // src/components/RestaurantCard.tsx
-// 北欧风格磨砂卡片设计
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+// 北欧风格磨砂卡片设计 - 使用优化的图片组件
+import React, { memo, useMemo } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+import OptimizedImage from './OptimizedImage';
 
-// 默认图片列表
+// 默认图片列表（已简化 URL）
 const defaultImages = [
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuCGKHZQTlEYMaCX_XakByf8YPtBpJu1JbiVmEUPUCftM6tNzRyVbyE8f3B93zfHC9IU6yuQTSyRLBwyjZOCyKcwArw8BWvTd4ICz9hLoegZzezmIpMj--IQrqYL1y-5FBJynhYgrMIvAfx3LqT7MIWUdjd7Nu_4HG_yixaPWLbcv1JbV57XSLtFufazLCDmtIKU75l2djE7H-Nq9jmcWSE8nmdeV86n26tJOAArQksQID-q6YqfTF9XDOT1m_wGyrA7EwCx7fuiaXiY',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuB5D4cVHmUDvJBFBae0uRhUP2dGh034P4yT1eXX7DXI4o99VrjQvf4MyLRT7aKUrxV54tTmh4MHx4I-X2mx6IEMJCfj1_NM79LlXeoR1Ee02k9qtFgtXO1cm08DggVsalQnB2CZqt-J4XXrJMmQ6pxAU5vP5aC6ex7wgrNJ8HvZ3KJUmpRzlteclmYitmPZbzJlaA4fMdJcy_dwxhnxl78edH5ei5fvuo9Z-pX4CemlX9S32hkNNtUv4BCGkEPSL35LhioStzX-N-wY',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuCRbRdtVr5x0wXS2eSK0WUNXjC-oxYSdvonWoNS-5Wj0qxtMrWgGUrHVLAigY4VfoOEj86XuQevuNcn6UVpNGy8n2p9uwiZr-1MDiI3xmweY99OYdsgUJFW4tInlg6E3xKTLOd4TUg0NGHnXSgUaF53YIhvEh-Gb_RVHKFa1fpH_2zjYdMS6ZMSyJc4sfJ0et0OMUuC1WpzaJtHkk8Y96pTTJsdxQoIoVbuPJ_FkYGR1vlN4qp1zXjSC-2PWHG91LimkY47Gf8UwrIw',
+    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
+    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
+    'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400',
 ];
 
 interface Props {
@@ -16,11 +17,15 @@ interface Props {
     onPress: (restaurant: any) => void;
 }
 
-const RestaurantCard = ({ restaurant, onPress }: Props) => {
+const RestaurantCard = memo(({ restaurant, onPress }: Props) => {
     // 数据处理
     const name = restaurant.name || '未知餐厅';
-    // 图片处理：优先用 API 返回的，包括 features 里的 image，没有就随机选一个默认图
-    const imageUrl = restaurant.image || restaurant.imageUrl || restaurant.features?.image || defaultImages[Math.floor(Math.random() * defaultImages.length)];
+
+    // 图片处理：使用 useMemo 避免每次渲染都计算随机图片
+    const imageUrl = useMemo(() => {
+        return restaurant.image || restaurant.imageUrl || restaurant.features?.image ||
+            defaultImages[Math.floor(Math.random() * defaultImages.length)];
+    }, [restaurant.image, restaurant.imageUrl, restaurant.features?.image]);
 
     // AI评分：优先使用后端返回的 score（60-100），final_score，最后默认85
     // 后端 DecisionAgent 返回的 score 已经是 60-100 范围
@@ -71,12 +76,14 @@ const RestaurantCard = ({ restaurant, onPress }: Props) => {
             onPress={() => onPress(restaurant)}
             activeOpacity={0.85}
         >
-            {/* 顶部图片区域 - 圆角裁剪 */}
+            {/* 顶部图片区域 - 使用优化的图片组件 */}
             <View style={styles.imageContainer}>
-                <Image
-                    source={{ uri: imageUrl }}
+                <OptimizedImage
+                    uri={imageUrl}
+                    width={400}
                     style={styles.image}
-                    resizeMode="cover"
+                    priority="normal"
+                    fallbackUri={defaultImages[0]}
                 />
                 {/* 评分角标 - 磨砂玻璃效果 */}
                 <View style={[styles.scoreBadge, { backgroundColor: getScoreBgColor(score) }]}>
@@ -117,40 +124,40 @@ const RestaurantCard = ({ restaurant, onPress }: Props) => {
             </View>
         </TouchableOpacity>
     );
-};
+});
 
 const styles = StyleSheet.create({
-    // 北欧风磨砂卡片 - 参考图片3的设计
+    // 磨砂卡片（Image3 风格）- 可点击元素带阴影（Image2 原则）
     card: {
-        backgroundColor: colors.cardBg,
-        borderRadius: borderRadius.xl,
-        marginBottom: spacing.lg,
+        backgroundColor: colors.cardBgSolid,
+        borderRadius: borderRadius.xxl,
+        marginBottom: spacing.xl,
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: colors.cardBorder,
-        ...shadows.card,  // 可点击元素才有阴影
+        ...shadows.card,
     },
     imageContainer: {
-        height: 160,
+        height: 168,
         width: '100%',
         position: 'relative',
         backgroundColor: colors.backgroundGradientEnd,
-        borderTopLeftRadius: borderRadius.xl,
-        borderTopRightRadius: borderRadius.xl,
+        borderTopLeftRadius: borderRadius.xxl,
+        borderTopRightRadius: borderRadius.xxl,
         overflow: 'hidden',
     },
     image: {
         width: '100%',
         height: '100%',
     },
-    // 评分角标 - 磨砂玻璃效果
+    // 评分角标 - 磨砂玻璃效果（Image3）
     scoreBadge: {
         position: 'absolute',
         top: spacing.md,
         right: spacing.md,
         paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-        borderRadius: borderRadius.lg,
+        paddingVertical: spacing.xs,
+        borderRadius: borderRadius.full,
         backgroundColor: colors.frostedBgStrong,
         borderWidth: 1,
         borderColor: colors.frostedBorder,
@@ -175,6 +182,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: spacing.md,
         flexWrap: 'wrap',
+        gap: spacing.sm,
     },
     ratingText: {
         color: colors.warning,
@@ -182,33 +190,29 @@ const styles = StyleSheet.create({
         fontSize: fontSize.md,
     },
     metaText: {
-        color: colors.textSecondary,
+        color: colors.textTertiary,
         fontSize: fontSize.sm,
-        marginLeft: spacing.sm,
     },
-    // 配送标签 - 北欧柔和绿色
+    // 配送标签 - 柔和绿色胶囊
     deliveryTag: {
         backgroundColor: colors.successBg,
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.xs,
-        borderRadius: borderRadius.sm,
-        marginLeft: spacing.sm,
+        borderRadius: borderRadius.full,
     },
     deliveryTagText: {
         color: colors.secondary,
         fontSize: fontSize.xs,
         fontWeight: fontWeight.medium,
     },
-    // AI推荐理由容器 - 柔和的磨砂效果
+    // AI推荐理由 - 柔和磨砂底
     reasonContainer: {
-        backgroundColor: colors.primaryBg,
+        backgroundColor: colors.primarySoft,
         padding: spacing.md,
-        borderRadius: borderRadius.md,
-        borderWidth: 1,
-        borderColor: colors.frostedBorder,
+        borderRadius: borderRadius.lg,
     },
     reasonText: {
-        color: colors.primary,
+        color: colors.primaryDark,
         fontSize: fontSize.sm,
         lineHeight: 20,
         fontWeight: fontWeight.medium,

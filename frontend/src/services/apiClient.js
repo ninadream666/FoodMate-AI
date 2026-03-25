@@ -2,28 +2,40 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SERVICE_URLS, API_CONFIG } from '../config/serviceConfig';
+import { cacheService } from '../utils/cacheUtils';
 
-// 添加 axios 请求拦截器来调试实际发送的请求
+// 是否开启调试日志（生产环境应关闭）
+const DEBUG_MODE = __DEV__;
+
+// 请求去重：防止同一请求短时间内重复发送
+const pendingRequests = new Map();
+
+// 生成请求唯一标识
+const getRequestKey = (url, method, data) => {
+    return `${method}_${url}_${JSON.stringify(data || {})}`;
+};
+
+// 添加 axios 请求拦截器（仅在开发模式输出日志）
 axios.interceptors.request.use(request => {
-    console.log('[AXIOS INTERCEPTOR] 实际发送的请求:', {
-        url: request.url,
-        method: request.method,
-        headers: request.headers,
-        data: request.data
-    });
+    if (DEBUG_MODE) {
+        console.log('[API] 发送请求:', request.method?.toUpperCase(), request.url);
+    }
     return request;
 }, error => {
-    console.error('[AXIOS INTERCEPTOR] 请求拦截器错误:', error);
+    console.error('[API] 请求拦截器错误:', error);
     return Promise.reject(error);
 });
 
 // 添加 axios 响应拦截器
 axios.interceptors.response.use(response => {
-    console.log('[AXIOS INTERCEPTOR] 收到响应:', response.status);
+    if (DEBUG_MODE) {
+        console.log('[API] 响应:', response.status, response.config.url);
+    }
     return response;
 }, error => {
-    console.error('[AXIOS INTERCEPTOR] 响应拦截器 - 错误状态:', error.response?.status);
-    console.error('[AXIOS INTERCEPTOR] 响应拦截器 - 错误数据:', error.response?.data);
+    if (DEBUG_MODE) {
+        console.error('[API] 错误:', error.response?.status, error.config?.url);
+    }
     return Promise.reject(error);
 });
 
@@ -37,9 +49,43 @@ export const getToken = async () => {
     }
 };
 
+// 缓存类型映射：根据 urlKey 确定缓存类型
+const CACHE_TYPE_MAP = {
+    merchants: 'merchants',
+    recommendation: 'recommendations',
+    orders: 'orders',
+    users: 'user',
+};
+
+// 可缓存的 GET 请求端点模式
+const CACHEABLE_PATTERNS = [
+    { service: 'merchants', pattern: /^\/$/, type: 'merchants' },
+    { service: 'merchants', pattern: /^\/\d+$/, type: 'merchants' },
+    { service: 'merchants', pattern: /\/menu-items/, type: 'menu' },
+    { service: 'recommendation', pattern: /\/recommendations/, type: 'recommendations' },
+];
+
+// 判断请求是否可缓存
+const isCacheable = (urlKey, endpoint, method) => {
+    if (method !== 'GET') return false;
+    return CACHEABLE_PATTERNS.some(
+        p => p.service === urlKey && p.pattern.test(endpoint)
+    );
+};
+
+// 获取缓存类型
+const getCacheType = (urlKey, endpoint) => {
+    const match = CACHEABLE_PATTERNS.find(
+        p => p.service === urlKey && p.pattern.test(endpoint)
+    );
+    return match?.type || CACHE_TYPE_MAP[urlKey] || 'default';
+};
+
 // 2. 通用请求函数
 // urlKey: 对应 SERVICE_URLS 中的 key，例如 'auth', 'orders'
 // endpoint: 具体路径，例如 '/login'
+// options.useCache: 是否使用缓存（默认 true）
+// options.forceRefresh: 强制刷新缓存
 export const request = async (urlKey, endpoint, options = {}) => {
     const baseUrl = SERVICE_URLS[urlKey];
     if (!baseUrl) {
@@ -48,6 +94,29 @@ export const request = async (urlKey, endpoint, options = {}) => {
 
     // 拼接完整 URL，例如 http://192.168.1.16:8083/api/auth/login
     const fullUrl = `${baseUrl}${endpoint}`;
+    const method = options.method || 'GET';
+
+    // 缓存逻辑（仅对 GET 请求）
+    const useCache = options.useCache !== false;
+    const forceRefresh = options.forceRefresh === true;
+    const canCache = isCacheable(urlKey, endpoint, method);
+
+    if (canCache && useCache && !forceRefresh) {
+        const cacheType = getCacheType(urlKey, endpoint);
+        const cached = await cacheService.get(cacheType, { urlKey, endpoint });
+        if (cached) {
+            return cached;
+        }
+    }
+
+    // 请求去重：防止同一请求短时间内重复发送
+    const requestKey = getRequestKey(fullUrl, method, options.body);
+    if (pendingRequests.has(requestKey)) {
+        if (DEBUG_MODE) {
+            console.log('[API] 请求合并:', requestKey);
+        }
+        return pendingRequests.get(requestKey);
+    }
 
     // 获取 Token
     const token = await getToken();
@@ -65,108 +134,77 @@ export const request = async (urlKey, endpoint, options = {}) => {
 
     const config = {
         url: fullUrl,
-        method: options.method || 'GET',
+        method: method,
         headers: headers,
         data: options.body, // axios 用 data，fetch 用 body
         timeout: API_CONFIG.TIMEOUT || 15000, // 使用配置的超时时间
     };
 
-    try {
-        console.log(`[API] Requesting: ${config.method} ${config.url}`);
-        console.log(`[API] Headers:`, config.headers);
-        console.log(`[API] Token exists:`, !!token);
-        if (token) {
-            console.log(`[API] Token format:`, token.substring(0, 20) + '...');
-        }
-        if (config.data) {
-            console.log(`[API] Request body:`, JSON.stringify(config.data));
-        }
-        const response = await axios(config);
-        return response.data;
-    } catch (error) {
-        // 错误处理
-        if (error.response) {
-            // 后端返回了错误状态码 (4xx, 5xx)
-            const status = error.response.status;
-            console.error(`[API] Error Response:`, {
-                status: status,
-                statusText: error.response.statusText,
-                data: error.response.data,
-                headers: error.response.headers,
-                url: config.url
-            });
+    // 创建请求 Promise 并存入去重 Map
+    const requestPromise = (async () => {
+        try {
+            const response = await axios(config);
+            const data = response.data;
 
-            if (status === 401) {
-                // Token 过期或未登录
-                await AsyncStorage.removeItem('token');
-                await AsyncStorage.removeItem('user');
-                // 注意：这里不能像Web那样直接 window.location 跳转
-                // 我们抛出一个特定错误，让 UI 层去处理跳转
-                throw new Error('UNAUTHORIZED');
+            // 缓存成功的 GET 响应
+            if (canCache && useCache) {
+                const cacheType = getCacheType(urlKey, endpoint);
+                await cacheService.set(cacheType, { urlKey, endpoint }, data);
             }
 
-            if (status === 403) {
-                // 权限不足或token无效
-                console.error('[API] 403 Forbidden - URL:', config.url);
-                console.error('[API] 403 Forbidden - Method:', config.method);
-                console.error('[API] 403 Forbidden - ResponseData:', JSON.stringify(error.response.data));
-                console.error('[API] 403 Forbidden - SentAuthHeader:', config.headers['Authorization']);
+            return data;
+        } catch (error) {
+            // 错误处理
+            if (error.response) {
+                // 后端返回了错误状态码 (4xx, 5xx)
+                const status = error.response.status;
+                if (DEBUG_MODE) {
+                    console.error(`[API] Error Response:`, status, config.url);
+                }
 
-                // 检查是否有token
-                const currentToken = await AsyncStorage.getItem('token');
-                console.error('[API] 403 Token状态 - hasToken:', !!currentToken);
-                console.error('[API] 403 Token状态 - tokenLength:', currentToken ? currentToken.length : 0);
-                console.error('[API] 403 Token状态 - tokenPrefix:', currentToken ? currentToken.substring(0, 50) : 'null');
+                if (status === 401) {
+                    // Token 过期或未登录
+                    await AsyncStorage.removeItem('token');
+                    await AsyncStorage.removeItem('user');
+                    throw new Error('UNAUTHORIZED');
+                }
 
-                let debugInfo = `hasToken=${!!currentToken}`;
-
-                // 尝试解析token查看是否过期
-                if (currentToken) {
-                    try {
-                        const parts = currentToken.split('.');
-                        if (parts.length === 3) {
-                            let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-                            while (base64.length % 4) base64 += '=';
-                            const payload = JSON.parse(atob(base64));
-                            const isExpired = Date.now() > payload.exp * 1000;
-                            debugInfo += `, userId=${payload.userId}, role=${payload.role}, expired=${isExpired}`;
-                            console.error('[API] 403 Token解析 - userId:', payload.userId);
-                            console.error('[API] 403 Token解析 - username:', payload.sub);
-                            console.error('[API] 403 Token解析 - role:', payload.role);
-                            console.error('[API] 403 Token解析 - exp:', payload.exp);
-                            console.error('[API] 403 Token解析 - 过期时间:', new Date(payload.exp * 1000).toISOString());
-                            console.error('[API] 403 Token解析 - 是否过期:', isExpired);
-                        }
-                    } catch (e) {
-                        debugInfo += `, parseError=${e.message}`;
-                        console.error('[API] 403 Token解析失败:', e.message);
+                if (status === 403) {
+                    const currentToken = await AsyncStorage.getItem('token');
+                    if (!currentToken) {
+                        throw new Error('未登录，请先登录');
+                    } else {
+                        throw new Error('登录验证失败(403)');
                     }
                 }
 
-                if (!currentToken) {
-                    throw new Error('未登录，请先登录');
-                } else {
-                    // 把调试信息放到错误消息里
-                    throw new Error(`登录验证失败(403): ${debugInfo}`);
-                }
+                // 尝试提取后端返回的错误文字
+                const errorMsg = error.response.data?.message || error.response.data || `请求失败 (${status})`;
+                throw new Error(typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg));
+            } else if (error.request) {
+                throw new Error('网络连接失败，请检查后端服务是否启动');
+            } else {
+                throw new Error(error.message);
             }
-
-            // 尝试提取后端返回的错误文字
-            const errorMsg = error.response.data?.message || error.response.data || `请求失败 (${status})`;
-            throw new Error(typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg));
-        } else if (error.request) {
-            // 发出了请求但没有收到响应 (通常是网络问题或后端没启动)
-            throw new Error('网络连接失败，请检查后端服务是否启动');
-        } else {
-            throw new Error(error.message);
+        } finally {
+            // 请求完成后移除去重记录
+            pendingRequests.delete(requestKey);
         }
-    }
+    })();
+
+    // 存入去重 Map
+    pendingRequests.set(requestKey, requestPromise);
+
+    return requestPromise;
 };
 
 // 导出便捷方法
 export default {
-    get: (service, endpoint) => request(service, endpoint, { method: 'GET' }),
-    post: (service, endpoint, data) => request(service, endpoint, { method: 'POST', body: data }),
-    put: (service, endpoint, data) => request(service, endpoint, { method: 'PUT', body: data }),
-    del: (service, endpoint) => request(service, endpoint, { method: 'DELETE' }),
+    get: (service, endpoint, options = {}) => request(service, endpoint, { method: 'GET', ...options }),
+    post: (service, endpoint, data, options = {}) => request(service, endpoint, { method: 'POST', body: data, ...options }),
+    put: (service, endpoint, data, options = {}) => request(service, endpoint, { method: 'PUT', body: data, ...options }),
+    del: (service, endpoint, options = {}) => request(service, endpoint, { method: 'DELETE', ...options }),
+    // 清除缓存方法
+    clearCache: (type) => cacheService.clear(type),
+    clearAllCache: () => cacheService.clearAll(),
 };

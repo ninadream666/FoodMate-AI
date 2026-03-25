@@ -1544,7 +1544,7 @@ class DecisionAgent(BaseAgent):
                 reasoning_parts.append("工作日午餐时段，为您优选出餐快、性价比高的餐厅")
 
         # 🆕 健康状态因素（OPPO健康SDK）
-        health_ctx = context.get("health_context", {})
+        health_ctx = context_analysis.get("health_context", {})
         if health_ctx:
             # 运动状态
             if health_ctx.get("is_post_workout", False):
