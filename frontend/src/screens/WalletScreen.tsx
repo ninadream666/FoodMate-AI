@@ -137,56 +137,145 @@ const WalletScreen = ({ navigation }: any) => {
     );
 };
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
+    container: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
 
     balanceCard: {
-        backgroundColor: '#e85a2d', // 模拟渐变，使用纯色代替
-        margin: 16,
-        padding: 20,
-        borderRadius: 12,
-        elevation: 4,
+        backgroundColor: colors.primary,
+        margin: spacing.lg,
+        padding: spacing.xl,
+        borderRadius: borderRadius.xl,
+        ...shadows.primary,
     },
-    balanceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    balanceLabel: { color: 'rgba(255,255,255,0.9)', fontSize: 14 },
-    balanceValue: { color: '#fff', fontSize: 32, fontWeight: 'bold', marginTop: 8 },
-    chargeBtn: { backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
-    chargeText: { color: '#e85a2d', fontWeight: 'bold', fontSize: 12 },
+    balanceRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    balanceLabel: {
+        color: 'rgba(255,255,255,0.9)',
+        fontSize: fontSize.sm,
+    },
+    balanceValue: {
+        color: colors.textOnPrimary,
+        fontSize: fontSize.hero,
+        fontWeight: fontWeight.bold,
+        marginTop: spacing.sm,
+    },
+    chargeBtn: {
+        backgroundColor: colors.surface,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderRadius: borderRadius.full,
+        ...shadows.sm,
+    },
+    chargeText: {
+        color: colors.primary,
+        fontWeight: fontWeight.bold,
+        fontSize: fontSize.xs,
+    },
 
-    tabs: { flexDirection: 'row', backgroundColor: '#fff', paddingVertical: 10 },
-    tab: { flex: 1, alignItems: 'center', paddingVertical: 8 },
-    activeTab: { borderBottomWidth: 2, borderBottomColor: '#e85a2d' },
-    tabText: { color: '#999', fontWeight: 'bold' },
-    activeTabText: { color: '#e85a2d' },
+    tabs: {
+        flexDirection: 'row',
+        backgroundColor: colors.surface,
+        paddingVertical: spacing.md,
+        marginHorizontal: spacing.lg,
+        borderRadius: borderRadius.lg,
+        marginBottom: spacing.md,
+    },
+    tab: {
+        flex: 1,
+        alignItems: 'center',
+        paddingVertical: spacing.sm,
+    },
+    activeTab: {
+        borderBottomWidth: 2,
+        borderBottomColor: colors.primary,
+    },
+    tabText: {
+        color: colors.textTertiary,
+        fontWeight: fontWeight.semibold,
+        fontSize: fontSize.sm,
+    },
+    activeTabText: {
+        color: colors.primary,
+    },
 
-    list: { padding: 16 },
+    list: { padding: spacing.lg },
     coupon: {
         flexDirection: 'row',
-        backgroundColor: '#fff',
-        borderRadius: 8,
-        marginBottom: 12,
+        backgroundColor: colors.cardBg,
+        borderRadius: borderRadius.lg,
+        marginBottom: spacing.md,
         overflow: 'hidden',
-        elevation: 1,
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
     },
     disabledCoupon: { opacity: 0.6 },
     couponLeft: {
         width: 100,
-        backgroundColor: '#fff5f2',
+        backgroundColor: colors.primaryBg,
         justifyContent: 'center',
         alignItems: 'center',
         borderRightWidth: 1,
-        borderRightColor: '#eee',
+        borderRightColor: colors.divider,
         borderStyle: 'dashed',
     },
-    amount: { fontSize: 16, color: '#e85a2d', fontWeight: 'bold' },
-    condition: { fontSize: 10, color: '#666', marginTop: 4 },
-    couponRight: { flex: 1, padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    couponTitle: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 4 },
-    couponDate: { fontSize: 10, color: '#999' },
-    useBtn: { backgroundColor: '#e85a2d', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-    useBtnText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
-    statusText: { fontSize: 12, color: '#999' },
-    emptyText: { textAlign: 'center', marginTop: 40, color: '#999' },
+    amount: {
+        fontSize: fontSize.lg,
+        color: colors.primary,
+        fontWeight: fontWeight.bold,
+    },
+    condition: {
+        fontSize: fontSize.xs,
+        color: colors.textSecondary,
+        marginTop: spacing.xs,
+    },
+    couponRight: {
+        flex: 1,
+        padding: spacing.md,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    couponTitle: {
+        fontSize: fontSize.sm,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+        marginBottom: spacing.xs,
+    },
+    couponDate: {
+        fontSize: fontSize.xs,
+        color: colors.textTertiary,
+    },
+    useBtn: {
+        backgroundColor: colors.primary,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderRadius: borderRadius.full,
+        ...shadows.sm,
+    },
+    useBtnText: {
+        color: colors.textOnPrimary,
+        fontSize: fontSize.xs,
+        fontWeight: fontWeight.bold,
+    },
+    statusText: {
+        fontSize: fontSize.xs,
+        color: colors.textTertiary,
+    },
+    emptyText: {
+        textAlign: 'center',
+        marginTop: 40,
+        color: colors.textTertiary,
+        fontSize: fontSize.lg,
+    },
 });
 
 export default WalletScreen;

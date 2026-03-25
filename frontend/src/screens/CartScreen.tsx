@@ -99,20 +99,101 @@ const CartScreen = ({ route, navigation }: any) => {
     );
 };
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
+// 北欧风格样式
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    header: { padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
-    restaurantName: { fontSize: 18, fontWeight: 'bold' },
-    bill: { padding: 16, backgroundColor: '#fff', marginTop: 10 },
-    row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-    totalRow: { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#eee' },
-    totalText: { fontSize: 16, fontWeight: 'bold' },
-    totalPrice: { fontSize: 20, fontWeight: 'bold', color: '#e85a2d' },
-    footer: { padding: 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#eee' },
-    payBtn: { backgroundColor: '#e85a2d', height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center' },
-    disabledBtn: { backgroundColor: '#ccc' },
-    payText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-    emptyText: { textAlign: 'center', marginTop: 50, color: '#999' }
+    container: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
+    header: {
+        padding: spacing.xl,
+        backgroundColor: colors.surface,
+        marginHorizontal: spacing.lg,
+        marginTop: spacing.lg,
+        borderRadius: borderRadius.xl,
+        ...shadows.sm,
+    },
+    restaurantName: {
+        fontSize: fontSize.xl,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
+    // 账单卡片 - 磨砂效果
+    bill: {
+        padding: spacing.xl,
+        backgroundColor: colors.frostedBg,
+        marginHorizontal: spacing.lg,
+        marginTop: spacing.lg,
+        borderRadius: borderRadius.xl,
+        borderWidth: 1,
+        borderColor: colors.borderLight,
+    },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: spacing.md,
+    },
+    rowLabel: {
+        fontSize: fontSize.md,
+        color: colors.textSecondary,
+    },
+    rowValue: {
+        fontSize: fontSize.md,
+        color: colors.textPrimary,
+        fontWeight: fontWeight.medium,
+    },
+    totalRow: {
+        marginTop: spacing.md,
+        paddingTop: spacing.md,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+    },
+    totalText: {
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
+    totalPrice: {
+        fontSize: fontSize.xxl,
+        fontWeight: fontWeight.bold,
+        color: colors.primary,
+    },
+    // 底部结算栏
+    footer: {
+        padding: spacing.xl,
+        backgroundColor: colors.surface,
+        borderTopWidth: 1,
+        borderTopColor: colors.borderLight,
+        ...shadows.sm,
+    },
+    payBtn: {
+        backgroundColor: colors.primary,
+        height: 54,
+        borderRadius: borderRadius.full,
+        justifyContent: 'center',
+        alignItems: 'center',
+        ...shadows.primary,
+    },
+    disabledBtn: {
+        backgroundColor: colors.textDisabled,
+        shadowOpacity: 0,
+        elevation: 0,
+    },
+    payText: {
+        color: colors.textOnPrimary,
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        letterSpacing: 1,
+    },
+    emptyText: {
+        textAlign: 'center',
+        marginTop: 80,
+        color: colors.textTertiary,
+        fontSize: fontSize.lg,
+    },
 });
 
 export default CartScreen;

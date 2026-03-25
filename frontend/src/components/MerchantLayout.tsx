@@ -108,33 +108,37 @@ export default function MerchantLayout({ children }: MerchantLayoutProps) {
     );
 }
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight } from '../theme/NordicTheme';
+
 const styles = StyleSheet.create({
     loadingContainer: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f9fafb',
+        backgroundColor: colors.background,
     },
     loadingContent: {
         alignItems: 'center',
-        gap: 8,
+        gap: spacing.sm,
     },
     loadingText: {
-        color: '#6b7280',
-        fontSize: 14,
+        color: colors.textSecondary,
+        fontSize: fontSize.md,
     },
     errorContainer: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f9fafb',
+        backgroundColor: colors.background,
     },
     errorText: {
-        color: '#6b7280',
+        color: colors.textSecondary,
+        fontSize: fontSize.md,
     },
     container: {
         flex: 1,
-        backgroundColor: '#f9fafb',
+        backgroundColor: colors.background,
     },
     contentRow: {
         flex: 1,
@@ -142,6 +146,6 @@ const styles = StyleSheet.create({
     },
     mainContent: {
         flex: 1,
-        padding: 16,
+        padding: spacing.lg,
     },
 });

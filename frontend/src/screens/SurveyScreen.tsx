@@ -181,55 +181,187 @@ const SurveyScreen = ({ navigation }: any) => {
     );
 };
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff5ec' },
-    content: { padding: 20, paddingBottom: 40 },
-    header: { alignItems: 'center', marginBottom: 30 },
-    title: { fontSize: 24, fontWeight: 'bold', color: '#1c130d', marginBottom: 8 },
-    subtitle: { fontSize: 14, color: '#666' },
-    progressContainer: { width: '100%', marginTop: 20 },
-    stepText: { textAlign: 'right', fontSize: 12, color: '#666', marginBottom: 4 },
-    progressBar: { height: 8, backgroundColor: '#fed7aa', borderRadius: 4 },
-    progressFill: { width: '100%', height: '100%', backgroundColor: '#f97316', borderRadius: 4 },
+    container: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
+    content: {
+        padding: spacing.xl,
+        paddingBottom: 40,
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: spacing.xxxl,
+    },
+    title: {
+        fontSize: fontSize.title,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+        marginBottom: spacing.sm,
+    },
+    subtitle: {
+        fontSize: fontSize.sm,
+        color: colors.textSecondary,
+    },
+    progressContainer: {
+        width: '100%',
+        marginTop: spacing.xl,
+    },
+    stepText: {
+        textAlign: 'right',
+        fontSize: fontSize.xs,
+        color: colors.textTertiary,
+        marginBottom: spacing.xs,
+    },
+    progressBar: {
+        height: 8,
+        backgroundColor: colors.primaryBg,
+        borderRadius: borderRadius.sm,
+    },
+    progressFill: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: colors.primary,
+        borderRadius: borderRadius.sm,
+    },
 
-    section: { marginBottom: 30 },
-    question: { fontSize: 18, fontWeight: 'bold', color: '#1c130d', marginBottom: 16 },
-    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    section: { marginBottom: spacing.xxxl },
+    question: {
+        fontSize: fontSize.xl,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+        marginBottom: spacing.lg,
+    },
+    grid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: spacing.md,
+    },
 
-    // Card Styles (Flavor)
+    // Card Styles (Flavor) - 北欧磨砂风格
     card: {
-        width: '48%', aspectRatio: 1, backgroundColor: '#fff', borderRadius: 12,
-        justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'transparent'
+        width: '48%',
+        aspectRatio: 1,
+        backgroundColor: colors.cardBg,
+        borderRadius: borderRadius.xl,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: colors.cardBorder,
     },
-    activeCard: { borderColor: '#f97316', backgroundColor: '#fff7ed' },
-    emoji: { fontSize: 32, marginBottom: 8 },
-    label: { fontSize: 14, fontWeight: 'bold', color: '#333' },
-    activeLabel: { color: '#f97316' },
-    checkIcon: { position: 'absolute', top: 8, right: 8, color: '#f97316', fontWeight: 'bold' },
+    activeCard: {
+        borderColor: colors.primary,
+        backgroundColor: colors.primaryBg,
+        ...shadows.sm,
+    },
+    emoji: { fontSize: 32, marginBottom: spacing.sm },
+    label: {
+        fontSize: fontSize.sm,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+    },
+    activeLabel: { color: colors.primary },
+    checkIcon: {
+        position: 'absolute',
+        top: spacing.sm,
+        right: spacing.sm,
+        color: colors.primary,
+        fontWeight: fontWeight.bold,
+    },
 
-    // Chip Styles (Cuisine)
+    // Chip Styles (Cuisine) - 北欧风格
     chip: {
-        width: '48%', flexDirection: 'row', alignItems: 'center', padding: 12,
-        backgroundColor: '#fff', borderRadius: 8, marginBottom: 10
+        width: '48%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.md,
+        backgroundColor: colors.cardBg,
+        borderRadius: borderRadius.lg,
+        marginBottom: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
     },
-    activeChip: { backgroundColor: '#ffedd5', borderWidth: 1, borderColor: '#f97316' },
-    chipEmoji: { fontSize: 20, marginRight: 8 },
-    chipLabel: { fontSize: 14, color: '#333' },
-    activeChipLabel: { color: '#c2410c', fontWeight: 'bold' },
+    activeChip: {
+        backgroundColor: colors.primaryBg,
+        borderWidth: 1.5,
+        borderColor: colors.primary,
+    },
+    chipEmoji: { fontSize: 20, marginRight: spacing.sm },
+    chipLabel: {
+        fontSize: fontSize.sm,
+        color: colors.textPrimary,
+    },
+    activeChipLabel: {
+        color: colors.primary,
+        fontWeight: fontWeight.bold,
+    },
 
-    // Tag Styles (Allergies)
-    tagContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-    tag: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#eee' },
-    activeTag: { backgroundColor: '#f97316', borderColor: '#f97316' },
-    tagText: { color: '#666' },
-    activeTagText: { color: '#fff', fontWeight: 'bold' },
-    input: { marginTop: 10, backgroundColor: '#fff', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#fed7aa' },
+    // Tag Styles (Allergies) - 北欧胶囊风格
+    tagContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: spacing.md,
+    },
+    tag: {
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.sm,
+        borderRadius: borderRadius.full,
+        backgroundColor: colors.surface,
+        borderWidth: 1.5,
+        borderColor: colors.border,
+    },
+    activeTag: {
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
+        ...shadows.sm,
+    },
+    tagText: {
+        color: colors.textSecondary,
+        fontSize: fontSize.sm,
+        fontWeight: fontWeight.medium,
+    },
+    activeTagText: {
+        color: colors.textOnPrimary,
+        fontWeight: fontWeight.bold,
+    },
+    input: {
+        marginTop: spacing.md,
+        backgroundColor: colors.surface,
+        padding: spacing.md,
+        borderRadius: borderRadius.lg,
+        borderWidth: 1.5,
+        borderColor: colors.border,
+        fontSize: fontSize.md,
+        color: colors.textPrimary,
+    },
 
-    footer: { alignItems: 'center', marginTop: 10 },
-    submitBtn: { width: '100%', height: 50, backgroundColor: '#f97316', borderRadius: 25, justifyContent: 'center', alignItems: 'center', shadowColor: '#f97316', shadowOpacity: 0.3, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
-    submitText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-    skipBtn: { marginTop: 16 },
-    skipText: { color: '#999' },
+    footer: {
+        alignItems: 'center',
+        marginTop: spacing.md,
+    },
+    submitBtn: {
+        width: '100%',
+        height: 54,
+        backgroundColor: colors.primary,
+        borderRadius: borderRadius.full,
+        justifyContent: 'center',
+        alignItems: 'center',
+        ...shadows.primary,
+    },
+    submitText: {
+        color: colors.textOnPrimary,
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+    },
+    skipBtn: { marginTop: spacing.lg },
+    skipText: {
+        color: colors.textTertiary,
+        fontSize: fontSize.sm,
+    },
 });
 
 export default SurveyScreen;

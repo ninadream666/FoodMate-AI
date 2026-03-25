@@ -167,32 +167,105 @@ const AddressListScreen = ({ navigation, route }: any) => {
     );
 };
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    list: { padding: 16 },
-    card: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: 'transparent',
+    container: {
+        flex: 1,
+        backgroundColor: colors.background,
     },
-    defaultBorder: { borderColor: '#e85a2d' },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-    tagRow: { flexDirection: 'row', gap: 8 },
-    tag: { fontSize: 12, color: '#e85a2d', backgroundColor: '#fff5f2', padding: 4, borderRadius: 4 },
-    defaultTag: { fontSize: 12, color: 'green', backgroundColor: '#e6fffa', padding: 4, borderRadius: 4 },
-    deleteBtn: { padding: 4 },
-    deleteText: { color: '#999', fontSize: 12 },
-    addressText: { fontSize: 16, color: '#333', lineHeight: 24, marginBottom: 10 },
-    setDefaultBtn: { borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 10, alignItems: 'center' },
-    setDefaultText: { color: '#666', fontSize: 12 },
-    footer: { padding: 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#eee' },
-    addBtn: { backgroundColor: '#e85a2d', height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center' },
-    addBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-    empty: { textAlign: 'center', marginTop: 50, color: '#999' },
-    loading: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.5)' },
+    list: { padding: spacing.lg },
+    card: {
+        backgroundColor: colors.cardBg,
+        borderRadius: borderRadius.xl,
+        padding: spacing.lg,
+        marginBottom: spacing.md,
+        borderWidth: 1.5,
+        borderColor: colors.cardBorder,
+    },
+    defaultBorder: {
+        borderColor: colors.primary,
+        backgroundColor: colors.primaryBg,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: spacing.md,
+    },
+    tagRow: { flexDirection: 'row', gap: spacing.sm },
+    tag: {
+        fontSize: fontSize.xs,
+        color: colors.primary,
+        backgroundColor: colors.primaryBg,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: borderRadius.sm,
+        fontWeight: fontWeight.medium,
+    },
+    defaultTag: {
+        fontSize: fontSize.xs,
+        color: colors.success,
+        backgroundColor: colors.successBg,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: borderRadius.sm,
+        fontWeight: fontWeight.medium,
+    },
+    deleteBtn: { padding: spacing.xs },
+    deleteText: {
+        color: colors.textTertiary,
+        fontSize: fontSize.xs,
+    },
+    addressText: {
+        fontSize: fontSize.lg,
+        color: colors.textPrimary,
+        lineHeight: 24,
+        marginBottom: spacing.md,
+        fontWeight: fontWeight.medium,
+    },
+    setDefaultBtn: {
+        borderTopWidth: 1,
+        borderTopColor: colors.divider,
+        paddingTop: spacing.md,
+        alignItems: 'center',
+    },
+    setDefaultText: {
+        color: colors.textSecondary,
+        fontSize: fontSize.xs,
+        fontWeight: fontWeight.medium,
+    },
+    footer: {
+        padding: spacing.lg,
+        backgroundColor: colors.surface,
+        borderTopWidth: 1,
+        borderTopColor: colors.borderLight,
+    },
+    addBtn: {
+        backgroundColor: colors.primary,
+        height: 54,
+        borderRadius: borderRadius.full,
+        justifyContent: 'center',
+        alignItems: 'center',
+        ...shadows.primary,
+    },
+    addBtnText: {
+        color: colors.textOnPrimary,
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+    },
+    empty: {
+        textAlign: 'center',
+        marginTop: 50,
+        color: colors.textTertiary,
+        fontSize: fontSize.lg,
+    },
+    loading: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(250, 249, 247, 0.92)',
+    },
 });
 
 export default AddressListScreen;

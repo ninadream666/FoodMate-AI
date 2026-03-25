@@ -208,151 +208,160 @@ const LoginScreen = ({ navigation }: any) => {
     );
 };
 
-// 样式表 (对应 Web 端的 CSS)
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
+// 样式表 - 北欧简约风格
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#fcfaf8', // 米色背景
+        backgroundColor: colors.background,
     },
     container: {
         flexGrow: 1,
-        padding: 24,
+        padding: spacing.xxl,
     },
     header: {
-        marginTop: 20,
-        marginBottom: 30,
+        marginTop: spacing.xxxl,
+        marginBottom: spacing.xxxl,
     },
     appTitle: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#1c130d',
-        marginBottom: 8,
+        fontSize: fontSize.hero,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+        marginBottom: spacing.sm,
+        letterSpacing: -0.5,
     },
     subTitle: {
-        fontSize: 18,
-        color: '#666',
+        fontSize: fontSize.lg,
+        color: colors.textSecondary,
+        fontWeight: fontWeight.medium,
     },
-    // Tab 切换样式
+    // Tab 切换样式 - 北欧磨砂效果
     tabContainer: {
         flexDirection: 'row',
-        backgroundColor: '#f4ece7',
-        borderRadius: 25,
-        padding: 4,
-        marginBottom: 24,
-        height: 48,
+        backgroundColor: colors.backgroundGradientEnd,
+        borderRadius: borderRadius.full,
+        padding: spacing.xs,
+        marginBottom: spacing.xxl,
+        height: 52,
     },
     tabButton: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 22,
+        borderRadius: borderRadius.full,
     },
     tabButtonActive: {
-        backgroundColor: '#fff',
-        elevation: 2, // Android 阴影
-        shadowColor: '#000', // iOS 阴影
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
+        backgroundColor: colors.surface,
+        ...shadows.sm,
     },
     tabText: {
-        color: '#9c6c49',
-        fontWeight: '600',
+        color: colors.textSecondary,
+        fontWeight: fontWeight.semibold,
+        fontSize: fontSize.md,
     },
     tabTextActive: {
-        color: '#1c130d',
-        fontWeight: 'bold',
+        color: colors.textPrimary,
+        fontWeight: fontWeight.bold,
     },
-    // 角色选择样式
+    // 角色选择样式 - 北欧卡片风格
     sectionLabel: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#1c130d',
-        marginBottom: 10,
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.semibold,
+        color: colors.textPrimary,
+        marginBottom: spacing.md,
     },
     roleGrid: {
         flexDirection: 'row',
         justifyContent: 'center',
-        gap: 20,
-        marginBottom: 24,
+        gap: spacing.lg,
+        marginBottom: spacing.xxl,
     },
     roleBox: {
-        width: 120,
-        height: 80,
-        borderWidth: 1,
-        borderColor: '#e8d9ce',
-        borderRadius: 8,
+        width: 140,
+        height: 90,
+        borderWidth: 1.5,
+        borderColor: colors.border,
+        borderRadius: borderRadius.lg,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: colors.surface,
     },
     roleBoxSelected: {
-        borderColor: '#e85a2d', // 主题色 Orange
-        backgroundColor: '#fff5f2',
+        borderColor: colors.primary,
+        backgroundColor: colors.primaryBg,
+        ...shadows.sm,
     },
     roleText: {
-        fontSize: 12,
-        color: '#9c6c49',
-        fontWeight: 'bold',
+        fontSize: fontSize.sm,
+        color: colors.textSecondary,
+        fontWeight: fontWeight.semibold,
+        marginTop: spacing.xs,
     },
     roleTextSelected: {
-        color: '#e85a2d',
+        color: colors.primary,
     },
-    // 表单样式
+    // 表单样式 - 北欧简约输入框
     formContainer: {
         flex: 1,
     },
     inputLabel: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#1c130d',
-        marginBottom: 8,
-        marginTop: 8,
+        fontSize: fontSize.md,
+        fontWeight: fontWeight.medium,
+        color: colors.textPrimary,
+        marginBottom: spacing.sm,
+        marginTop: spacing.md,
     },
     input: {
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: '#e8d9ce',
-        borderRadius: 8,
-        padding: 15,
-        fontSize: 16,
-        color: '#1c130d',
-        marginBottom: 8,
+        backgroundColor: colors.surface,
+        borderWidth: 1.5,
+        borderColor: colors.border,
+        borderRadius: borderRadius.lg,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md + 2,
+        fontSize: fontSize.md,
+        color: colors.textPrimary,
+        marginBottom: spacing.sm,
     },
     passwordContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: '#e8d9ce',
-        borderRadius: 8,
-        marginBottom: 24,
+        backgroundColor: colors.surface,
+        borderWidth: 1.5,
+        borderColor: colors.border,
+        borderRadius: borderRadius.lg,
+        marginBottom: spacing.xxl,
     },
     passwordInput: {
         flex: 1,
-        padding: 15,
-        fontSize: 16,
-        color: '#1c130d',
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md + 2,
+        fontSize: fontSize.md,
+        color: colors.textPrimary,
     },
     eyeButton: {
-        padding: 10,
-        marginRight: 5,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
     },
+    // 主按钮 - 北欧风格带阴影
     submitButton: {
-        backgroundColor: '#e85a2d', // 主题色
-        borderRadius: 30,
+        backgroundColor: colors.primary,
+        borderRadius: borderRadius.full,
         height: 56,
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 16,
+        marginTop: spacing.lg,
+        ...shadows.primary,
     },
     buttonDisabled: {
-        opacity: 0.7,
+        opacity: 0.6,
     },
     submitButtonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
+        color: colors.textOnPrimary,
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
+        letterSpacing: 1,
     },
 });
 

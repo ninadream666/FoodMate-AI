@@ -135,19 +135,24 @@ function LocationDisplay({ onLocationChange, showRefresh = true }: LocationDispl
     );
 }
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
 const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f8f9fa',
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 12,
+        backgroundColor: colors.cardBg,
+        padding: spacing.md,
+        borderRadius: borderRadius.lg,
+        marginBottom: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
     },
     warningContainer: {
-        backgroundColor: '#fff3cd',
-        borderColor: '#ffc107',
-        borderWidth: 1,
+        backgroundColor: colors.warningBg,
+        borderColor: colors.warning,
+        borderWidth: 1.5,
     },
     locationInfo: {
         flex: 1,
@@ -156,40 +161,44 @@ const styles = StyleSheet.create({
     },
     icon: {
         fontSize: 16,
-        marginRight: 8,
+        marginRight: spacing.sm,
     },
     textContainer: {
         flex: 1,
     },
     label: {
-        fontSize: 12,
-        color: '#666666',
-        marginBottom: 2,
+        fontSize: fontSize.xs,
+        color: colors.textSecondary,
+        marginBottom: spacing.xs,
+        fontWeight: fontWeight.medium,
     },
     warningLabel: {
-        color: '#856404',
-        fontWeight: '600',
+        color: colors.warning,
+        fontWeight: fontWeight.semibold,
     },
     address: {
-        fontSize: 14,
-        color: '#333333',
-        fontWeight: '500',
+        fontSize: fontSize.sm,
+        color: colors.textPrimary,
+        fontWeight: fontWeight.medium,
     },
     warningText: {
-        color: '#dc3545',
-        fontWeight: '600',
+        color: colors.error,
+        fontWeight: fontWeight.semibold,
     },
     refreshButton: {
-        padding: 8,
-        borderRadius: 6,
-        backgroundColor: '#ffffff',
+        padding: spacing.sm,
+        borderRadius: borderRadius.md,
+        backgroundColor: colors.surface,
         alignItems: 'center',
         justifyContent: 'center',
-        minWidth: 32,
-        minHeight: 32,
+        minWidth: 36,
+        minHeight: 36,
+        borderWidth: 1,
+        borderColor: colors.border,
     },
     warningButton: {
-        backgroundColor: '#ffc107',
+        backgroundColor: colors.warning,
+        borderColor: colors.warning,
     },
     refreshIcon: {
         fontSize: 16,

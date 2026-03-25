@@ -251,23 +251,28 @@ const StatusCapsule: React.FC<StatusCapsuleProps> = ({
     );
 };
 
+// 北欧风主题
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
+
 const styles = StyleSheet.create({
+    // 状态胶囊 - 北欧磨砂玻璃效果
     capsule: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f8f9fa',
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        borderRadius: 20,
-        marginBottom: 12,
+        backgroundColor: colors.cardBg,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.lg,
+        borderRadius: borderRadius.full,
+        marginBottom: spacing.md,
         borderWidth: 1,
-        borderColor: '#e9ecef',
+        borderColor: colors.cardBorder,
         position: 'relative',
     },
     capsuleActive: {
-        backgroundColor: '#fff3e0',
-        borderColor: '#e85a2d',
+        backgroundColor: colors.primaryBg,
+        borderColor: colors.primary,
         borderWidth: 1.5,
+        ...shadows.sm,  // 激活状态才有阴影
     },
     section: {
         flexDirection: 'row',
@@ -279,12 +284,12 @@ const styles = StyleSheet.create({
     },
     weatherIcon: {
         fontSize: 18,
-        marginRight: 6,
+        marginRight: spacing.sm,
     },
     weatherText: {
-        fontSize: 14,
-        color: '#333',
-        fontWeight: '500',
+        fontSize: fontSize.sm,
+        color: colors.textPrimary,
+        fontWeight: fontWeight.medium,
     },
     activitySection: {
         flexDirection: 'row',
@@ -292,25 +297,25 @@ const styles = StyleSheet.create({
     },
     activityIcon: {
         fontSize: 16,
-        marginRight: 6,
+        marginRight: spacing.sm,
     },
     activityText: {
-        fontSize: 13,
-        color: '#666',
+        fontSize: fontSize.sm,
+        color: colors.textSecondary,
     },
     activeText: {
-        color: '#e85a2d',
-        fontWeight: '600',
+        color: colors.primary,
+        fontWeight: fontWeight.semibold,
     },
     divider: {
         width: 1,
         height: 20,
-        backgroundColor: '#ddd',
-        marginHorizontal: 12,
+        backgroundColor: colors.border,
+        marginHorizontal: spacing.md,
     },
     dividerActive: {
-        backgroundColor: '#e85a2d',
-        opacity: 0.5,
+        backgroundColor: colors.primary,
+        opacity: 0.4,
     },
     heartSection: {
         flexDirection: 'row',
@@ -318,58 +323,65 @@ const styles = StyleSheet.create({
     },
     heartIcon: {
         fontSize: 14,
-        marginRight: 4,
+        marginRight: spacing.xs,
     },
     heartRate: {
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: fontSize.lg,
+        fontWeight: fontWeight.bold,
     },
     heartUnit: {
-        fontSize: 11,
-        color: '#999',
+        fontSize: fontSize.xs,
+        color: colors.textTertiary,
         marginLeft: 2,
     },
     stepsIndicator: {
-        marginLeft: 12,
-        backgroundColor: '#e9ecef',
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 10,
+        marginLeft: spacing.md,
+        backgroundColor: colors.surfaceFrosted,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: borderRadius.sm,
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
     },
     stepsText: {
-        fontSize: 11,
-        color: '#666',
+        fontSize: fontSize.xs,
+        color: colors.textSecondary,
+        fontWeight: fontWeight.medium,
     },
     lightIndicator: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#e9ecef',
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 10,
-        marginLeft: 4,
+        backgroundColor: colors.surfaceFrosted,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: borderRadius.sm,
+        marginLeft: spacing.xs,
+        borderWidth: 1,
+        borderColor: colors.cardBorder,
     },
     lightIcon: {
         fontSize: 12,
         marginRight: 3,
     },
     lightText: {
-        fontSize: 11,
-        color: '#666',
+        fontSize: fontSize.xs,
+        color: colors.textSecondary,
+        fontWeight: fontWeight.medium,
     },
     devBadge: {
         position: 'absolute',
         top: -6,
         right: -6,
-        backgroundColor: '#e85a2d',
-        paddingHorizontal: 6,
+        backgroundColor: colors.primary,
+        paddingHorizontal: spacing.sm,
         paddingVertical: 2,
-        borderRadius: 8,
+        borderRadius: borderRadius.sm,
+        ...shadows.sm,
     },
     devBadgeText: {
         fontSize: 9,
-        color: '#fff',
-        fontWeight: 'bold',
+        color: colors.textOnPrimary,
+        fontWeight: fontWeight.bold,
     },
 });
 
