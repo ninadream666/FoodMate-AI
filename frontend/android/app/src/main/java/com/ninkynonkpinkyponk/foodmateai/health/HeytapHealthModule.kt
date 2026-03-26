@@ -1,9 +1,11 @@
 package com.ninkynonkpinkyponk.foodmateai.health
 
 import android.util.Log
+import android.app.Activity
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import java.util.Calendar
+import com.heytap.databaseengine.apiv2.auth.AuthResult
 
 /**
  * React Native 原生模块 - OPPO健康SDK桥接
@@ -60,7 +62,7 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
      */
     @ReactMethod
     fun downloadHealthApp() {
-        currentActivity?.let { activity ->
+        getCurrentActivity()?.let { activity ->
             healthManager.downloadHealthApp(activity)
         }
     }
@@ -70,14 +72,14 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
      */
     @ReactMethod
     fun requestAuthorization(promise: Promise) {
-        val activity = currentActivity
+        val activity = getCurrentActivity()
         if (activity == null) {
             promise.reject("NO_ACTIVITY", "当前没有可用的Activity")
             return
         }
 
-        healthManager.requestAuthorization(activity, object : HeytapHealthManager.HealthCallback<com.heytap.health.auth.AuthResult> {
-            override fun onSuccess(data: com.heytap.health.auth.AuthResult) {
+        healthManager.requestAuthorization(activity, object : HeytapHealthManager.HealthCallback<AuthResult> {
+            override fun onSuccess(data: AuthResult) {
                 val result = Arguments.createMap().apply {
                     putBoolean("success", true)
                 }
@@ -419,6 +421,42 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
         val (startTime, endTime) = getTimeRange(days)
         healthManager.readRelax(startTime, endTime, object : HeytapHealthManager.HealthCallback<List<RelaxData>> {
             override fun onSuccess(data: List<RelaxData>) {
+                val array = data.toWritableArray { it.toWritableMap() }
+                promise.resolve(array)
+            }
+
+            override fun onFailure(errorCode: Int, message: String) {
+                promise.reject(errorCode.toString(), message)
+            }
+        })
+    }
+
+    /**
+     * 读取听力统计数据 (最近N天)
+     */
+    @ReactMethod
+    fun readHearingHealthCount(days: Int, promise: Promise) {
+        val (startTime, endTime) = getTimeRange(days)
+        healthManager.readHearingHealthCount(startTime, endTime, object : HeytapHealthManager.HealthCallback<List<HearingHealthCountData>> {
+            override fun onSuccess(data: List<HearingHealthCountData>) {
+                val array = data.toWritableArray { it.toWritableMap() }
+                promise.resolve(array)
+            }
+
+            override fun onFailure(errorCode: Int, message: String) {
+                promise.reject(errorCode.toString(), message)
+            }
+        })
+    }
+
+    /**
+     * 读取放松统计数据 (最近N天)
+     */
+    @ReactMethod
+    fun readRelaxCount(days: Int, promise: Promise) {
+        val (startTime, endTime) = getTimeRange(days)
+        healthManager.readRelaxCount(startTime, endTime, object : HeytapHealthManager.HealthCallback<List<RelaxCountData>> {
+            override fun onSuccess(data: List<RelaxCountData>) {
                 val array = data.toWritableArray { it.toWritableMap() }
                 promise.resolve(array)
             }

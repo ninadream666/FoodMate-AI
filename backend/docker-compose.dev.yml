@@ -262,13 +262,16 @@ services:
     volumes:
       # 保留这个挂载，以防代码需要读取私钥文件路径等
       - ./.env:/app/.env:ro
-      # ML 模型 & 训练数据共享卷（与 ml-trainer 共享）
-      - ml_models:/app/models
+      # ML 模型 & 训练数据（直接挂载宿主机目录，确保微调模型可用）
+      - ./recommendation-service/models:/app/models:ro
       - ml_data:/app/ml_data
+      # HuggingFace 模型缓存（宿主机已下载的基座模型，避免容器内重复下载）
+      - C:/Users/21478/.cache/huggingface:/root/.cache/huggingface:ro
 
     environment:
       - TZ=Asia/Shanghai
       - PYTHONPATH=/app
+      - HF_HUB_OFFLINE=1
 
       - DEBUG=true
       - LOG_LEVEL=INFO

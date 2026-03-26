@@ -34,51 +34,53 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
         
-        // 获取Authorization Header
         final String authHeader = request.getHeader("Authorization");
         
-        // 检查Header格式是否正确：以"Bearer "开头
+        // 简易日志，方便排查 403 问题
+        if (request.getRequestURI().contains("/merchants")) {
+            logger.info("Processing: " + request.getMethod() + " " + request.getRequestURI());
+            if (authHeader != null) logger.info("Auth Header present (len=" + authHeader.length() + ")");
+            else logger.warn("Auth Header MISSING");
+        }
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
-            // 提取Token
             String jwt = authHeader.substring(7);
-            
-            // 从Token中提取用户信息
             String username = jwtUtil.extractUsername(jwt);
             Long userId = jwtUtil.extractUserId(jwt);
             String role = jwtUtil.extractRole(jwt);
             
-            // 兼容旧token：如果role为null，默认为customer
+            if (request.getRequestURI().contains("/merchants")) {
+               logger.info("JWT Parsed - User: " + username + " (ID: " + userId + "), Role: " + role);
+            }
+
             if (role == null) {
                 role = "customer";
             }
 
-            // 如果用户名存在，且当前上下文没有认证信息
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                // 验证 Token 是否有效
                 if (jwtUtil.isTokenValid(jwt, username)) {
-                    // 生成认证令牌
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userId, // principal 使用 userId
+                            userId, 
                             null,
                             Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
                     );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     
-                    // 将认证信息放入 Spring Security 上下文
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                    logger.info("SecurityContext set for user: " + username);
+                } else {
+                    logger.warn("Token INVALID for user: " + username);
                 }
             }
         } catch (Exception e) {
-            // Token 解析失败，继续执行但不设置认证信息
-            logger.error("JWT authentication failed: " + e.getMessage());
+            logger.error("JWT Auth Failed: " + e.getMessage());
         }
         
-        // 放行，进入下一个过滤器
         filterChain.doFilter(request, response);
     }
 }

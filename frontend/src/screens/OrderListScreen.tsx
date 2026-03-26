@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     View,
     Text,
@@ -12,40 +12,71 @@ import {
 } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { orderService } from '../services/orderService';
+import { cacheService } from '../utils/cacheUtils';
 
 const OrderListScreen = ({ navigation }: any) => {
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [cancellingId, setCancellingId] = useState<number | null>(null); // 正在取消的订单ID
+    const [cancellingId, setCancellingId] = useState<number | null>(null);
+    const lastLoadTimeRef = useRef(0);
+    const isLoadingRef = useRef(false);
 
     const isFocused = useIsFocused();
 
     useEffect(() => {
         if (isFocused) {
-            loadOrders();
+            // 如果距离上次加载不足 30 秒且已有数据，跳过加载
+            const now = Date.now();
+            const timeSinceLastLoad = now - lastLoadTimeRef.current;
+            if (timeSinceLastLoad < 30000 && orders.length > 0) {
+                setLoading(false);
+                return;
+            }
+            loadOrders(false);
         }
     }, [isFocused]);
 
-    const loadOrders = async () => {
+    const loadOrders = useCallback(async (forceRefresh = false) => {
+        // 防止重复请求
+        if (isLoadingRef.current) return;
+        isLoadingRef.current = true;
+
         try {
+            // 尝试从缓存获取
+            if (!forceRefresh) {
+                const cached = await cacheService.get('orders', { type: 'myOrders' });
+                if (cached && cached.length > 0) {
+                    setOrders(cached);
+                    setLoading(false);
+                    setRefreshing(false);
+                    isLoadingRef.current = false;
+                    return;
+                }
+            }
+
             const data = await orderService.getMyOrders();
             const sorted = Array.isArray(data) ? data.sort((a: any, b: any) =>
                 new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             ) : [];
             setOrders(sorted);
+
+            // 缓存订单数据
+            await cacheService.set('orders', { type: 'myOrders' }, sorted);
+            lastLoadTimeRef.current = Date.now();
         } catch (error) {
             console.error(error);
         } finally {
             setLoading(false);
             setRefreshing(false);
+            isLoadingRef.current = false;
         }
-    };
+    }, []);
 
-    const handleRefresh = () => {
+    const handleRefresh = useCallback(() => {
         setRefreshing(true);
-        loadOrders();
-    };
+        loadOrders(true); // 强制刷新
+    }, [loadOrders]);
 
     // 跳转详情
     const goToDetail = (order: any) => {
@@ -67,7 +98,9 @@ const OrderListScreen = ({ navigation }: any) => {
                             setCancellingId(order.id);
                             await orderService.cancelOrder(order.id, '用户主动取消');
                             Alert.alert('成功', '订单已取消');
-                            loadOrders(); // 刷新列表
+                            // 清除缓存并刷新
+                            await cacheService.clear('orders');
+                            loadOrders(true);
                         } catch (error: any) {
                             Alert.alert('取消失败', error.message || '请稍后重试');
                         } finally {

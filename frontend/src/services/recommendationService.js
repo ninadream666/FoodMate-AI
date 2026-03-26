@@ -4,13 +4,11 @@ import { merchantService } from './merchantService';
 
 // 模拟数据 (兜底用)
 const MOCK_RECOMMENDATIONS = {
-    success: true,
-    data: {
-        restaurants: [
-            { id: 1, name: '川味观', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAhbQ9QcRMxm3Llr59SYyPVDBvXIeETgPqmZ_TDh0yGFWfgYmjwN89xAIT2MGtR--XXTFjIlci4ywk8FxQXju58r-0x4abnohjNJ0yvHytPSCMeME8hpWfe-iuarjXSMaMtmaToplyJCQzWEJ1PC_FrV_i0Rf2WcM57dchzX78SC-fPZrifDw9SYP2b73FdLAcxRrqgO0nkOXsdaMMvXb85jDZ2Lm68VN2jDGHZCeeS4N-judX4sb3iiv0fUZqmCc0iOZlIFSo2K0Bx', rating: 4.8, deliveryTime: '30-40分钟', tags: ['川菜', '辣味'] },
-            { id: 2, name: '寿司之家', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCmmd-i4u5v21dh8Ip1PqQdmDDbIYxNeb8OpD0iwmy60G1vNZ9xxIxPJqyAP7kCV8jzvrSQD8zQuLrRvI_-R1CCMGm0tGeRbvLANxmBxvzpAN8sG8zR8kyBH4UdgaP-37WBj-k0Soe7jH3a2ERUM7qsHnkxbPV2UynBCU8ppX0BaGm93gPtVDmAil-sCuYyFxRWiSmcuit_tWPlIA8C_O7TctaQxlMVWKYdQ7xHhFFZplnBVJ2kCwJ0pr2Rm9Vpr2Rm9VquCzWpE7qLdbczkm4', rating: 4.6, deliveryTime: '25-35分钟', tags: ['日料', '寿司'] },
-        ]
-    }
+    restaurants: [
+        { id: 1, name: '川味观', image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=200', rating: 4.8, deliveryTime: '30-40分钟', tags: ['川菜', '辣味'] },
+        { id: 2, name: '寿司之家', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=200', rating: 4.6, deliveryTime: '25-35分钟', tags: ['日料', '寿司'] },
+    ],
+    total_count: 2,
 };
 
 export const recommendationService = {

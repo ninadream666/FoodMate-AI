@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services/authService';
+import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
 
 // 注意：这里暂时注释掉未迁移的服务，防止报错
 // import adminAuthService from '../../services/admin/authService';
@@ -82,18 +83,21 @@ const LoginScreen = ({ navigation }: any) => {
         }
     };
 
-    // 角色选择组件
+    // 角色选择组件 - 北欧磨砂卡片风格
     const RoleOption = ({ label, value, iconText }: any) => {
         const isSelected = role === value;
         return (
             <TouchableOpacity
+                activeOpacity={0.7}
                 onPress={() => setRole(value)}
                 style={[
                     styles.roleBox,
                     isSelected && styles.roleBoxSelected
                 ]}
             >
-                <Text style={{ fontSize: 20, marginBottom: 5 }}>{iconText}</Text>
+                <View style={[styles.roleIconCircle, isSelected && styles.roleIconCircleSelected]}>
+                    <Text style={styles.roleIconText}>{iconText}</Text>
+                </View>
                 <Text style={[styles.roleText, isSelected && styles.roleTextSelected]}>
                     {label}
                 </Text>
@@ -102,149 +106,225 @@ const LoginScreen = ({ navigation }: any) => {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={{ flex: 1 }}
-            >
-                <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.gradient}>
+            <SafeAreaView style={styles.safeArea}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={{ flex: 1 }}
+                >
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {/* 顶部品牌区域 */}
+                        <View style={styles.brandArea}>
+                            <View style={styles.logoCircle}>
+                                <Text style={styles.logoEmoji}>🍽</Text>
+                            </View>
+                            <Text style={styles.appTitle}>FoodMate AI</Text>
+                            <Text style={styles.subTitle}>
+                                {isLogin ? '欢迎回来，美好一天从这里开始' : '创建新账户，开启美食之旅'}
+                            </Text>
+                        </View>
 
-                    {/* 标题区域 */}
-                    <View style={styles.header}>
-                        <Text style={styles.appTitle}>FoodMate AI</Text>
-                        <Text style={styles.subTitle}>
-                            {isLogin ? '欢迎回来' : '创建新账户'}
-                        </Text>
-                    </View>
+                        {/* 磨砂表单卡片 */}
+                        <View style={styles.formCard}>
 
-                    {/* 登录/注册 切换 Tab */}
-                    <View style={styles.tabContainer}>
-                        <TouchableOpacity
-                            style={[styles.tabButton, isLogin && styles.tabButtonActive]}
-                            onPress={() => setIsLogin(true)}
-                        >
-                            <Text style={[styles.tabText, isLogin && styles.tabTextActive]}>登录</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.tabButton, !isLogin && styles.tabButtonActive]}
-                            onPress={() => setIsLogin(false)}
-                        >
-                            <Text style={[styles.tabText, !isLogin && styles.tabTextActive]}>注册</Text>
-                        </TouchableOpacity>
-                    </View>
+                            {/* 登录/注册 切换 Tab */}
+                            <View style={styles.tabContainer}>
+                                <TouchableOpacity
+                                    activeOpacity={0.7}
+                                    style={[styles.tabButton, isLogin && styles.tabButtonActive]}
+                                    onPress={() => setIsLogin(true)}
+                                >
+                                    <Text style={[styles.tabText, isLogin && styles.tabTextActive]}>登录</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    activeOpacity={0.7}
+                                    style={[styles.tabButton, !isLogin && styles.tabButtonActive]}
+                                    onPress={() => setIsLogin(false)}
+                                >
+                                    <Text style={[styles.tabText, !isLogin && styles.tabTextActive]}>注册</Text>
+                                </TouchableOpacity>
+                            </View>
 
-                    {/* 角色选择网格 */}
-                    <Text style={styles.sectionLabel}>请选择您的身份</Text>
-                    <View style={styles.roleGrid}>
-                        <RoleOption label="顾客" value="customer" iconText="👤" />
-                        <RoleOption label="商家" value="merchant" iconText="🏪" />
-                    </View>
+                            {/* 角色选择 */}
+                            <Text style={styles.sectionLabel}>选择身份</Text>
+                            <View style={styles.roleGrid}>
+                                <RoleOption label="顾客" value="customer" iconText="👤" />
+                                <RoleOption label="商家" value="merchant" iconText="🏪" />
+                            </View>
 
-                    {/* 表单输入区 */}
-                    <View style={styles.formContainer}>
-                        <Text style={styles.inputLabel}>用户名</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="请输入用户名"
-                            value={username}
-                            onChangeText={setUsername}
-                            autoCapitalize="none"
-                        />
+                            {/* 分隔线 */}
+                            <View style={styles.divider} />
 
-                        {!isLogin && (
-                            <>
-                                <Text style={styles.inputLabel}>邮箱地址</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="example@email.com"
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                />
-                            </>
-                        )}
+                            {/* 表单输入区 */}
+                            <View style={styles.formFields}>
+                                <Text style={styles.inputLabel}>用户名</Text>
+                                <View style={styles.inputWrapper}>
+                                    <Text style={styles.inputIcon}>👤</Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="请输入用户名"
+                                        placeholderTextColor={colors.textTertiary}
+                                        value={username}
+                                        onChangeText={setUsername}
+                                        autoCapitalize="none"
+                                    />
+                                </View>
 
-                        <Text style={styles.inputLabel}>密码</Text>
-                        <View style={styles.passwordContainer}>
-                            <TextInput
-                                style={styles.passwordInput}
-                                placeholder="请输入密码"
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry={!showPassword}
-                            />
+                                {!isLogin && (
+                                    <>
+                                        <Text style={styles.inputLabel}>邮箱地址</Text>
+                                        <View style={styles.inputWrapper}>
+                                            <Text style={styles.inputIcon}>✉️</Text>
+                                            <TextInput
+                                                style={styles.input}
+                                                placeholder="example@email.com"
+                                                placeholderTextColor={colors.textTertiary}
+                                                value={email}
+                                                onChangeText={setEmail}
+                                                keyboardType="email-address"
+                                                autoCapitalize="none"
+                                            />
+                                        </View>
+                                    </>
+                                )}
+
+                                <Text style={styles.inputLabel}>密码</Text>
+                                <View style={styles.inputWrapper}>
+                                    <Text style={styles.inputIcon}>🔒</Text>
+                                    <TextInput
+                                        style={[styles.input, { flex: 1 }]}
+                                        placeholder="请输入密码"
+                                        placeholderTextColor={colors.textTertiary}
+                                        value={password}
+                                        onChangeText={setPassword}
+                                        secureTextEntry={!showPassword}
+                                    />
+                                    <TouchableOpacity
+                                        style={styles.eyeButton}
+                                        onPress={() => setShowPassword(!showPassword)}
+                                        activeOpacity={0.6}
+                                    >
+                                        <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁'}</Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                {/* 忘记密码 - 仅登录态显示 */}
+                                {isLogin && (
+                                    <TouchableOpacity style={styles.forgotButton} activeOpacity={0.6}>
+                                        <Text style={styles.forgotText}>忘记密码?</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+
+                            {/* 提交按钮 */}
                             <TouchableOpacity
-                                style={styles.eyeButton}
-                                onPress={() => setShowPassword(!showPassword)}
+                                activeOpacity={0.8}
+                                style={[styles.submitButton, loading && styles.buttonDisabled]}
+                                onPress={handleSubmit}
+                                disabled={loading}
                             >
-                                <Text>{showPassword ? '隐藏' : '显示'}</Text>
+                                {loading ? (
+                                    <ActivityIndicator color={colors.textOnPrimary} />
+                                ) : (
+                                    <Text style={styles.submitButtonText}>
+                                        {isLogin ? '登 录' : '注 册'}
+                                    </Text>
+                                )}
                             </TouchableOpacity>
                         </View>
 
-                        {/* 提交按钮 */}
-                        <TouchableOpacity
-                            style={[styles.submitButton, loading && styles.buttonDisabled]}
-                            onPress={handleSubmit}
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <ActivityIndicator color="#fff" />
-                            ) : (
-                                <Text style={styles.submitButtonText}>
-                                    {isLogin ? '登 录' : '注 册'}
+                        {/* 底部切换提示 */}
+                        <View style={styles.bottomHint}>
+                            <Text style={styles.bottomHintText}>
+                                {isLogin ? '还没有账户？' : '已有账户？'}
+                            </Text>
+                            <TouchableOpacity onPress={() => setIsLogin(!isLogin)} activeOpacity={0.6}>
+                                <Text style={styles.bottomHintLink}>
+                                    {isLogin ? '立即注册' : '去登录'}
                                 </Text>
-                            )}
-                        </TouchableOpacity>
+                            </TouchableOpacity>
+                        </View>
 
-                        <TouchableOpacity style={{ marginTop: 20, alignItems: 'center' }}>
-                            <Text style={{ color: '#9c6c49' }}>忘记密码?</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                </ScrollView>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
+                    </ScrollView>
+                </KeyboardAvoidingView>
+            </SafeAreaView>
+        </View>
     );
 };
 
-// 北欧风主题
-import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
-
-// 样式表 - 北欧简约风格
+// ============================================================
+// 样式表 - 北欧磨砂风格登录页
+// ============================================================
 const styles = StyleSheet.create({
+    gradient: {
+        flex: 1,
+    },
     safeArea: {
         flex: 1,
-        backgroundColor: colors.background,
     },
-    container: {
+    scrollContent: {
         flexGrow: 1,
-        padding: spacing.xxl,
+        paddingHorizontal: spacing.xl,
+        paddingBottom: spacing.xxxl,
     },
-    header: {
-        marginTop: spacing.xxxl,
-        marginBottom: spacing.xxxl,
+
+    // ---- 品牌区域 ----
+    brandArea: {
+        alignItems: 'center',
+        marginTop: spacing.xxxl + 8,
+        marginBottom: spacing.xxl,
+    },
+    logoCircle: {
+        width: 72,
+        height: 72,
+        borderRadius: borderRadius.full,
+        backgroundColor: colors.primaryBg,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.primaryLight,
+        ...shadows.sm,
+    },
+    logoEmoji: {
+        fontSize: 32,
     },
     appTitle: {
-        fontSize: fontSize.hero,
+        fontSize: fontSize.title,
         fontWeight: fontWeight.bold,
         color: colors.textPrimary,
-        marginBottom: spacing.sm,
         letterSpacing: -0.5,
+        marginBottom: spacing.xs,
     },
     subTitle: {
-        fontSize: fontSize.lg,
+        fontSize: fontSize.md,
         color: colors.textSecondary,
-        fontWeight: fontWeight.medium,
+        fontWeight: fontWeight.regular,
+        textAlign: 'center',
     },
-    // Tab 切换样式 - 北欧磨砂效果
+
+    // ---- 磨砂表单卡片 ----
+    formCard: {
+        backgroundColor: colors.surfaceFrosted,
+        borderRadius: borderRadius.xxl,
+        padding: spacing.xl,
+        borderWidth: 1,
+        borderColor: colors.frostedBorder,
+        ...shadows.frosted,
+    },
+
+    // ---- Tab 切换 ----
     tabContainer: {
         flexDirection: 'row',
-        backgroundColor: colors.backgroundGradientEnd,
+        backgroundColor: colors.backgroundSection,
         borderRadius: borderRadius.full,
         padding: spacing.xs,
-        marginBottom: spacing.xxl,
-        height: 52,
+        marginBottom: spacing.xl,
+        height: 48,
     },
     tabButton: {
         flex: 1,
@@ -257,33 +337,36 @@ const styles = StyleSheet.create({
         ...shadows.sm,
     },
     tabText: {
-        color: colors.textSecondary,
+        color: colors.textTertiary,
         fontWeight: fontWeight.semibold,
         fontSize: fontSize.md,
     },
     tabTextActive: {
-        color: colors.textPrimary,
+        color: colors.primary,
         fontWeight: fontWeight.bold,
     },
-    // 角色选择样式 - 北欧卡片风格
+
+    // ---- 角色选择 ----
     sectionLabel: {
-        fontSize: fontSize.lg,
+        fontSize: fontSize.sm,
         fontWeight: fontWeight.semibold,
-        color: colors.textPrimary,
+        color: colors.textSecondary,
         marginBottom: spacing.md,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
     roleGrid: {
         flexDirection: 'row',
         justifyContent: 'center',
-        gap: spacing.lg,
-        marginBottom: spacing.xxl,
+        gap: spacing.md,
+        marginBottom: spacing.lg,
     },
     roleBox: {
-        width: 140,
-        height: 90,
+        flex: 1,
+        paddingVertical: spacing.lg,
         borderWidth: 1.5,
         borderColor: colors.border,
-        borderRadius: borderRadius.lg,
+        borderRadius: borderRadius.xl,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: colors.surface,
@@ -293,62 +376,91 @@ const styles = StyleSheet.create({
         backgroundColor: colors.primaryBg,
         ...shadows.sm,
     },
+    roleIconCircle: {
+        width: 44,
+        height: 44,
+        borderRadius: borderRadius.full,
+        backgroundColor: colors.backgroundSection,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: spacing.sm,
+    },
+    roleIconCircleSelected: {
+        backgroundColor: colors.primarySoft,
+    },
+    roleIconText: {
+        fontSize: 20,
+    },
     roleText: {
         fontSize: fontSize.sm,
         color: colors.textSecondary,
         fontWeight: fontWeight.semibold,
-        marginTop: spacing.xs,
     },
     roleTextSelected: {
         color: colors.primary,
+        fontWeight: fontWeight.bold,
     },
-    // 表单样式 - 北欧简约输入框
-    formContainer: {
-        flex: 1,
+
+    // ---- 分隔线 ----
+    divider: {
+        height: 1,
+        backgroundColor: colors.divider,
+        marginBottom: spacing.lg,
     },
+
+    // ---- 表单字段 ----
+    formFields: {},
     inputLabel: {
-        fontSize: fontSize.md,
+        fontSize: fontSize.sm,
         fontWeight: fontWeight.medium,
-        color: colors.textPrimary,
+        color: colors.textSecondary,
         marginBottom: spacing.sm,
         marginTop: spacing.md,
     },
-    input: {
-        backgroundColor: colors.surface,
-        borderWidth: 1.5,
-        borderColor: colors.border,
-        borderRadius: borderRadius.lg,
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.md + 2,
-        fontSize: fontSize.md,
-        color: colors.textPrimary,
-        marginBottom: spacing.sm,
-    },
-    passwordContainer: {
+    inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.surface,
-        borderWidth: 1.5,
-        borderColor: colors.border,
+        backgroundColor: colors.backgroundSection,
+        borderWidth: 1,
+        borderColor: colors.borderLight,
         borderRadius: borderRadius.lg,
-        marginBottom: spacing.xxl,
+        paddingHorizontal: spacing.md,
     },
-    passwordInput: {
+    inputIcon: {
+        fontSize: 16,
+        marginRight: spacing.sm,
+    },
+    input: {
         flex: 1,
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.md + 2,
+        paddingVertical: spacing.md,
         fontSize: fontSize.md,
         color: colors.textPrimary,
     },
     eyeButton: {
-        paddingHorizontal: spacing.md,
+        paddingHorizontal: spacing.sm,
         paddingVertical: spacing.sm,
     },
-    // 主按钮 - 北欧风格带阴影
+    eyeText: {
+        fontSize: 18,
+    },
+
+    // ---- 忘记密码 ----
+    forgotButton: {
+        alignSelf: 'flex-end',
+        marginTop: spacing.sm,
+        marginBottom: spacing.sm,
+    },
+    forgotText: {
+        color: colors.primary,
+        fontSize: fontSize.sm,
+        fontWeight: fontWeight.medium,
+    },
+
+    // ---- 提交按钮 ----
     submitButton: {
         backgroundColor: colors.primary,
         borderRadius: borderRadius.full,
-        height: 56,
+        height: 52,
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: spacing.lg,
@@ -362,6 +474,24 @@ const styles = StyleSheet.create({
         fontSize: fontSize.lg,
         fontWeight: fontWeight.bold,
         letterSpacing: 1,
+    },
+
+    // ---- 底部切换提示 ----
+    bottomHint: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: spacing.xl,
+        gap: spacing.xs,
+    },
+    bottomHintText: {
+        color: colors.textSecondary,
+        fontSize: fontSize.sm,
+    },
+    bottomHintLink: {
+        color: colors.primary,
+        fontSize: fontSize.sm,
+        fontWeight: fontWeight.bold,
     },
 });
 

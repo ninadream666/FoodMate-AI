@@ -143,7 +143,7 @@ class FoodCFEncoder:
             except Exception as e:
                 logger.warning(f"⚠️ 微调模型加载失败: {e}")
 
-        # 尝试 2: 加载 HuggingFace 预训练模型
+        # 尝试 2: 加载 HuggingFace 预训练模型（通过挂载宿主机缓存，HF_HUB_OFFLINE=1）
         try:
             self._load_pretrained()
             self._mode = "pretrained"
@@ -151,7 +151,7 @@ class FoodCFEncoder:
             logger.info("✅ GTE-Qwen2-1.5B 预训练模型加载成功")
             return
         except Exception as e:
-            logger.warning(f"⚠️ 预训练模型加载失败 (可能未安装 transformers): {e}")
+            logger.warning(f"⚠️ 预训练模型加载失败: {e}")
 
         # 尝试 3: TF-IDF 哈希降级
         self._mode = "fallback"

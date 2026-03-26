@@ -16,7 +16,18 @@ public class JwtUtil {
     private String secret;
 
     public Long extractUserId(String token) {
-        return extractClaim(token, claims -> claims.get("userId", Long.class));
+        return extractClaim(token, claims -> {
+            Object userId = claims.get("userId");
+            if (userId instanceof Integer) {
+                 return ((Integer) userId).longValue();
+            } else if (userId instanceof Long) {
+                 return (Long) userId;
+            } else if (userId instanceof String) {
+                 return Long.parseLong((String) userId);
+            }
+            return null; // 或者抛出异常
+            // return claims.get("userId", Long.class);
+        });
     }
     
     public String extractUsername(String token) {

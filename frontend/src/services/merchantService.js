@@ -1,17 +1,18 @@
 // src/services/merchantService.js
 import api from './apiClient';
 
-// --- 模拟菜单数据生成器 (保留原有的兜底数据) ---
+// --- 模拟菜单数据生成器 (使用优化的图片 URL) ---
+// 使用 Unsplash 作为备用图片源，加载更快且 URL 更短
 const CUISINE_MENUS = {
     '火锅': [
-        { id: 1, name: '麻辣锅底', description: '经典川味麻辣锅底', price: 68.0, category: 'mainCourses', imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuArCT0tj8J-e9yyH422cU_NzNiA-NddrGRXaqEsw_wDvT0Mfni_KyoPn4p67_giN4rSkQZtFbs7Ux4aXNhyex6eHWl7' },
-        { id: 4, name: '精品肥牛', description: '优质牛肉', price: 48.0, category: 'appetizers', imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAhbQ9QcRMxm3Llr59SYyPVDBvXIeETgPqmZ_TDh0yGFWfgYmjwN89xAIT2MGtR--XXTFjIlci4ywk8FxQXju58r-0x4abnohjNJ0yvHytPSCMeME8hpWfe-iuarjXSMaMtmaToplyJCQzWEJ1PC_FrV_i0Rf2WcM57dchzX78SC-fPZrifDw9SYP2b73FdLAcxRrqgO0nkOXsdaMMvXb85jDZ2Lm68VN2jDGHZCeeS4N-judX4sb3iiv0fUZqmCc0iOZlIFSo2K0Bx' },
-        { id: 7, name: '酸梅汤', description: '解腻开胃', price: 8.0, category: 'drinks', imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCmmd-i4u5v21dh8Ip1PqQdmDDbIYxNeb8OpD0iwmy60G1vNZ9xxIxPJqyAP7kCV8jz' },
+        { id: 1, name: '麻辣锅底', description: '经典川味麻辣锅底', price: 68.0, category: 'mainCourses', imageUrl: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=200' },
+        { id: 4, name: '精品肥牛', description: '优质牛肉', price: 48.0, category: 'appetizers', imageUrl: 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=200' },
+        { id: 7, name: '酸梅汤', description: '解腻开胃', price: 8.0, category: 'drinks', imageUrl: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=200' },
     ],
     'default': [
-        { id: 101, name: '招牌汉堡', description: '双层牛肉，芝士满满', price: 38.0, category: 'mainCourses', imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBrawV460GKuSwxG2erT5rdBh9ksqmQjzOTvnwYNU94TAR8--4IoSIyOfS2xC0-s3GbtIMMvUkusGoRljcvgdBFUwmD-nkloIV6LQSXdQUcr27tzgJpxyuKyVik-B_9eTdirHZhMVgfkEVfDKo6yDeJv7tOMeUbHB-BW6vGuWrj0-245nme0zrYfM0SN5ZaxIK5AyaCUa1vvb2fIri1634y5Hjop3rpflHAC9zZXdPSEWLiQh7mhvSgy4_gKUuFYXuuBjkJrNms9v23' },
-        { id: 102, name: '炸薯条', description: '金黄酥脆', price: 12.0, category: 'appetizers', imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD0SqHYZlIXyFFcCFeErv7z3OCT3dWL1Eb2_7H2rw85kJN-QpFQB9NJg1JxLfHuCIcc9LySyuY9gHTuNFRiQSUFM8n2tPxCcoUCuHVr8uHm0PM8ZtGLP7QMU3v8nwmLVsQjHJV_Xmx8pj2VI06I7Y2sT_i4dCsutqf6twJq3q-ck158JrAnEH2_JJ_3UW8OxWRCet5OikJ1MztLTr8IWYEs2qvK6uAcJ326SNeNfYtyh-5Hrc5P2mZIGeIKpWDoz2AF5UcrzZHEWx8u' },
-        { id: 103, name: '冰可乐', description: '快乐水', price: 6.0, category: 'drinks', imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCmmd-i4u5v21dh8Ip1PqQdmDDbIYxNeb8OpD0iwmy60G1vNZ9xxIxPJqyAP7kCV8jzvrSQD8zQuLrRvI_-R1CCMGm0tGeRbvLANxmBxvzpAN8sG8zR8kyBH4UdgaP-37WBj-k0Soe7jH3a2ERUM7qsHnkxbPV2UynBCU8ppX0BaGm93gPtVDmAil-sCuYyFxRWiSmcuit_tWPlIA8C_O7TctaQxlMVWKYdQ7xHhFFZplnBVJ2kCwJ0pr2Rm9VquCzWpE7qLdbczkm4' },
+        { id: 101, name: '招牌汉堡', description: '双层牛肉，芝士满满', price: 38.0, category: 'mainCourses', imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200' },
+        { id: 102, name: '炸薯条', description: '金黄酥脆', price: 12.0, category: 'appetizers', imageUrl: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200' },
+        { id: 103, name: '冰可乐', description: '快乐水', price: 6.0, category: 'drinks', imageUrl: 'https://images.unsplash.com/photo-1581006852262-e4307cf6283a?w=200' },
     ]
 };
 
@@ -23,7 +24,7 @@ export const merchantService = {
     // 1. 获取商铺列表 (首页推荐用)
     getRecommendedMerchants: async () => {
         try {
-            const data = await api.get('merchants', '/');
+            const data = await api.get('merchants', '');
             const list = Array.isArray(data) ? data : (data.content || []);
             return list;
         } catch (error) {
