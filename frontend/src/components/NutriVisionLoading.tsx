@@ -16,22 +16,32 @@ const { width } = Dimensions.get('window');
 
 interface NutriVisionLoadingProps {
     imageUri: string;
+    mode?: 'menu' | 'food'; // 新增 mode 属性识别加载状态
     onCancel?: () => void;
 }
 
-const NutriVisionLoading: React.FC<NutriVisionLoadingProps> = ({ imageUri, onCancel }) => {
+const NutriVisionLoading: React.FC<NutriVisionLoadingProps> = ({ imageUri, mode = 'menu', onCancel }) => {
     // 动画值
     const pulseAnim = useRef(new Animated.Value(1)).current;
     const radarRotate = useRef(new Animated.Value(0)).current;
     const progressAnim = useRef(new Animated.Value(0)).current;
 
-    // 状态文字轮播
-    const loadingTexts = [
+    // 根据模式动态分配不同维度的装X状态文字
+    const menuTexts = [
         "正在识别菜单文字...", 
         "小助理全力分析中...", 
         "正在匹配健康建议...",
         "生成营养透视报告..."
     ];
+    
+    const foodTexts = [
+        "底层高精度视觉模型启动...", 
+        "锁定食物纹理与特征...", 
+        "端云协同：请求云端知识图谱...",
+        "生成专属单品健康分析..."
+    ];
+
+    const loadingTexts = mode === 'food' ? foodTexts : menuTexts;
     const [textIndex, setTextIndex] = useState(0);
 
     useEffect(() => {
@@ -62,9 +72,11 @@ const NutriVisionLoading: React.FC<NutriVisionLoadingProps> = ({ imageUri, onCan
         ).start();
 
         // 3. 模拟进度条动画 (假进度，为了视觉效果)
+        // 单品模式因为有 CV 加持速度更快，进度条可以走得稍微快一点
+        const duration = mode === 'food' ? 5000 : 8000;
         Animated.timing(progressAnim, {
             toValue: 90, // 走到90%停住等待接口返回
-            duration: 8000,
+            duration: duration,
             easing: Easing.out(Easing.ease),
             useNativeDriver: false,
         }).start();
@@ -75,7 +87,7 @@ const NutriVisionLoading: React.FC<NutriVisionLoadingProps> = ({ imageUri, onCan
         }, 2000);
 
         return () => clearInterval(interval);
-    }, []);
+    }, [mode]);
 
     // 插值映射
     const spin = radarRotate.interpolate({
@@ -121,7 +133,7 @@ const NutriVisionLoading: React.FC<NutriVisionLoadingProps> = ({ imageUri, onCan
                             <View style={styles.radarGradient} />
                         </Animated.View>
                         <View style={styles.centerIcon}>
-                            <Text style={{fontSize: 48}}>🥗</Text>
+                            <Text style={{fontSize: 48}}>{mode === 'food' ? '🍱' : '🥗'}</Text>
                         </View>
                     </View>
                 </View>
@@ -140,7 +152,9 @@ const NutriVisionLoading: React.FC<NutriVisionLoadingProps> = ({ imageUri, onCan
             {/* 底部进度条区 */}
             <View style={styles.bottomContainer}>
                 <View style={styles.progressRow}>
-                    <Text style={styles.progressLabel}>AI Vision Processing</Text>
+                    <Text style={styles.progressLabel}>
+                        {mode === 'food' ? 'CV + LLM Engine Active' : 'AI Vision Processing'}
+                    </Text>
                     <Text style={styles.progressPercent}>Processing...</Text>
                 </View>
                 <View style={styles.progressBarBg}>
@@ -149,7 +163,9 @@ const NutriVisionLoading: React.FC<NutriVisionLoadingProps> = ({ imageUri, onCan
 
                 <View style={styles.poweredBy}>
                     <Text style={styles.poweredByIcon}>⚡</Text>
-                    <Text style={styles.poweredByText}>基于 Google Gemini Vision 提供技术支持</Text>
+                    <Text style={styles.poweredByText}>
+                        {mode === 'food' ? '基于自研 CV 模型与云端知识图谱' : '基于 Google Gemini Vision 提供技术支持'}
+                    </Text>
                 </View>
             </View>
         </View>
