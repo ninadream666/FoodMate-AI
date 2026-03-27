@@ -266,7 +266,7 @@ services:
       - ./recommendation-service/models:/app/models:ro
       - ml_data:/app/ml_data
       # HuggingFace 模型缓存（宿主机已下载的基座模型，避免容器内重复下载）
-      - C:/Users/21478/.cache/huggingface:/root/.cache/huggingface:ro
+      - ./.hf_cache:/root/.cache/huggingface:ro
 
     environment:
       - TZ=Asia/Shanghai

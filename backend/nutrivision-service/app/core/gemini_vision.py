@@ -93,6 +93,152 @@ class NutriVisionClient:
             logger.error(f"Vision Analysis Exception: {str(e)}")
             return self._error_msg(str(e))
 
+    async def analyze_image_fallback(self, image_base64: str, health_tags: list) -> dict:
+        """
+        新增：单菜品图片识别兜底方法。当本地 CV 模型识别置信度过低时调用，
+        直接把图片喂给大模型进行兜底识别。
+        """
+        if not self.api_key:
+            return self._error_msg("Backend API Key is missing")
+
+        clean_base64 = re.sub(r'^data:image/.+;base64,', '', image_base64)
+        tags_info = "、".join(health_tags) if health_tags else "无特殊偏好"
+        
+        # 这里的 Prompt 专门针对“单道菜品图”进行了优化，防止大模型按“菜单”去理解
+        prompt = f"""
+        你是一位专业的数字营养师。请识别图片中的这道菜品，并根据用户背景【{tags_info}】给出健康建议。
+
+        必须严格按照以下 JSON 格式返回，禁止包含任何 Markdown 标记或额外说明文字：
+        {{
+          "items": [
+            {{
+              "name": "这里填入识别出的中文菜品名称",
+              "calories": "估算热量(如: 250kcal)",
+              "ingredients": ["主要食材1", "主要食材2"],
+              "warnings": "针对用户标签的过敏原或禁忌说明，若无则为空",
+              "is_recommended": true
+            }}
+          ],
+          "top_recommendations": ["可以推荐一些健康的替代吃法，或与之搭配的健康饮品1", "搭配推荐2"],
+          "health_summary": "针对这道菜和用户标签的综合饮食建议，中文回答"
+        }}
+        
+        注意：ingredients 字段必须是字符串列表，不能是单个字符串。
+        """
+
+        payload = {
+            "model": self.model,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{clean_base64}"}
+                        }
+                    ]
+                }
+            ],
+            "response_format": {"type": "json_object"}
+        }
+
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(self.base_url, headers=headers, json=payload, timeout=60.0)
+                
+                if response.status_code != 200:
+                    logger.error(f"AI API Error Status: {response.status_code}, Body: {response.text}")
+                    return self._error_msg(f"云端接口响应异常: {response.status_code}")
+                
+                resp_json = response.json()
+                raw_content = resp_json["choices"][0]["message"]["content"]
+                
+                cleaned_text = raw_content.replace("```json", "").replace("```", "").strip()
+                parsed_data = json.loads(cleaned_text)
+
+                if isinstance(parsed_data, list):
+                    logger.warning("AI returned a list instead of an object, wrapping it.")
+                    parsed_data = {"items": parsed_data}
+
+                return self._standardize_response(parsed_data)
+
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON Decode Error: {str(e)}, Raw: {raw_content}")
+            return self._error_msg("AI 返回格式非标准 JSON")
+        except Exception as e:
+            logger.error(f"Vision Fallback Analysis Exception: {str(e)}")
+            return self._error_msg(str(e))
+
+    async def analyze_single_food(self, food_name: str, health_tags: list) -> dict:
+        """
+        降级版 LLM 调用：不传图片，只传我们自研 CV 模型识别出的文本菜名，大幅降低成本并提升速度
+        """
+        if not self.api_key:
+            return self._error_msg("Backend API Key is missing")
+
+        tags_info = "、".join(health_tags) if health_tags else "无特殊偏好"
+        prompt = f"""
+        你是一位专业的数字营养师。我们的本地视觉模型已经精准识别出用户正在食用或关注的菜品是：【{food_name}】。
+        请结合用户的健康标签【{tags_info}】，给出关于这道菜品的健康建议和营养分析。
+
+        请必须严格按照以下 JSON 格式返回，禁止包含任何 Markdown 标记或额外说明文字：
+        {{
+          "items": [
+            {{
+              "name": "这里填入对应的中文菜品名称",
+              "calories": "估算热量(如: 250kcal)",
+              "ingredients": ["主要食材1", "主要食材2"],
+              "warnings": "针对用户标签的过敏原或禁忌说明，若无则为空",
+              "is_recommended": true
+            }}
+          ],
+          "top_recommendations": ["可以推荐一些健康的替代吃法，或与之搭配的健康饮品1", "搭配推荐2"],
+          "health_summary": "针对这道菜和用户标签的综合饮食建议，中文回答"
+        }}
+        
+        注意：ingredients 字段必须是字符串列表，不能是单个字符串。
+        """
+
+        payload = {
+            "model": self.model,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [{"type": "text", "text": prompt}]
+                }
+            ],
+            "response_format": {"type": "json_object"}
+        }
+
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+
+        try:
+            async with httpx.AsyncClient() as client:
+                # 文本推理非常快，超时可以设短一点
+                response = await client.post(self.base_url, headers=headers, json=payload, timeout=20.0)
+                
+                if response.status_code != 200:
+                    logger.error(f"AI API Error Status: {response.status_code}, Body: {response.text}")
+                    return self._error_msg(f"云端接口响应异常: {response.status_code}")
+                
+                resp_json = response.json()
+                raw_content = resp_json["choices"][0]["message"]["content"]
+                
+                cleaned_text = raw_content.replace("```json", "").replace("```", "").strip()
+                parsed_data = json.loads(cleaned_text)
+
+                if isinstance(parsed_data, list):
+                    parsed_data = {"items": parsed_data}
+
+                return self._standardize_response(parsed_data)
+
+        except Exception as e:
+            logger.error(f"Single Food LLM Analysis Exception: {str(e)}")
+            return self._error_msg(str(e))
+
     def _standardize_response(self, data: dict) -> dict:
         """
         确保返回的数据结构 100% 匹配 VisionAnalysisResponse schema

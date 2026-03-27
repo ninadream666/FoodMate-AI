@@ -13,7 +13,9 @@ import {
     Alert,
     Image,
     Animated,
-    Easing
+    Easing,
+    PermissionsAndroid,
+    Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { merchantService } from '../services/merchantService';
@@ -60,6 +62,10 @@ const HomeScreen = ({ navigation }: any) => {
     const [tempImage, setTempImage] = useState<any>(null); // 临时存储选中的图片
     const [selectedTags, setSelectedTags] = useState<string[]>([]); // 用户选的标签
     const [preferencesModalVisible, setPreferencesModalVisible] = useState(false);
+    
+    // --- 新增: NutriVision 模式选择状态 ---
+    const [modeSelectionVisible, setModeSelectionVisible] = useState(false);
+    const [selectedVisionMode, setSelectedVisionMode] = useState<'menu' | 'food'>('menu');
 
     // 常用健康标签
     const HEALTH_TAGS = ["花生过敏", "海鲜过敏", "乳糖不耐受", "低糖", "低脂", "高蛋白", "素食"];
@@ -531,20 +537,31 @@ const HomeScreen = ({ navigation }: any) => {
         navigation.replace('Login');
     };
 
-    // --- NutriVision 处理逻辑 ---
+    // --- NutriVision 处理逻辑 (双轨制改造) ---
     const startNutriVision = () => {
-        Alert.alert(
-            "实景菜单营养透视",
-            "请拍摄或上传菜单照片",
-            [
-                { text: "取消", style: "cancel" },
-                { text: "从相册选择", onPress: () => pickImage('gallery') },
-                { text: "拍照", onPress: () => pickImage('camera') },
-            ]
-        );
+        // 第一步：先弹出模式选择，展示双轨制的黑科技
+        setModeSelectionVisible(true);
     };
 
-    const pickImage = async (type: 'camera' | 'gallery') => {
+    const handleModeSelect = (mode: 'menu' | 'food') => {
+        setModeSelectionVisible(false);
+        setSelectedVisionMode(mode);
+        
+        // 增加一点点延迟让动画更平滑
+        setTimeout(() => {
+            Alert.alert(
+                mode === 'food' ? "实景单品透视" : "全菜单营养扫雷",
+                "请拍摄或上传您的美食照片",
+                [
+                    { text: "取消", style: "cancel" },
+                    { text: "从相册选择", onPress: () => pickImage('gallery', mode) },
+                    { text: "拍照", onPress: () => pickImage('camera', mode) },
+                ]
+            );
+        }, 300);
+    };
+
+    const pickImage = async (type: 'camera' | 'gallery', mode: 'menu' | 'food') => {
         const options: any = {
             mediaType: 'photo',
             includeBase64: true,
@@ -578,6 +595,30 @@ const HomeScreen = ({ navigation }: any) => {
         };
 
         if (type === 'camera') {
+            // --- 动态权限申请逻辑开始 ---
+            if (Platform.OS === 'android') {
+                try {
+                    const granted = await PermissionsAndroid.request(
+                        PermissionsAndroid.PERMISSIONS.CAMERA,
+                        {
+                            title: "需要相机权限",
+                            message: "NutriVision 需要使用您的相机来拍摄菜品以进行营养分析。",
+                            buttonNeutral: "稍后询问",
+                            buttonNegative: "取消",
+                            buttonPositive: "确定"
+                        }
+                    );
+                    if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                        Alert.alert("权限被拒绝", "我们需要相机权限才能为您提供营养透视功能，请在系统设置中开启。");
+                        return; // 如果用户拒绝权限，直接返回，不再调起相机，避免报错
+                    }
+                } catch (err) {
+                    console.warn(err);
+                    return;
+                }
+            }
+            // --- 动态权限申请逻辑结束 ---
+            
             await launchCamera(options, callback);
         } else {
             await launchImageLibrary(options, callback);
@@ -587,10 +628,12 @@ const HomeScreen = ({ navigation }: any) => {
     const confirmAnalysis = () => {
         setPreferencesModalVisible(false);
         if (tempImage) {
+            // 将选中的模式向下传递，驱动不同的 API 和 UI
             navigation.navigate('NutriVisionResult', {
                 imageUri: tempImage.uri,
                 imageBase64: tempImage.base64,
-                healthTags: selectedTags
+                healthTags: selectedTags,
+                mode: selectedVisionMode 
             });
         }
     };
@@ -672,8 +715,8 @@ const HomeScreen = ({ navigation }: any) => {
                     <Text style={{ fontSize: 24 }}>📸</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.visionTitle}>拍一拍：实景菜单营养透视</Text>
-                    <Text style={styles.visionSubtitle}>AI 识别热量、过敏原，定制健康推荐</Text>
+                    <Text style={styles.visionTitle}>拍一拍：实景营养透视</Text>
+                    <Text style={styles.visionSubtitle}>可拍菜单和菜品！热量、过敏原分析，定制健康推荐</Text>
                 </View>
                 <View style={styles.visionArrow}>
                     <Text style={{ color: '#fff' }}>→</Text>
@@ -949,6 +992,53 @@ const HomeScreen = ({ navigation }: any) => {
                 </View>
             </Modal>
 
+            {/* --- 新增：双轨制视觉模式选择弹窗 --- */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={modeSelectionVisible}
+                onRequestClose={() => setModeSelectionVisible(false)}
+            >
+                <View style={styles.modalCenteredView}>
+                    <View style={styles.modalView}>
+                        <Text style={styles.modalTitle}>选择视觉引擎</Text>
+                        <Text style={styles.modalSubtitle}>请根据您的拍摄内容选择对应模式</Text>
+
+                        <View style={{ width: '100%', gap: spacing.md, marginBottom: spacing.xl }}>
+                            <TouchableOpacity 
+                                style={[styles.modeCard, { borderColor: colors.primary }]}
+                                onPress={() => handleModeSelect('food')}
+                            >
+                                <View style={styles.modeIconBox}><Text style={{fontSize: 28}}>🍱</Text></View>
+                                <View style={{flex: 1}}>
+                                    <Text style={styles.modeTitle}>拍单道菜品 <Text style={{color: colors.primary, fontSize: 12}}>极速</Text></Text>
+                                    <Text style={styles.modeDesc}>启用自研本地 CV 模型，瞬间识别食物种类并联调云端知识图谱。</Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity 
+                                style={styles.modeCard}
+                                onPress={() => handleModeSelect('menu')}
+                            >
+                                <View style={[styles.modeIconBox, { backgroundColor: '#e3f2fd' }]}><Text style={{fontSize: 28}}>📋</Text></View>
+                                <View style={{flex: 1}}>
+                                    <Text style={styles.modeTitle}>拍复杂菜单</Text>
+                                    <Text style={styles.modeDesc}>启用云端多模态大语言模型，直接进行整页菜单 OCR 与分析。</Text>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.modalBtn, styles.modalBtnCancel, { width: '100%' }]}
+                            onPress={() => setModeSelectionVisible(false)}
+                        >
+                            <Text style={styles.modalBtnTextCancel}>取消</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* 健康标签偏好弹窗 */}
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -1429,6 +1519,39 @@ const styles = StyleSheet.create({
         color: colors.textSecondary,
         marginBottom: spacing.xl,
     },
+    
+    // --- 新增: 模式选择弹窗样式 ---
+    modeCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.surface,
+        borderWidth: 1.5,
+        borderColor: colors.borderLight,
+        borderRadius: borderRadius.lg,
+        padding: spacing.lg,
+        ...shadows.sm,
+    },
+    modeIconBox: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: colors.primaryBg,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: spacing.md,
+    },
+    modeTitle: {
+        fontSize: fontSize.md,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+        marginBottom: 4,
+    },
+    modeDesc: {
+        fontSize: fontSize.xs,
+        color: colors.textTertiary,
+        lineHeight: 18,
+    },
+
     tagsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',

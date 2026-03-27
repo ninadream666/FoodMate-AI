@@ -16,7 +16,7 @@ const DEVELOPMENT_CONFIG = {
     // 请求超时时间 (毫秒)
     TIMEOUT: 60000,
 
-    // 重试次数
+    // 重试次数r
     MAX_RETRIES: 3
 };
 

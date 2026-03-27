@@ -45,10 +45,15 @@ cd ..
 目录： C:\Users\用户名\AppData\Local\Android\Sdk\platform-tools
 .\adb.exe pair <手机IP>:<端口号>
 .\adb.exe connect <手机IP>:<端口号>
+
+
 ```
 FoodMate-AI
+├─ .claude
+│  └─ settings.local.json
 ├─ backend
 │  ├─ .env
+│  ├─ .hf_cache
 │  ├─ ai-pricing-service
 │  │  ├─ app
 │  │  │  ├─ clients.py
@@ -299,6 +304,7 @@ FoodMate-AI
 │  │                 │  └─ SmartIssuanceService.java.bak
 │  │                 └─ util
 │  │                    └─ JwtUtil.class
+│  ├─ maven-settings.xml
 │  ├─ merchant-service
 │  │  ├─ Dockerfile
 │  │  ├─ merchant-service.iml
@@ -428,6 +434,7 @@ FoodMate-AI
 │  │  ├─ app
 │  │  │  ├─ core
 │  │  │  │  ├─ config.py
+│  │  │  │  ├─ food_classifier.py
 │  │  │  │  ├─ gemini_vision.py
 │  │  │  │  └─ _init_.py
 │  │  │  ├─ main.py
@@ -991,11 +998,15 @@ FoodMate-AI
 ├─ docs
 │  ├─ PPT展示_Marp.md
 │  ├─ PPT展示内容.md
+│  ├─ UI.md
 │  ├─ 协同过滤使用的大模型
 │  ├─ 开题报告前准备工作.md
+│  ├─ 性能优化.md
 │  ├─ 数据库设计文档.md
 │  ├─ 智能推荐部分增加协同过滤
 │  ├─ 环境光感知.md
+│  ├─ 项目完整结构文档.md
+│  ├─ 项目管理报告.md
 │  └─ 项目详细报告.md
 ├─ frontend
 │  ├─ .bundle
@@ -1040,19 +1051,21 @@ FoodMate-AI
 │  │  │  │  │     │  │        │     ├─ cmakeFiles-v1
 │  │  │  │  │     │  │        │     └─ codemodel-v2
 │  │  │  │  │     │  │        └─ reply
-│  │  │  │  │     │  │           ├─ cache-v2-111f62b359e68573c930.json
-│  │  │  │  │     │  │           ├─ cmakeFiles-v1-f4f72bcd549d32fbb78e.json
-│  │  │  │  │     │  │           ├─ codemodel-v2-31b8b0c41b90ebee7e52.json
+│  │  │  │  │     │  │           ├─ cache-v2-e6760a6874a01920526c.json
+│  │  │  │  │     │  │           ├─ cmakeFiles-v1-d56489155c935cb578af.json
+│  │  │  │  │     │  │           ├─ codemodel-v2-25632fb39a0293bfae1a.json
 │  │  │  │  │     │  │           ├─ directory-.-Debug-d0094a50bb2071803777.json
 │  │  │  │  │     │  │           ├─ directory-rnasyncstorage_autolinked_build-Debug-ce80e9411a44e7b5c4e7.json
+│  │  │  │  │     │  │           ├─ directory-rnblurview_autolinked_build-Debug-2608b3bd9ea61b1892c2.json
 │  │  │  │  │     │  │           ├─ directory-RNImagePickerSpec_autolinked_build-Debug-95c0cba1ce00e080d0b6.json
 │  │  │  │  │     │  │           ├─ directory-RNLlamaSpec_autolinked_build-Debug-309bb2ab8492df907922.json
 │  │  │  │  │     │  │           ├─ directory-rnscreens_autolinked_build-Debug-6778232716d1a2c5d1e8.json
 │  │  │  │  │     │  │           ├─ directory-safeareacontext_autolinked_build-Debug-ee4679645502e7ade171.json
 │  │  │  │  │     │  │           ├─ directory-VoskSpec_autolinked_build-Debug-33c2cba4e531b28ee8f8.json
-│  │  │  │  │     │  │           ├─ index-2026-03-10T10-07-44-0562.json
-│  │  │  │  │     │  │           ├─ target-appmodules-Debug-61ac70cbf939a6342a32.json
+│  │  │  │  │     │  │           ├─ index-2026-03-27T04-29-47-0176.json
+│  │  │  │  │     │  │           ├─ target-appmodules-Debug-70956eca6f4bddc05e8c.json
 │  │  │  │  │     │  │           ├─ target-react_codegen_rnasyncstorage-Debug-9cdbb0bf2221d76a6de9.json
+│  │  │  │  │     │  │           ├─ target-react_codegen_rnblurview-Debug-b8c24e25d3f3003496b4.json
 │  │  │  │  │     │  │           ├─ target-react_codegen_RNImagePickerSpec-Debug-a9f71434d8c04861285a.json
 │  │  │  │  │     │  │           ├─ target-react_codegen_RNLlamaSpec-Debug-548b9280bc2acc9e9cb6.json
 │  │  │  │  │     │  │           ├─ target-react_codegen_rnscreens-Debug-76b0f28365f8820f9e90.json
@@ -1128,19 +1141,21 @@ FoodMate-AI
 │  │  │  │  │     │  │        │     ├─ cmakeFiles-v1
 │  │  │  │  │     │  │        │     └─ codemodel-v2
 │  │  │  │  │     │  │        └─ reply
-│  │  │  │  │     │  │           ├─ cache-v2-ff6fa7c2b80cd838951c.json
-│  │  │  │  │     │  │           ├─ cmakeFiles-v1-41cf75b42b42f4855e66.json
-│  │  │  │  │     │  │           ├─ codemodel-v2-00001c4dca45f13085d2.json
+│  │  │  │  │     │  │           ├─ cache-v2-cf0dbb953f1e602d6186.json
+│  │  │  │  │     │  │           ├─ cmakeFiles-v1-a0f892f3439eebbc03f1.json
+│  │  │  │  │     │  │           ├─ codemodel-v2-00e6f4750363b8ab2710.json
 │  │  │  │  │     │  │           ├─ directory-.-Debug-d0094a50bb2071803777.json
 │  │  │  │  │     │  │           ├─ directory-rnasyncstorage_autolinked_build-Debug-ce80e9411a44e7b5c4e7.json
+│  │  │  │  │     │  │           ├─ directory-rnblurview_autolinked_build-Debug-2608b3bd9ea61b1892c2.json
 │  │  │  │  │     │  │           ├─ directory-RNImagePickerSpec_autolinked_build-Debug-95c0cba1ce00e080d0b6.json
 │  │  │  │  │     │  │           ├─ directory-RNLlamaSpec_autolinked_build-Debug-309bb2ab8492df907922.json
 │  │  │  │  │     │  │           ├─ directory-rnscreens_autolinked_build-Debug-6778232716d1a2c5d1e8.json
 │  │  │  │  │     │  │           ├─ directory-safeareacontext_autolinked_build-Debug-ee4679645502e7ade171.json
 │  │  │  │  │     │  │           ├─ directory-VoskSpec_autolinked_build-Debug-33c2cba4e531b28ee8f8.json
-│  │  │  │  │     │  │           ├─ index-2026-03-10T10-07-51-0787.json
-│  │  │  │  │     │  │           ├─ target-appmodules-Debug-0836778b33471a0b9079.json
+│  │  │  │  │     │  │           ├─ index-2026-03-27T04-30-17-0112.json
+│  │  │  │  │     │  │           ├─ target-appmodules-Debug-96b186785f44c5e293d7.json
 │  │  │  │  │     │  │           ├─ target-react_codegen_rnasyncstorage-Debug-fd15119f7cd8c696abb1.json
+│  │  │  │  │     │  │           ├─ target-react_codegen_rnblurview-Debug-0a2e063e819795665420.json
 │  │  │  │  │     │  │           ├─ target-react_codegen_RNImagePickerSpec-Debug-ccf8ca87f66b7c122edb.json
 │  │  │  │  │     │  │           ├─ target-react_codegen_RNLlamaSpec-Debug-7bd88cdc72e5096064e5.json
 │  │  │  │  │     │  │           ├─ target-react_codegen_rnscreens-Debug-68ca310858a3d14d4201.json
@@ -1274,19 +1289,21 @@ FoodMate-AI
 │  │  │  │  │     │  │        │     ├─ cmakeFiles-v1
 │  │  │  │  │     │  │        │     └─ codemodel-v2
 │  │  │  │  │     │  │        └─ reply
-│  │  │  │  │     │  │           ├─ cache-v2-7962ff5a449fb9581d9f.json
-│  │  │  │  │     │  │           ├─ cmakeFiles-v1-f01dd2abe74618156035.json
-│  │  │  │  │     │  │           ├─ codemodel-v2-d2cb9f28552b30d7105b.json
+│  │  │  │  │     │  │           ├─ cache-v2-82a4c62605f96a4793c3.json
+│  │  │  │  │     │  │           ├─ cmakeFiles-v1-86b2ec7fae3e8fbb6fb1.json
+│  │  │  │  │     │  │           ├─ codemodel-v2-ea5130bc3d747050a711.json
 │  │  │  │  │     │  │           ├─ directory-.-Debug-d0094a50bb2071803777.json
 │  │  │  │  │     │  │           ├─ directory-rnasyncstorage_autolinked_build-Debug-ce80e9411a44e7b5c4e7.json
+│  │  │  │  │     │  │           ├─ directory-rnblurview_autolinked_build-Debug-2608b3bd9ea61b1892c2.json
 │  │  │  │  │     │  │           ├─ directory-RNImagePickerSpec_autolinked_build-Debug-95c0cba1ce00e080d0b6.json
 │  │  │  │  │     │  │           ├─ directory-RNLlamaSpec_autolinked_build-Debug-309bb2ab8492df907922.json
 │  │  │  │  │     │  │           ├─ directory-rnscreens_autolinked_build-Debug-6778232716d1a2c5d1e8.json
 │  │  │  │  │     │  │           ├─ directory-safeareacontext_autolinked_build-Debug-ee4679645502e7ade171.json
 │  │  │  │  │     │  │           ├─ directory-VoskSpec_autolinked_build-Debug-33c2cba4e531b28ee8f8.json
-│  │  │  │  │     │  │           ├─ index-2026-03-10T10-07-56-0863.json
-│  │  │  │  │     │  │           ├─ target-appmodules-Debug-7725893560126bc76777.json
+│  │  │  │  │     │  │           ├─ index-2026-03-27T04-30-37-0024.json
+│  │  │  │  │     │  │           ├─ target-appmodules-Debug-d1a277c601a0bf818ebf.json
 │  │  │  │  │     │  │           ├─ target-react_codegen_rnasyncstorage-Debug-9cdbb0bf2221d76a6de9.json
+│  │  │  │  │     │  │           ├─ target-react_codegen_rnblurview-Debug-b8c24e25d3f3003496b4.json
 │  │  │  │  │     │  │           ├─ target-react_codegen_RNImagePickerSpec-Debug-a9f71434d8c04861285a.json
 │  │  │  │  │     │  │           ├─ target-react_codegen_RNLlamaSpec-Debug-548b9280bc2acc9e9cb6.json
 │  │  │  │  │     │  │           ├─ target-react_codegen_rnscreens-Debug-50e115b758fa60c2c196.json
@@ -1362,19 +1379,21 @@ FoodMate-AI
 │  │  │  │  │        │        │     ├─ cmakeFiles-v1
 │  │  │  │  │        │        │     └─ codemodel-v2
 │  │  │  │  │        │        └─ reply
-│  │  │  │  │        │           ├─ cache-v2-88fe636943b69f422eaf.json
-│  │  │  │  │        │           ├─ cmakeFiles-v1-dc8605bb66361587a25c.json
-│  │  │  │  │        │           ├─ codemodel-v2-0ddf4f340ddba73e8bc1.json
+│  │  │  │  │        │           ├─ cache-v2-675ae5f6c9d318ee82f3.json
+│  │  │  │  │        │           ├─ cmakeFiles-v1-bb29e0e4d23dea279a4d.json
+│  │  │  │  │        │           ├─ codemodel-v2-c953ade9543fa3c5bac4.json
 │  │  │  │  │        │           ├─ directory-.-Debug-d0094a50bb2071803777.json
 │  │  │  │  │        │           ├─ directory-rnasyncstorage_autolinked_build-Debug-ce80e9411a44e7b5c4e7.json
+│  │  │  │  │        │           ├─ directory-rnblurview_autolinked_build-Debug-2608b3bd9ea61b1892c2.json
 │  │  │  │  │        │           ├─ directory-RNImagePickerSpec_autolinked_build-Debug-95c0cba1ce00e080d0b6.json
 │  │  │  │  │        │           ├─ directory-RNLlamaSpec_autolinked_build-Debug-309bb2ab8492df907922.json
 │  │  │  │  │        │           ├─ directory-rnscreens_autolinked_build-Debug-6778232716d1a2c5d1e8.json
 │  │  │  │  │        │           ├─ directory-safeareacontext_autolinked_build-Debug-ee4679645502e7ade171.json
 │  │  │  │  │        │           ├─ directory-VoskSpec_autolinked_build-Debug-33c2cba4e531b28ee8f8.json
-│  │  │  │  │        │           ├─ index-2026-03-10T10-08-04-0108.json
-│  │  │  │  │        │           ├─ target-appmodules-Debug-3cc4459da8204cf3575a.json
+│  │  │  │  │        │           ├─ index-2026-03-27T04-30-53-0318.json
+│  │  │  │  │        │           ├─ target-appmodules-Debug-3e4cbb61653c3313897f.json
 │  │  │  │  │        │           ├─ target-react_codegen_rnasyncstorage-Debug-9cdbb0bf2221d76a6de9.json
+│  │  │  │  │        │           ├─ target-react_codegen_rnblurview-Debug-b8c24e25d3f3003496b4.json
 │  │  │  │  │        │           ├─ target-react_codegen_RNImagePickerSpec-Debug-a9f71434d8c04861285a.json
 │  │  │  │  │        │           ├─ target-react_codegen_RNLlamaSpec-Debug-548b9280bc2acc9e9cb6.json
 │  │  │  │  │        │           ├─ target-react_codegen_rnscreens-Debug-2f6cb08df84eb4306c8f.json
@@ -1452,6 +1471,8 @@ FoodMate-AI
 │  │  │  │           └─ compile_commands.json
 │  │  │  ├─ build.gradle
 │  │  │  ├─ debug.keystore
+│  │  │  ├─ libs
+│  │  │  │  └─ heytap-health-sdk.aar
 │  │  │  ├─ proguard-rules.pro
 │  │  │  └─ src
 │  │  │     └─ main
@@ -1460,6 +1481,11 @@ FoodMate-AI
 │  │  │        │  └─ com
 │  │  │        │     └─ ninkynonkpinkyponk
 │  │  │        │        └─ foodmateai
+│  │  │        │           ├─ health
+│  │  │        │           │  ├─ HealthDataTypes.kt
+│  │  │        │           │  ├─ HeytapHealthManager.kt
+│  │  │        │           │  ├─ HeytapHealthModule.kt
+│  │  │        │           │  └─ HeytapHealthPackage.kt
 │  │  │        │           ├─ MainActivity.kt
 │  │  │        │           └─ MainApplication.kt
 │  │  │        └─ res
@@ -1489,6 +1515,11 @@ FoodMate-AI
 │  │  │              ├─ strings.xml
 │  │  │              └─ styles.xml
 │  │  ├─ build.gradle
+│  │  ├─ frontend
+│  │  │  └─ android
+│  │  │     └─ app
+│  │  │        └─ libs
+│  │  │           └─ heytap-health-sdk-2.1.7.aar
 │  │  ├─ gradle
 │  │  │  └─ wrapper
 │  │  │     ├─ gradle-wrapper.jar
@@ -1535,6 +1566,7 @@ FoodMate-AI
 │  │  │  │  └─ MerchantSidebar.tsx
 │  │  │  ├─ MerchantLayout.tsx
 │  │  │  ├─ NutriVisionLoading.tsx
+│  │  │  ├─ OptimizedImage.tsx
 │  │  │  ├─ RestaurantCard.tsx
 │  │  │  ├─ StatusCapsule.tsx
 │  │  │  └─ WeatherAlertModal.tsx
@@ -1545,7 +1577,10 @@ FoodMate-AI
 │  │  │  ├─ useAuth.tsx
 │  │  │  ├─ useCoupons.js
 │  │  │  ├─ useHealthContext.tsx
+│  │  │  ├─ useOppoHealth.ts
 │  │  │  └─ usePedometer.tsx
+│  │  ├─ native
+│  │  │  └─ HeytapHealthModule.ts
 │  │  ├─ README.md
 │  │  ├─ screens
 │  │  │  ├─ AddressEditScreen.tsx
@@ -1595,9 +1630,12 @@ FoodMate-AI
 │  │  │  ├─ VoiceInferenceService.ts
 │  │  │  ├─ walletService.js
 │  │  │  └─ weatherService.ts
+│  │  ├─ theme
+│  │  │  └─ NordicTheme.ts
 │  │  ├─ types
 │  │  │  └─ coupon.ts
 │  │  └─ utils
+│  │     ├─ cacheUtils.js
 │  │     └─ couponUtils.js
 │  ├─ src_frontend_web
 │  │  ├─ App.css

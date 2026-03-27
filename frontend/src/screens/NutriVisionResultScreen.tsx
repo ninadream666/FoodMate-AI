@@ -33,8 +33,8 @@ const Icon = ({ name, size = 24, color = '#333' }: any) => {
 };
 
 const NutriVisionResultScreen = ({ route, navigation }: any) => {
-    // 路由参数
-    const { imageUri, imageBase64, healthTags } = route.params || {};
+    // 路由参数 (包含 mode 参数用于区分 API 分发)
+    const { imageUri, imageBase64, healthTags, mode = 'menu' } = route.params || {};
 
     const [loading, setLoading] = useState(true);
     const [result, setResult] = useState<any>(null);
@@ -57,8 +57,18 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
 
     const analyzeImage = async () => {
         try {
-            console.log('🚀 开始调用视觉大模型...');
-            const data = await nutriVisionService.analyzeMenu(imageBase64, healthTags);
+            console.log(`🚀 开始调用模型分析, 模式: ${mode}`);
+            let data;
+            
+            // API 智能分发
+            if (mode === 'food') {
+                // 拍菜品：走自研 CV + 降级版 LLM，速度快
+                data = await nutriVisionService.analyzeFood(imageBase64, healthTags);
+            } else {
+                // 拍菜单：走多模态巨物 LLM 模型
+                data = await nutriVisionService.analyzeMenu(imageBase64, healthTags);
+            }
+            
             setResult(data);
             setLoading(false);
         } catch (error: any) {
@@ -72,11 +82,12 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
         Alert.alert('提示', '健康记录功能开发中，敬请期待！');
     };
 
-    // 1. 渲染加载页 (使用独立组件)
+    // 1. 渲染加载页
     if (loading) {
         return (
             <NutriVisionLoading 
                 imageUri={imageUri} 
+                mode={mode}
                 onCancel={() => navigation.goBack()} 
             />
         );
@@ -152,18 +163,25 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                                 // 尝试从 items 中找到完整信息
                                 const itemDetail = result.items?.find((i: any) => i.name === recName);
                                 return (
-                                    <View key={index} style={styles.recCard}>
+                                    <TouchableOpacity 
+                                        key={index} 
+                                        style={styles.recCard}
+                                        onPress={() => Alert.alert('推荐详情', recName)}
+                                        activeOpacity={0.7}
+                                    >
                                         <View style={styles.recCardTop}>
-                                            <Text style={styles.recName} numberOfLines={1}>{recName}</Text>
+                                            {/* 移除 numberOfLines，允许完全显示 */}
+                                            <Text style={styles.recName}>{recName}</Text>
                                             <Icon name="thumb_up" size={16} color="#e85a2d" />
                                         </View>
                                         <View style={styles.recBadge}>
                                             <Text style={styles.recBadgeText}>健康首选</Text>
                                         </View>
-                                        <Text style={styles.recDesc} numberOfLines={2}>
+                                        {/* 移除 numberOfLines，允许完全显示 */}
+                                        <Text style={styles.recDesc}>
                                             {itemDetail?.calories || '推荐选择'} • {itemDetail?.ingredients?.[0] || 'AI严选'}
                                         </Text>
-                                    </View>
+                                    </TouchableOpacity>
                                 );
                             })}
                         </ScrollView>
@@ -180,26 +198,27 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                             style={styles.menuItemCard}
                             onPress={() => setSelectedItem(item)} // 点击显示详情
                         >
-                            <View style={{ flex: 1 }}>
+                            <View style={styles.itemLeft}>
                                 <View style={styles.itemHeader}>
+                                    {/* 移除 numberOfLines，允许完全显示 */}
                                     <Text style={styles.itemName}>{item.name}</Text>
                                     {item.is_recommended && (
                                         <Icon name="check_circle" size={16} color="#4caf50" />
                                     )}
-                                    {/* 警告 Badge */}
-                                    {item.warnings && (
+                                    {/* 警告 Badge 浓缩显示 */}
+                                    {item.warnings ? (
                                         <View style={styles.warningBadge}>
-                                            <Text style={styles.warningText}>⚠️ {item.warnings}</Text>
+                                            <Text style={styles.warningText}>⚠️ 风险</Text>
                                         </View>
-                                    )}
+                                    ) : null}
                                 </View>
-                                <Text style={styles.itemIngredients} numberOfLines={1}>
-                                    {item.ingredients?.join(', ')}
+                                {/* 移除 numberOfLines，防止成分过长被截断 */}
+                                <Text style={styles.itemIngredients}>
+                                    {item.ingredients?.join('、')}
                                 </Text>
                             </View>
                             
                             <View style={styles.itemRight}>
-                                {/* 热量显示：简单逻辑判断颜色 */}
                                 <Text style={[
                                     styles.itemCalories,
                                     item.calories.includes('kcal') && parseInt(item.calories) > 800 
@@ -250,7 +269,7 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                 </View>
             </Modal>
 
-            {/* 2. 菜品详情小卡片 Modal */}
+            {/* 2. 菜品详情小卡片 Modal (改为 ScrollView 以支持长文本) */}
             <Modal visible={!!selectedItem} transparent={true} animationType="fade" onRequestClose={() => setSelectedItem(null)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.detailCard}>
@@ -261,29 +280,34 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                             </TouchableOpacity>
                         </View>
                         
-                        <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>🔥 热量估算:</Text>
-                            <Text style={styles.detailValue}>{selectedItem?.calories}</Text>
-                        </View>
-                        
-                        <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>🥦 主要成分:</Text>
-                            <Text style={styles.detailValue}>{selectedItem?.ingredients?.join(', ')}</Text>
-                        </View>
+                        <ScrollView style={styles.detailScroll} showsVerticalScrollIndicator={false}>
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>🔥 估算热量:</Text>
+                                <Text style={styles.detailValue}>{selectedItem?.calories}</Text>
+                            </View>
+                            
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>🥦 主要食材:</Text>
+                                <Text style={[styles.detailValue, { lineHeight: 22 }]}>
+                                    {selectedItem?.ingredients?.join('、')}
+                                </Text>
+                            </View>
 
-                        {selectedItem?.warnings && (
-                            <View style={[styles.detailRow, { marginTop: 10, backgroundColor: '#fff3e0', padding: 8, borderRadius: 8 }]}>
-                                <Text style={[styles.detailLabel, { color: '#e65100', width: 60 }]}>⚠️ 注意:</Text>
-                                <Text style={[styles.detailValue, { color: '#e65100' }]}>{selectedItem?.warnings}</Text>
-                            </View>
-                        )}
-                        
-                        {selectedItem?.is_recommended && (
-                            <View style={{ marginTop: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                                <Icon name="check_circle" size={20} color="#4caf50" />
-                                <Text style={{ marginLeft: 5, color: '#4caf50', fontWeight: 'bold' }}>AI 推荐健康选择</Text>
-                            </View>
-                        )}
+                            {/* 完整显示长段落的健康警告 */}
+                            {selectedItem?.warnings ? (
+                                <View style={styles.warningBox}>
+                                    <Text style={styles.warningLabel}>⚠️ 风险提示:</Text>
+                                    <Text style={styles.warningBoxText}>{selectedItem?.warnings}</Text>
+                                </View>
+                            ) : null}
+                            
+                            {selectedItem?.is_recommended && (
+                                <View style={styles.recommendedBox}>
+                                    <Icon name="check_circle" size={20} color="#4caf50" />
+                                    <Text style={styles.recommendedBoxText}>AI 推荐健康选择</Text>
+                                </View>
+                            )}
+                        </ScrollView>
 
                         <TouchableOpacity 
                             style={styles.detailCloseBtn}
@@ -307,7 +331,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background,
     },
 
-    // 导航栏 - 北欧磨砂效果
+    // 导航栏
     navBar: {
         backgroundColor: colors.frostedBgStrong,
         paddingHorizontal: spacing.lg,
@@ -327,7 +351,7 @@ const styles = StyleSheet.create({
 
     scrollContent: { padding: spacing.lg },
 
-    // 概览卡片 - 北欧磨砂风格
+    // 概览卡片
     summaryCard: {
         backgroundColor: colors.cardBg,
         borderRadius: borderRadius.xl,
@@ -380,7 +404,7 @@ const styles = StyleSheet.create({
         lineHeight: 22,
     },
 
-    // 推荐区 - 北欧风格
+    // 推荐区
     section: { marginBottom: spacing.xxl },
     sectionHeader: {
         flexDirection: 'row',
@@ -417,6 +441,7 @@ const styles = StyleSheet.create({
         fontWeight: fontWeight.bold,
         color: colors.textPrimary,
         flex: 1,
+        marginRight: spacing.xs,
     },
     recBadge: {
         backgroundColor: colors.successBg,
@@ -436,7 +461,7 @@ const styles = StyleSheet.create({
         color: colors.textTertiary,
     },
 
-    // 列表项 - 北欧磨砂卡片
+    // 列表项卡片
     menuItemCard: {
         backgroundColor: colors.cardBg,
         padding: spacing.lg,
@@ -448,40 +473,51 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.cardBorder,
     },
+    itemLeft: {
+        flex: 1,
+        paddingRight: spacing.md,
+    },
     itemHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.sm,
+        flexWrap: 'wrap',
+        gap: spacing.xs,
         marginBottom: spacing.xs,
     },
     itemName: {
         fontSize: fontSize.md,
         fontWeight: fontWeight.bold,
         color: colors.textPrimary,
+        flexShrink: 1,
     },
     warningBadge: {
         backgroundColor: colors.warningBg,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.xs,
-        borderRadius: borderRadius.sm,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: borderRadius.xs,
     },
     warningText: {
-        fontSize: fontSize.xs,
+        fontSize: 10,
         color: colors.warning,
         fontWeight: fontWeight.bold,
     },
     itemIngredients: {
         fontSize: fontSize.xs,
         color: colors.textTertiary,
-        maxWidth: 200,
+        lineHeight: 18,
+        marginTop: 2,
     },
-    itemRight: { alignItems: 'flex-end' },
+    itemRight: { 
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        minWidth: 60,
+    },
     itemCalories: {
         fontSize: fontSize.sm,
         fontWeight: fontWeight.bold,
     },
 
-    // 底部按钮 - 北欧风格
+    // 底部按钮
     bottomBar: {
         position: 'absolute',
         bottom: 0,
@@ -549,7 +585,7 @@ const styles = StyleSheet.create({
         fontWeight: fontWeight.bold,
     },
 
-    // Modal Styles - 北欧风格
+    // 原图 Modal
     modalContainer: {
         flex: 1,
         backgroundColor: 'black',
@@ -564,6 +600,7 @@ const styles = StyleSheet.create({
     },
     fullImage: { width: '100%', height: '100%' },
 
+    // 详情卡片 Modal
     modalOverlay: {
         flex: 1,
         backgroundColor: colors.overlay,
@@ -572,6 +609,7 @@ const styles = StyleSheet.create({
     },
     detailCard: {
         width: '85%',
+        maxHeight: '80%', // 限制最大高度防止溢出屏幕
         backgroundColor: colors.surface,
         borderRadius: borderRadius.xxl,
         padding: spacing.xl,
@@ -583,27 +621,67 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: spacing.xl,
+        marginBottom: spacing.lg,
+        paddingBottom: spacing.sm,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.borderLight,
     },
     detailTitle: {
-        fontSize: fontSize.xxl,
+        fontSize: fontSize.xl,
         fontWeight: fontWeight.bold,
         color: colors.textPrimary,
         flex: 1,
+        marginRight: spacing.sm,
+    },
+    detailScroll: {
+        paddingVertical: spacing.xs,
     },
     detailRow: {
         flexDirection: 'row',
         marginBottom: spacing.md,
     },
     detailLabel: {
-        width: 80,
+        width: 75,
         fontWeight: fontWeight.bold,
         color: colors.textSecondary,
         fontSize: fontSize.sm,
+        marginTop: 2,
     },
     detailValue: {
         flex: 1,
         color: colors.textPrimary,
+        fontSize: fontSize.sm,
+    },
+    warningBox: {
+        marginTop: spacing.sm,
+        backgroundColor: '#fff3e0',
+        padding: 12,
+        borderRadius: 8,
+    },
+    warningLabel: {
+        color: '#e65100',
+        fontWeight: 'bold',
+        fontSize: fontSize.sm,
+        marginBottom: 4,
+    },
+    warningBoxText: {
+        color: '#e65100',
+        fontSize: fontSize.sm,
+        lineHeight: 20,
+    },
+    recommendedBox: {
+        marginTop: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.successBg,
+        paddingVertical: 10,
+        borderRadius: 8,
+    },
+    recommendedBoxText: {
+        marginLeft: spacing.sm,
+        color: '#4caf50',
+        fontWeight: 'bold',
         fontSize: fontSize.sm,
     },
     detailCloseBtn: {
