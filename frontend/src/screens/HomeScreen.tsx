@@ -13,7 +13,9 @@ import {
     Alert,
     Image,
     Animated,
-    Easing
+    Easing,
+    PermissionsAndroid,
+    Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { merchantService } from '../services/merchantService';
@@ -593,6 +595,30 @@ const HomeScreen = ({ navigation }: any) => {
         };
 
         if (type === 'camera') {
+            // --- 动态权限申请逻辑开始 ---
+            if (Platform.OS === 'android') {
+                try {
+                    const granted = await PermissionsAndroid.request(
+                        PermissionsAndroid.PERMISSIONS.CAMERA,
+                        {
+                            title: "需要相机权限",
+                            message: "NutriVision 需要使用您的相机来拍摄菜品以进行营养分析。",
+                            buttonNeutral: "稍后询问",
+                            buttonNegative: "取消",
+                            buttonPositive: "确定"
+                        }
+                    );
+                    if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                        Alert.alert("权限被拒绝", "我们需要相机权限才能为您提供营养透视功能，请在系统设置中开启。");
+                        return; // 如果用户拒绝权限，直接返回，不再调起相机，避免报错
+                    }
+                } catch (err) {
+                    console.warn(err);
+                    return;
+                }
+            }
+            // --- 动态权限申请逻辑结束 ---
+            
             await launchCamera(options, callback);
         } else {
             await launchImageLibrary(options, callback);
@@ -689,8 +715,8 @@ const HomeScreen = ({ navigation }: any) => {
                     <Text style={{ fontSize: 24 }}>📸</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.visionTitle}>拍一拍：实景菜单营养透视</Text>
-                    <Text style={styles.visionSubtitle}>AI 识别热量、过敏原，定制健康推荐</Text>
+                    <Text style={styles.visionTitle}>拍一拍：实景营养透视</Text>
+                    <Text style={styles.visionSubtitle}>可拍菜单和菜品！热量、过敏原分析，定制健康推荐</Text>
                 </View>
                 <View style={styles.visionArrow}>
                     <Text style={{ color: '#fff' }}>→</Text>

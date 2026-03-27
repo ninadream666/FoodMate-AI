@@ -62,9 +62,9 @@ class FoodClassifier:
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
 
-    def predict(self, base64_img: str) -> str:
+    def predict(self, base64_img: str) -> tuple:
         """
-        接收 Base64 图片，返回识别出的菜品名称 (由于 Food-101 标签是英文，返回英文名交由 LLM 理解更准)
+        接收 Base64 图片，返回识别出的菜品名称和置信度 (food_name, confidence)
         """
         try:
             # 清理 base64 头
@@ -77,21 +77,26 @@ class FoodClassifier:
             
             with torch.no_grad():
                 outputs = self.model(img_tensor)
-                _, predicted = torch.max(outputs, 1)
+                # 使用 softmax 获取各类别的概率
+                probabilities = torch.nn.functional.softmax(outputs[0], dim=0)
+                # 获取最大概率及其对应的索引
+                confidence, predicted = torch.max(probabilities, 0)
+                
                 class_idx = predicted.item()
+                confidence_score = confidence.item()
 
             if self.class_names and class_idx < len(self.class_names):
                 food_name = self.class_names[class_idx]
                 # 简单美化一下 Kaggle 的下划线命名法，如 apple_pie -> Apple Pie
                 food_name = food_name.replace('_', ' ').title()
-                logger.info(f"本地 CV 模型识别结果: {food_name}")
-                return food_name
+                logger.info(f"本地 CV 模型识别结果: {food_name}, 置信度: {confidence_score:.4f}")
+                return food_name, confidence_score
             else:
-                return "Unknown Food"
+                return "Unknown Food", 0.0
                 
         except Exception as e:
             logger.error(f"CV 推理失败: {str(e)}")
-            return "Unknown Food"
+            return "Unknown Food", 0.0
 
 # 实例化单例
 food_classifier = FoodClassifier()

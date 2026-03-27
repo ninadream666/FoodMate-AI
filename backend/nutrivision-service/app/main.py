@@ -70,20 +70,36 @@ async def analyze_single_food(request: SingleFoodAnalysisRequest):
         start_time = time.time()
         
         # 第一阶段：调用本地自研 CV 模型进行极致精度的毫秒级分类
-        food_name = food_classifier.predict(request.image_base64)
+        # 这里解包返回值，获取分类名和置信度
+        food_name, confidence = food_classifier.predict(request.image_base64)
         cv_time = time.time()
-        logger.info(f"[CV 阶段] 本地模型识别完成: {food_name}, 耗时: {cv_time - start_time:.4f}s")
+        logger.info(f"[CV 阶段] 本地模型识别完成: {food_name}, 置信度: {confidence:.4f}, 耗时: {cv_time - start_time:.4f}s")
         
-        # 第二阶段：调用大模型进行知识图谱扩展 (仅传文本)
-        result = await vision_client.analyze_single_food(food_name, request.health_tags)
-        llm_time = time.time()
-        logger.info(f"[LLM 阶段] 云端知识图谱分析完成, 耗时: {llm_time - cv_time:.4f}s")
-        
-        # 针对返回结果动态修饰一下总结文字，彰显双模型协同
-        if not result.get("health_summary", "").startswith("分析暂不可用"):
-            # 在返回中加入本地识别结果的提示，让前端更有感知
-            enhanced_summary = f"[双模型协同] 我们的视觉模型已精准将其识别为【{food_name}】。根据您的健康档案，" + result.get("health_summary", "")
-            result["health_summary"] = enhanced_summary
+        # 阈值判定：如果置信度低于 60% 或者完全未识别，则启动大模型兜底
+        CONFIDENCE_THRESHOLD = 0.60
+        if food_name == "Unknown Food" or confidence < CONFIDENCE_THRESHOLD:
+            logger.warning(f"[兜底触发] CV识别置信度过低 ({confidence:.4f} < {CONFIDENCE_THRESHOLD}) 或未识别，转交云端大模型兜底...")
+            
+            # 分支 B：直接传原图给 Gemini 的兜底接口
+            result = await vision_client.analyze_image_fallback(request.image_base64, request.health_tags)
+            llm_time = time.time()
+            logger.info(f"[LLM 阶段] 云端视觉大模型兜底分析完成, 耗时: {llm_time - cv_time:.4f}s")
+            
+            # 隐藏前缀，直接展示健康建议
+            if not result.get("health_summary", "").startswith("分析暂不可用"):
+                enhanced_summary = "根据您的健康档案，" + result.get("health_summary", "")
+                result["health_summary"] = enhanced_summary
+
+        else:
+            # 分支 A：置信度很高，直接将纯文本发给大模型做知识扩展（极速模式）
+            result = await vision_client.analyze_single_food(food_name, request.health_tags)
+            llm_time = time.time()
+            logger.info(f"[LLM 阶段] 云端知识图谱扩展完成, 耗时: {llm_time - cv_time:.4f}s")
+            
+            # 隐藏前缀，直接展示健康建议
+            if not result.get("health_summary", "").startswith("分析暂不可用"):
+                enhanced_summary = "根据您的健康档案，" + result.get("health_summary", "")
+                result["health_summary"] = enhanced_summary
 
         response_data = {
             "status": "success",

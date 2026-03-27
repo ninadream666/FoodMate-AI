@@ -163,18 +163,25 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                                 // 尝试从 items 中找到完整信息
                                 const itemDetail = result.items?.find((i: any) => i.name === recName);
                                 return (
-                                    <View key={index} style={styles.recCard}>
+                                    <TouchableOpacity 
+                                        key={index} 
+                                        style={styles.recCard}
+                                        onPress={() => Alert.alert('推荐详情', recName)}
+                                        activeOpacity={0.7}
+                                    >
                                         <View style={styles.recCardTop}>
-                                            <Text style={styles.recName} numberOfLines={1}>{recName}</Text>
+                                            {/* 移除 numberOfLines，允许完全显示 */}
+                                            <Text style={styles.recName}>{recName}</Text>
                                             <Icon name="thumb_up" size={16} color="#e85a2d" />
                                         </View>
                                         <View style={styles.recBadge}>
                                             <Text style={styles.recBadgeText}>健康首选</Text>
                                         </View>
-                                        <Text style={styles.recDesc} numberOfLines={2}>
+                                        {/* 移除 numberOfLines，允许完全显示 */}
+                                        <Text style={styles.recDesc}>
                                             {itemDetail?.calories || '推荐选择'} • {itemDetail?.ingredients?.[0] || 'AI严选'}
                                         </Text>
-                                    </View>
+                                    </TouchableOpacity>
                                 );
                             })}
                         </ScrollView>
@@ -193,7 +200,8 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                         >
                             <View style={styles.itemLeft}>
                                 <View style={styles.itemHeader}>
-                                    <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+                                    {/* 移除 numberOfLines，允许完全显示 */}
+                                    <Text style={styles.itemName}>{item.name}</Text>
                                     {item.is_recommended && (
                                         <Icon name="check_circle" size={16} color="#4caf50" />
                                     )}
@@ -204,8 +212,8 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                                         </View>
                                     ) : null}
                                 </View>
-                                {/* 允许显示 2 行成分，防止截断 */}
-                                <Text style={styles.itemIngredients} numberOfLines={2}>
+                                {/* 移除 numberOfLines，防止成分过长被截断 */}
+                                <Text style={styles.itemIngredients}>
                                     {item.ingredients?.join('、')}
                                 </Text>
                             </View>
