@@ -1637,121 +1637,122 @@ FoodMate-AI
 │  │  └─ utils
 │  │     ├─ cacheUtils.js
 │  │     └─ couponUtils.js
-│  ├─ src_frontend_web
-│  │  ├─ App.css
-│  │  ├─ App.jsx
-│  │  ├─ assets
-│  │  │  └─ react.svg
-│  │  ├─ components
-│  │  │  ├─ admin
-│  │  │  │  ├─ AdminLayout.jsx
-│  │  │  │  ├─ ApiTestPanel.jsx
-│  │  │  │  ├─ Header.jsx
-│  │  │  │  └─ Sidebar.jsx
-│  │  │  └─ merchant
-│  │  │     ├─ MerchantHeader.jsx
-│  │  │     └─ MerchantSidebar.jsx
-│  │  ├─ config
-│  │  │  └─ adminConfig.js
-│  │  ├─ docs
-│  │  │  └─ 统计数据架构分析.md
-│  │  ├─ hooks
-│  │  │  ├─ useAuth.jsx
-│  │  │  └─ useCoupons.js
-│  │  ├─ index.css
-│  │  ├─ main.jsx
-│  │  ├─ pages
-│  │  │  ├─ admin
-│  │  │  │  ├─ AdminLogin.jsx
-│  │  │  │  ├─ Commissions.jsx
-│  │  │  │  ├─ Dashboard.jsx
-│  │  │  │  ├─ DashboardModern.jsx
-│  │  │  │  ├─ DashboardNew.jsx
-│  │  │  │  ├─ Marketing.jsx
-│  │  │  │  ├─ Merchants.jsx
-│  │  │  │  ├─ Orders.jsx
-│  │  │  │  ├─ Services.jsx
-│  │  │  │  ├─ ServicesNew.jsx
-│  │  │  │  ├─ Settlements.jsx
-│  │  │  │  ├─ SettlementsNew.jsx
-│  │  │  │  ├─ StatsTestPage.jsx
-│  │  │  │  ├─ SystemMonitor.jsx
-│  │  │  │  ├─ UserCredit.jsx
-│  │  │  │  └─ Users.jsx
-│  │  │  ├─ merchant
-│  │  │  │  ├─ MenuManagement.jsx
-│  │  │  │  ├─ MerchantLayout.jsx
-│  │  │  │  ├─ MerchantOnboarding.jsx
-│  │  │  │  ├─ MerchantShopInfo.jsx
-│  │  │  │  ├─ RefundAudit.jsx
-│  │  │  │  ├─ ServiceMarketplace.jsx
-│  │  │  │  ├─ SettlementDashboard.jsx
-│  │  │  │  └─ SmartPricing.jsx
-│  │  │  └─ user
-│  │  │     ├─ Address.jsx
-│  │  │     ├─ Cart.jsx
-│  │  │     ├─ Home.jsx
-│  │  │     ├─ Login.jsx
-│  │  │     ├─ MyOrders.jsx
-│  │  │     ├─ OrderConfirm.jsx
-│  │  │     ├─ OrderTracking.jsx
-│  │  │     ├─ PaymentSuccess.jsx
-│  │  │     ├─ Profile.jsx
-│  │  │     ├─ RestaurantDetail.jsx
-│  │  │     ├─ Survey.jsx
-│  │  │     └─ Wallet.jsx
-│  │  ├─ services
-│  │  │  ├─ addressService.js
-│  │  │  ├─ admin
-│  │  │  │  ├─ apiConfig.js
-│  │  │  │  ├─ apiTester.js
-│  │  │  │  ├─ authService.js
-│  │  │  │  ├─ dashboardService.js
-│  │  │  │  ├─ index.js
-│  │  │  │  ├─ marketingService.js
-│  │  │  │  ├─ merchantService.js
-│  │  │  │  ├─ orderService.js
-│  │  │  │  ├─ orderStatsService.js
-│  │  │  │  ├─ platformService.js
-│  │  │  │  ├─ settlementService.js
-│  │  │  │  ├─ systemService.js
-│  │  │  │  └─ userService.js
-│  │  │  ├─ aiPricingService.js
-│  │  │  ├─ apiClient.js
-│  │  │  ├─ authService.js
-│  │  │  ├─ index.js
-│  │  │  ├─ merchantOrderService.js
-│  │  │  ├─ merchantService.js
-│  │  │  ├─ orderService.js
-│  │  │  ├─ platformService.js
-│  │  │  ├─ profileService.js
-│  │  │  ├─ recommendationService.js
-│  │  │  ├─ settlementService.js
-│  │  │  ├─ userService.js
-│  │  │  └─ walletService.js
-│  │  ├─ types
-│  │  │  ├─ admin.js
-│  │  │  └─ coupon.ts
-│  │  └─ utils
-│  │     ├─ apiDiagnostic.js
-│  │     ├─ apiTest.js
-│  │     ├─ apiTester.js
-│  │     ├─ couponIssueDebug.js
-│  │     ├─ couponUtils.js
-│  │     ├─ debugApiConnection.js
-│  │     ├─ debugAuth.js
-│  │     ├─ debugMarketingApi.js
-│  │     ├─ fieldMapper.js
-│  │     ├─ frontendTester.js
-│  │     ├─ pageUpdater.js
-│  │     ├─ quickDiagnostic.js
-│  │     ├─ simpleMarketingTest.js
-│  │     ├─ statsApiChecker.js
-│  │     ├─ statsDebugger.js
-│  │     └─ testMarketingFeatures.js
 │  ├─ tsconfig.json
 │  └─ __tests__
 │     └─ App.test.tsx
-└─ README.md
+├─ frontend_web
+│  ├─ App.css
+│  ├─ App.jsx
+│  ├─ assets
+│  │  └─ react.svg
+│  ├─ components
+│  │  ├─ admin
+│  │  │  ├─ AdminLayout.jsx
+│  │  │  ├─ ApiTestPanel.jsx
+│  │  │  ├─ Header.jsx
+│  │  │  └─ Sidebar.jsx
+│  │  └─ merchant
+│  │     ├─ MerchantHeader.jsx
+│  │     └─ MerchantSidebar.jsx
+│  ├─ config
+│  │  └─ adminConfig.js
+│  ├─ docs
+│  │  └─ 统计数据架构分析.md
+│  ├─ hooks
+│  │  ├─ useAuth.jsx
+│  │  └─ useCoupons.js
+│  ├─ index.css
+│  ├─ main.jsx
+│  ├─ pages
+│  │  ├─ admin
+│  │  │  ├─ AdminLogin.jsx
+│  │  │  ├─ Commissions.jsx
+│  │  │  ├─ Dashboard.jsx
+│  │  │  ├─ DashboardModern.jsx
+│  │  │  ├─ DashboardNew.jsx
+│  │  │  ├─ Marketing.jsx
+│  │  │  ├─ Merchants.jsx
+│  │  │  ├─ Orders.jsx
+│  │  │  ├─ Services.jsx
+│  │  │  ├─ ServicesNew.jsx
+│  │  │  ├─ Settlements.jsx
+│  │  │  ├─ SettlementsNew.jsx
+│  │  │  ├─ StatsTestPage.jsx
+│  │  │  ├─ SystemMonitor.jsx
+│  │  │  ├─ UserCredit.jsx
+│  │  │  └─ Users.jsx
+│  │  ├─ merchant
+│  │  │  ├─ MenuManagement.jsx
+│  │  │  ├─ MerchantLayout.jsx
+│  │  │  ├─ MerchantOnboarding.jsx
+│  │  │  ├─ MerchantShopInfo.jsx
+│  │  │  ├─ RefundAudit.jsx
+│  │  │  ├─ ServiceMarketplace.jsx
+│  │  │  ├─ SettlementDashboard.jsx
+│  │  │  └─ SmartPricing.jsx
+│  │  └─ user
+│  │     ├─ Address.jsx
+│  │     ├─ Cart.jsx
+│  │     ├─ Home.jsx
+│  │     ├─ Login.jsx
+│  │     ├─ MyOrders.jsx
+│  │     ├─ OrderConfirm.jsx
+│  │     ├─ OrderTracking.jsx
+│  │     ├─ PaymentSuccess.jsx
+│  │     ├─ Profile.jsx
+│  │     ├─ RestaurantDetail.jsx
+│  │     ├─ Survey.jsx
+│  │     └─ Wallet.jsx
+│  ├─ services
+│  │  ├─ addressService.js
+│  │  ├─ admin
+│  │  │  ├─ apiConfig.js
+│  │  │  ├─ apiTester.js
+│  │  │  ├─ authService.js
+│  │  │  ├─ dashboardService.js
+│  │  │  ├─ index.js
+│  │  │  ├─ marketingService.js
+│  │  │  ├─ merchantService.js
+│  │  │  ├─ orderService.js
+│  │  │  ├─ orderStatsService.js
+│  │  │  ├─ platformService.js
+│  │  │  ├─ settlementService.js
+│  │  │  ├─ systemService.js
+│  │  │  └─ userService.js
+│  │  ├─ aiPricingService.js
+│  │  ├─ apiClient.js
+│  │  ├─ authService.js
+│  │  ├─ index.js
+│  │  ├─ merchantOrderService.js
+│  │  ├─ merchantService.js
+│  │  ├─ orderService.js
+│  │  ├─ platformService.js
+│  │  ├─ profileService.js
+│  │  ├─ recommendationService.js
+│  │  ├─ settlementService.js
+│  │  ├─ userService.js
+│  │  └─ walletService.js
+│  ├─ types
+│  │  ├─ admin.js
+│  │  └─ coupon.ts
+│  └─ utils
+│     ├─ apiDiagnostic.js
+│     ├─ apiTest.js
+│     ├─ apiTester.js
+│     ├─ couponIssueDebug.js
+│     ├─ couponUtils.js
+│     ├─ debugApiConnection.js
+│     ├─ debugAuth.js
+│     ├─ debugMarketingApi.js
+│     ├─ fieldMapper.js
+│     ├─ frontendTester.js
+│     ├─ pageUpdater.js
+│     ├─ quickDiagnostic.js
+│     ├─ simpleMarketingTest.js
+│     ├─ statsApiChecker.js
+│     ├─ statsDebugger.js
+│     └─ testMarketingFeatures.js
+├─ README.md
+└─ src_frontend_web
 
 ```
