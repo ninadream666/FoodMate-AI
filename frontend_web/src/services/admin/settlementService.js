@@ -233,6 +233,41 @@ class SettlementService {
             throw error;
         }
     }
+
+    // ============== 补充：手动触发操作接口 ==============
+
+    // 手动触发月结算
+    async triggerMonthlySettlement() {
+        try {
+            const response = await platformApi.post('/api/admin/settlements/trigger/monthly');
+            return response.data;
+        } catch (error) {
+            console.error('Trigger monthly settlement failed:', error);
+            throw error;
+        }
+    }
+
+    // 手动触发周结算
+    async triggerWeeklySettlement() {
+        try {
+            const response = await platformApi.post('/api/admin/settlements/trigger/weekly');
+            return response.data;
+        } catch (error) {
+            console.error('Trigger weekly settlement failed:', error);
+            throw error;
+        }
+    }
+
+    // 手动触发自动确认
+    async triggerAutoConfirm() {
+        try {
+            const response = await platformApi.post('/api/admin/settlements/trigger/auto-confirm');
+            return response.data;
+        } catch (error) {
+            console.error('Trigger auto confirm failed:', error);
+            throw error;
+        }
+    }
 }
 
 const settlementService = new SettlementService();

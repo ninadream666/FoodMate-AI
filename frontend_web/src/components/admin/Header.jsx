@@ -6,31 +6,27 @@ function Header({ onMenuClick, onLogout }) {
     const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
     const location = useLocation();
 
-    // 根据路径获取页面标题
+    // 修复：使用更智能的路径模糊匹配，防止子路由或末尾斜杠导致匹配失败
     const getPageTitle = (pathname) => {
-        const pageMap = {
-            '/admin': '平台数据概览',
-            '/admin/dashboard': '平台数据概览',
-            '/admin/merchants': '商家管理',
-            '/admin/orders': '订单管理',
-            '/admin/users': '用户管理',
-            '/admin/marketing': '营销中心',
-            '/admin/settlements': '财务管理',
-            '/admin/services': '服务管理',
-            '/admin/reports': '数据报表',
-            '/admin/commissions': '分成管理',
-            '/admin/system-monitor': '系统设置',
-            '/admin/user-credit': '用户信用',
-        };
-        // 处理子路由的情况，比如 /admin/merchants/123
-        const baseRoute = Object.keys(pageMap).find(route => pathname === route || pathname.startsWith(route + '/')) || '/admin';
-        return pageMap[baseRoute] || '管理后台';
+        if (pathname.includes('/dashboard')) return '平台数据概览';
+        if (pathname.includes('/merchants')) return '商家管理';
+        if (pathname.includes('/orders')) return '订单管理';
+        if (pathname.includes('/users')) return '用户管理';
+        if (pathname.includes('/marketing')) return '营销中心';
+        if (pathname.includes('/settlements')) return '财务管理';
+        if (pathname.includes('/services')) return '服务管理';
+        if (pathname.includes('/reports')) return '数据报表';
+        if (pathname.includes('/commissions')) return '分成管理';
+        if (pathname.includes('/system-monitor')) return '系统设置';
+        if (pathname.includes('/user-credit')) return '用户信用';
+        if (pathname.includes('/stats-test')) return '统计测试';
+        return '平台数据概览';
     };
 
     const pageTitle = getPageTitle(location.pathname);
 
     return (
-        <header className="glass-panel h-16 flex-none flex items-center justify-between px-6 lg:px-8 z-10 sticky top-0">
+        <header className="glass-panel h-16 flex-none flex items-center justify-between px-6 lg:px-8 z-10 sticky top-0 border-b border-border-light">
             {/* 左侧 - 菜单按钮和面包屑 */}
             <div className="flex items-center gap-4">
                 <button
@@ -69,7 +65,7 @@ function Header({ onMenuClick, onLogout }) {
                         onClick={() => setShowDropdown(!showDropdown)}
                         className="flex items-center gap-3 cursor-pointer hover:bg-surface-hover p-1.5 sm:pr-3 rounded-full sm:rounded-xl transition-colors border border-transparent hover:border-border-light"
                     >
-                        <div className="size-8 rounded-full bg-background-section border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <div className="size-8 rounded-full bg-background-section border border-border-light flex items-center justify-center overflow-hidden flex-shrink-0">
                             <span className="text-sm font-bold text-text-secondary">
                                 {adminUser.username?.charAt(0).toUpperCase() || 'A'}
                             </span>

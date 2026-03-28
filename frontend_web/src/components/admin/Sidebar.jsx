@@ -96,8 +96,8 @@ function Sidebar({ isOpen, onClose, currentPath }) {
                         <span className="material-symbols-outlined font-variation-settings-fill-1">lunch_dining</span>
                     </div>
                     <div className="flex flex-col">
-                        <h1 className="text-text-primary text-lg font-bold tracking-tight leading-tight">智惠外卖</h1>
-                        <p className="text-text-tertiary text-xs font-normal">平台数据管理</p>
+                        <h1 className="text-text-primary text-lg font-bold tracking-tight leading-tight">FooMate-AI</h1>
+                        <p className="text-text-tertiary text-xs font-normal">平台管理</p>
                     </div>
                 </div>
 

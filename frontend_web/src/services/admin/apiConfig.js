@@ -7,7 +7,7 @@ const isDev = import.meta.env.DEV;
 const API_BASE_URLS = {
     // 开发环境使用代理路径，生产环境使用完整URL
     // 各服务的 API 路径前缀，与 Vite 代理配置匹配
-    USER_SERVICE: isDev ? '' : 'http://localhost:8083',
+    USER_SERVICE: isDev ? '/api' : 'http://localhost:8083', // [修改点]: 添加 /api 前缀以触发 Vite 代理
     MERCHANT_SERVICE: isDev ? '' : 'http://localhost:8081',
     ORDER_SERVICE: isDev ? '' : 'http://localhost:8084',
     MARKETING_SERVICE: isDev ? '' : 'http://localhost:8082',

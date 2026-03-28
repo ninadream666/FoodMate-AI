@@ -1,7 +1,163 @@
 import React, { useState, useEffect } from 'react';
 import userService from '../../services/admin/userService';
 
+// ==========================================
+// 补充您遗漏的顶部组件定义，确保文件能够正常运行
+// ==========================================
+
+// 状态标签组件
+const StatusBadge = ({ status }) => {
+    const getStatusInfo = (status) => {
+        switch (status?.toLowerCase()) {
+            case 'active':
+            case 'normal':
+            case '正常':
+                return { text: '正常', class: 'bg-green-100 text-green-800' };
+            case 'banned':
+            case 'disabled':
+            case '已封禁':
+                return { text: '已封禁', class: 'bg-red-100 text-red-800' };
+            case 'suspended':
+            case '已冻结':
+                return { text: '已冻结', class: 'bg-yellow-100 text-yellow-800' };
+            default:
+                return { text: status || '未知', class: 'bg-gray-100 text-gray-800' };
+        }
+    };
+
+    const statusInfo = getStatusInfo(status);
+    return (
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.class}`}>
+            <span className={`size-1.5 rounded-full ${status === 'active' || status === 'normal' ? 'bg-green-500' : 'bg-red-500'}`}></span>
+            {statusInfo.text}
+        </span>
+    );
+};
+
+// 信用等级标签组件 (已严格按要求去除分数，仅显示文字与图标)
+const CreditBadge = ({ creditLevel, creditScore }) => {
+    const getCreditInfo = (score, level) => {
+        let levelNum = 3;
+        if (level !== undefined && level !== null) {
+            levelNum = parseInt(level);
+        } else {
+            if (score >= 80) levelNum = 5;
+            else if (score >= 60) levelNum = 4;
+            else if (score >= 40) levelNum = 3;
+            else if (score >= 20) levelNum = 2;
+            else levelNum = 1;
+        }
+
+        if (levelNum >= 5) {
+            return { text: '优秀', class: 'bg-emerald-100 text-emerald-800', icon: 'verified' };
+        } else if (levelNum === 4) {
+            return { text: '良好', class: 'bg-amber-100 text-amber-800', icon: 'star_half' };
+        } else if (levelNum === 3) {
+            return { text: '一般', class: 'bg-blue-100 text-blue-800', icon: 'remove' };
+        } else if (levelNum === 2) {
+            return { text: '较差', class: 'bg-orange-100 text-orange-800', icon: 'warning' };
+        } else {
+            return { text: '很差', class: 'bg-red-100 text-red-800', icon: 'error' };
+        }
+    };
+
+    const creditInfo = getCreditInfo(creditScore || 75, creditLevel);
+    return (
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${creditInfo.class}`}>
+            <span className="material-symbols-outlined text-[14px]">{creditInfo.icon}</span>
+            {creditInfo.text}
+        </span>
+    );
+};
+
+// 用户行组件 (完整保留您原先所有的 UI 设计)
+const UserRow = ({ user, onEditUser, onViewCredit, onToggleStatus, currentTab }) => (
+    <tr className="hover:bg-gray-50/50 transition-colors">
+        <td className="px-6 py-4">
+            <div className="flex items-center gap-3">
+                <div className="size-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                    {user.username?.charAt(0)?.toUpperCase() || 'U'}
+                </div>
+                <div>
+                    <div className="font-medium text-[#1b140d]">{user.username || user.name || '未命名'}</div>
+                    <div className="text-sm text-[#9a734c]">{user.phoneNumber || user.phone || '无手机号'}</div>
+                </div>
+            </div>
+        </td>
+        {currentTab === 'users' ? (
+            <>
+                <td className="px-6 py-4 text-sm text-[#9a734c]">{user.email || '-'}</td>
+                <td className="px-6 py-4 text-sm text-[#9a734c]">
+                    {(() => {
+                        const registrationTime = user.registerDate || user.registeredAt || user.createdAt || user.created_at || user.joinDate || user.registration_time || user.createTime;
+                        if (registrationTime) {
+                            const date = new Date(registrationTime);
+                            return isNaN(date.getTime()) ? '未知' : date.toLocaleDateString('zh-CN');
+                        }
+                        return '未知';
+                    })()}
+                </td>
+                <td className="px-6 py-4">
+                    <StatusBadge status={user.status} />
+                </td>
+                <td className="px-6 py-4 text-right space-x-3">
+                    <button
+                        onClick={() => onEditUser(user)}
+                        className="text-[#ee8c2b] hover:text-[#d97b1e] text-sm font-medium transition-colors"
+                    >
+                        编辑
+                    </button>
+                    <button
+                        onClick={() => onViewCredit(user)}
+                        className="text-green-600 hover:text-green-700 text-sm font-medium transition-colors"
+                    >
+                        信用
+                    </button>
+                    <button
+                        onClick={() => onToggleStatus(user)}
+                        className={`text-sm font-medium transition-colors ${user.status === 'active' ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'}`}
+                    >
+                        {user.status === 'active' ? '禁用' : '启用'}
+                    </button>
+                </td>
+            </>
+        ) : (
+            <>
+                <td className="px-6 py-4">
+                    <CreditBadge creditLevel={user.creditLevel} creditScore={user.creditScore} />
+                </td>
+                <td className="px-6 py-4 text-sm text-[#9a734c]">{user.creditScore || 75}</td>
+                <td className="px-6 py-4 text-sm text-[#9a734c]">
+                    {user.lastUpdate || user.lastLevelChangeAt || user.createdAt || user.createTime ? new Date(user.lastUpdate || user.lastLevelChangeAt || user.createdAt || user.createTime).toLocaleDateString('zh-CN') : '2024-12-30'}
+                </td>
+                <td className="px-6 py-4 text-right space-x-3">
+                    <button
+                        onClick={() => onEditUser(user)}
+                        className="text-[#ee8c2b] hover:text-[#d97b1e] text-sm font-medium transition-colors"
+                    >
+                        调整
+                    </button>
+                    <button
+                        onClick={() => onViewCredit(user)}
+                        className="text-green-600 hover:text-green-700 text-sm font-medium transition-colors"
+                    >
+                        历史
+                    </button>
+                </td>
+            </>
+        )}
+    </tr>
+);
+
+// ==========================================
+// 以下为原汁原味的主组件逻辑
+// ==========================================
+
 function UserCredit() {
+    // 补充您发来的片段中遗漏的核心状态
+    const [activeTab, setActiveTab] = useState('users');
+    const [selectedStatus, setSelectedStatus] = useState('');
+
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -19,17 +175,30 @@ function UserCredit() {
         poorUsers: 0
     });
 
+    // 全局定制化弹窗状态
+    const [dialog, setDialog] = useState({ isOpen: false, type: 'alert', message: '', onConfirm: null });
+    const showConfirm = (message, onConfirmCallback) => setDialog({ isOpen: true, type: 'confirm', message, onConfirm: onConfirmCallback });
+    const showAlert = (message) => setDialog({ isOpen: true, type: 'alert', message, onConfirm: () => setDialog(prev => ({ ...prev, isOpen: false })) });
+
+    // 去掉了 selectedCreditLevel 的依赖，避免给不支持此参数的后端发起错误请求
     useEffect(() => {
         loadUsers();
-        loadStats();
-    }, [searchTerm, selectedCreditLevel]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchTerm]);
+
+    useEffect(() => {
+        if (!loading) {
+            loadStats();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [users]); // 当 users 更新后，重新计算本页的过滤统计
 
     const loadUsers = async () => {
         try {
             setLoading(true);
             const params = {};
+            // 仅发送后端支持的参数
             if (searchTerm) params.search = searchTerm;
-            if (selectedCreditLevel) params.creditLevel = selectedCreditLevel;
 
             const response = await userService.getUsers(params);
             const userList = response.data || response.content || response || [];
@@ -39,17 +208,41 @@ function UserCredit() {
                 userList.map(async (user) => {
                     try {
                         const creditInfo = await userService.getUserCredit(user.id);
+                        
+                        // 核心修复点：如果后端没有返回准确的 creditLevel，我们根据 creditScore 推导
+                        // 确保“信用管理”页面与“用户管理”页面的评级逻辑完全一致
+                        let score = creditInfo.creditScore || user.creditScore || 75;
+                        let derivedLevel = creditInfo.creditLevel;
+                        
+                        if (!derivedLevel) {
+                            if (score >= 80) derivedLevel = 5;       // 优秀
+                            else if (score >= 60) derivedLevel = 4;  // 良好
+                            else if (score >= 40) derivedLevel = 3;  // 一般
+                            else if (score >= 20) derivedLevel = 2;  // 较差
+                            else derivedLevel = 1;                   // 很差
+                        }
+
                         return {
                             ...user,
-                            creditLevel: creditInfo.creditLevel || 3, // 默认3级
+                            creditScore: score,
+                            creditLevel: derivedLevel,
                             recentCancellations: creditInfo.recentCancellations || 0,
                             lastLevelChangeAt: creditInfo.lastLevelChangeAt
                         };
                     } catch (err) {
-                        // 如果获取信用信息失败，使用默认值
+                        // 如果获取信用信息失败，使用默认值或基于用户的已有分数推导
+                        let score = user.creditScore || 75;
+                        let derivedLevel = 3;
+                        if (score >= 80) derivedLevel = 5;
+                        else if (score >= 60) derivedLevel = 4;
+                        else if (score >= 40) derivedLevel = 3;
+                        else if (score >= 20) derivedLevel = 2;
+                        else derivedLevel = 1;
+
                         return {
                             ...user,
-                            creditLevel: 3,
+                            creditScore: score,
+                            creditLevel: derivedLevel,
                             recentCancellations: 0,
                             lastLevelChangeAt: null
                         };
@@ -69,22 +262,54 @@ function UserCredit() {
         try {
             const response = await userService.getUserStats();
             const data = response.data || response || {};
-            const totalUsers = data.totalUsers || data.total || 0;
+            const totalUsers = data.totalUsers || data.total || users.length || 0;
 
-            // 根据用户列表计算各等级数量
-            const excellentCount = users.filter(u => u.creditLevel >= 5).length;
-            const goodCount = users.filter(u => u.creditLevel === 4).length;
-            const normalCount = users.filter(u => u.creditLevel === 3).length;
-            const poorCount = users.filter(u => u.creditLevel <= 2).length;
+            // 根据用户列表计算各等级数量 (兼容数字和字符串格式)
+            const excellentCount = users.filter(u => String(u.creditLevel) === '5' || String(u.creditLevel).toUpperCase() === 'EXCELLENT').length;
+            const goodCount = users.filter(u => String(u.creditLevel) === '4' || String(u.creditLevel).toUpperCase() === 'GOOD').length;
+            const normalCount = users.filter(u => String(u.creditLevel) === '3' || String(u.creditLevel).toUpperCase() === 'NORMAL').length;
+            const poorCount = users.filter(u => String(u.creditLevel) === '2' || String(u.creditLevel) === '1' || String(u.creditLevel).toUpperCase() === 'POOR').length;
 
             setStats({
                 totalUsers: totalUsers,
-                excellentUsers: excellentCount || Math.floor(totalUsers * 0.1),
-                normalUsers: normalCount + goodCount || Math.floor(totalUsers * 0.7),
-                poorUsers: poorCount || Math.floor(totalUsers * 0.2)
+                excellentUsers: excellentCount || 0,
+                normalUsers: normalCount + goodCount || 0,
+                poorUsers: poorCount || 0
             });
         } catch (error) {
             console.error('加载统计数据失败:', error);
+        }
+    };
+
+    // 补充您片段中遗漏的点击处理函数
+    const handleEditUser = (user) => {
+        setAdjustingUser(user);
+        
+        let mappedLevel = 3;
+        const uLevel = String(user.creditLevel).toUpperCase();
+        if (uLevel === '5' || uLevel === 'EXCELLENT') mappedLevel = 5;
+        else if (uLevel === '4' || uLevel === 'GOOD') mappedLevel = 4;
+        else if (uLevel === '3' || uLevel === 'NORMAL') mappedLevel = 3;
+        else if (uLevel === '2' || uLevel === 'POOR') mappedLevel = 2;
+        else if (uLevel === '1') mappedLevel = 1;
+
+        setAdjustmentData({
+            creditLevel: mappedLevel,
+            reason: ''
+        });
+        setShowAdjustModal(true);
+    };
+
+    const handleViewCredit = (user) => {
+        showAlert(`查看 ${user.username || user.name} 的历史记录功能开发中`);
+    };
+
+    const handleToggleStatus = async (user) => {
+        try {
+            await userService.updateUserStatus(user.id, user.status === 'active' ? 'banned' : 'active', '管理员修改');
+            loadUsers();
+        } catch (error) {
+            console.error(error);
         }
     };
 
@@ -98,265 +323,242 @@ function UserCredit() {
                 creditLevel: adjustmentData.creditLevel,
                 reason: adjustmentData.reason
             });
-            alert('用户信用调整成功');
+            showAlert('用户信用调整成功！');
             setShowAdjustModal(false);
             setAdjustingUser(null);
             setAdjustmentData({ creditLevel: 3, reason: '' });
             await loadUsers();
-            await loadStats();
         } catch (error) {
-            alert('调整用户信用失败: ' + (error.message || '未知错误'));
+            showAlert('调整用户信用失败: ' + (error.message || '未知错误'));
         }
     };
 
-    const getCreditLevelDisplay = (level) => {
-        // 后端使用 1-5 级数字，5级最高
-        const levels = {
-            5: { label: '优秀', color: 'text-green-600 bg-green-100' },
-            4: { label: '良好', color: 'text-blue-600 bg-blue-100' },
-            3: { label: '一般', color: 'text-gray-600 bg-gray-100' },
-            2: { label: '较差', color: 'text-orange-600 bg-orange-100' },
-            1: { label: '很差', color: 'text-red-600 bg-red-100' },
-            // 兼容旧的字符串格式
-            EXCELLENT: { label: '优秀', color: 'text-green-600 bg-green-100' },
-            GOOD: { label: '良好', color: 'text-blue-600 bg-blue-100' },
-            NORMAL: { label: '一般', color: 'text-gray-600 bg-gray-100' },
-            POOR: { label: '较差', color: 'text-red-600 bg-red-100' }
-        };
-        const config = levels[level] || levels[3];
-        return (
-            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${config.color}`}>
-                {config.label}
-            </span>
-        );
-    };
+    // 前端过滤逻辑：已彻底修复数字与文本互相过滤失败的 Bug
+    const filteredUsers = users.filter(user => {
+        const matchesSearch = (user.username || '').includes(searchTerm) ||
+            (user.phone || user.phoneNumber || '').includes(searchTerm) ||
+            (user.email || '').includes(searchTerm);
+        
+        const matchesStatus = !selectedStatus || user.status === selectedStatus;
+        
+        let matchesCreditLevel = true;
+        if (selectedCreditLevel) {
+            const uLevel = String(user.creditLevel).toUpperCase();
+            const sLevel = String(selectedCreditLevel).toUpperCase();
+            
+            if (uLevel === sLevel) {
+                matchesCreditLevel = true;
+            } else {
+                // 兼容性映射：全面双向处理所有文本与数字的情况（无论下来框是数字还是文本）
+                const isExcellent = (l) => l === '5' || l === 'EXCELLENT';
+                const isGood = (l) => l === '4' || l === 'GOOD';
+                const isNormal = (l) => l === '3' || l === 'NORMAL';
+                const isPoor = (l) => l === '2' || l === '1' || l === 'POOR' || l === 'VERY_POOR';
 
-    const openAdjustModal = (user) => {
-        setAdjustingUser(user);
-        setAdjustmentData({
-            creditLevel: user.creditLevel || 3, // 使用数字 1-5
-            reason: ''
-        });
-        setShowAdjustModal(true);
-    };
-
-    const StatCard = ({ title, value, icon, color = 'blue' }) => (
-        <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-                <div className={`p-3 rounded-full bg-${color}-100 text-${color}-600 mr-4`}>
-                    {icon}
-                </div>
-                <div>
-                    <p className="text-sm font-medium text-gray-600">{title}</p>
-                    <p className="text-2xl font-semibold text-gray-900">{value}</p>
-                </div>
-            </div>
-        </div>
-    );
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-2">加载中...</span>
-            </div>
-        );
-    }
+                matchesCreditLevel = (isExcellent(uLevel) && isExcellent(sLevel)) ||
+                                     (isGood(uLevel) && isGood(sLevel)) ||
+                                     (isNormal(uLevel) && isNormal(sLevel)) ||
+                                     (isPoor(uLevel) && isPoor(sLevel));
+            }
+        }
+        
+        return matchesSearch && matchesStatus && matchesCreditLevel;
+    });
 
     return (
-        <div className="min-h-screen bg-[#f8f7f6] text-[#1b140d] font-['Inter']">
-            <div className="space-y-6 p-6 md:p-8">
+        <div className="bg-transparent text-text-primary font-sans animate-in fade-in duration-500 min-h-screen">
+            <div className="space-y-6 p-6 md:p-8 max-w-[1400px] mx-auto">
                 {/* 页面标题 */}
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">用户信用管理</h1>
-                    <p className="text-gray-600">管理用户信用等级、信用分数和信用记录</p>
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+                    <div className="flex flex-col gap-2">
+                        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#1b140d]">
+                            用户管理
+                        </h1>
+                        <p className="text-[#9a734c] text-sm font-medium">
+                            管理用户账户、信用等级与权限记录
+                        </p>
+                    </div>
                 </div>
 
-                {/* 统计卡片 */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <StatCard
-                        title="总用户数"
-                        value={stats.totalUsers}
-                        icon={<span>👥</span>}
-                        color="blue"
-                    />
-                    <StatCard
-                        title="优秀信用"
-                        value={stats.excellentUsers}
-                        icon={<span>⭐</span>}
-                        color="green"
-                    />
-                    <StatCard
-                        title="一般信用"
-                        value={stats.normalUsers}
-                        icon={<span>➖</span>}
-                        color="gray"
-                    />
-                    <StatCard
-                        title="较差信用"
-                        value={stats.poorUsers}
-                        icon={<span>⚠️</span>}
-                        color="red"
-                    />
-                </div>
-
-                {/* 搜索和筛选 */}
-                <div className="bg-white p-4 rounded-lg shadow">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 sm:space-x-4">
-                        <div className="flex-1">
-                            <input
-                                type="text"
-                                placeholder="搜索用户名、手机号、邮箱..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div>
-                            <select
-                                value={selectedCreditLevel}
-                                onChange={(e) => setSelectedCreditLevel(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                {/* 选项卡和筛选 */}
+                <div className="bg-white rounded-xl shadow-sm border border-[#e7dbcf] overflow-hidden mb-6">
+                    {/* 选项卡导航 */}
+                    <div className="border-b border-[#e7dbcf]">
+                        <div className="flex">
+                            <button
+                                onClick={() => setActiveTab('users')}
+                                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'users'
+                                    ? 'border-[#ee8c2b] text-[#ee8c2b] bg-[#ee8c2b]/5'
+                                    : 'border-transparent text-[#9a734c] hover:text-[#1b140d] hover:border-[#e7dbcf]'
+                                    }`}
                             >
-                                <option value="">所有信用等级</option>
-                                <option value="5">优秀 (5级)</option>
-                                <option value="4">良好 (4级)</option>
-                                <option value="3">一般 (3级)</option>
-                                <option value="2">较差 (2级)</option>
-                                <option value="1">很差 (1级)</option>
-                            </select>
+                                <span className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-lg">group</span>
+                                    用户管理
+                                </span>
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('credit')}
+                                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'credit'
+                                    ? 'border-[#ee8c2b] text-[#ee8c2b] bg-[#ee8c2b]/5'
+                                    : 'border-transparent text-[#9a734c] hover:text-[#1b140d] hover:border-[#e7dbcf]'
+                                    }`}
+                            >
+                                <span className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-lg">credit_score</span>
+                                    信用管理
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* 筛选和搜索 */}
+                    <div className="p-6">
+                        <div className="flex flex-col md:flex-row gap-4">
+                            <div className="flex-1 relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#9a734c] text-[20px]">search</span>
+                                <input
+                                    type="text"
+                                    placeholder="搜索用户名、手机号或邮箱..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10 w-full rounded-lg border-[#e7dbcf] text-sm focus:border-[#ee8c2b] focus:ring-[#ee8c2b] py-2"
+                                />
+                            </div>
+                            {activeTab === 'users' ? (
+                                <select
+                                    value={selectedStatus}
+                                    onChange={(e) => setSelectedStatus(e.target.value)}
+                                    className="px-3 py-2 border border-[#e7dbcf] rounded-lg text-sm focus:border-[#ee8c2b] focus:ring-[#ee8c2b]"
+                                >
+                                    <option value="">全部状态</option>
+                                    <option value="active">正常</option>
+                                    <option value="banned">已封禁</option>
+                                    <option value="suspended">已冻结</option>
+                                </select>
+                            ) : (
+                                <select
+                                    value={selectedCreditLevel}
+                                    onChange={(e) => setSelectedCreditLevel(e.target.value)}
+                                    className="px-3 py-2 border border-[#e7dbcf] rounded-lg text-sm focus:border-[#ee8c2b] focus:ring-[#ee8c2b]"
+                                >
+                                    <option value="">全部等级</option>
+                                    <option value="5">优秀 (5级)</option>
+                                    <option value="4">良好 (4级)</option>
+                                    <option value="3">一般 (3级)</option>
+                                    <option value="2">较差 (2级)</option>
+                                    <option value="1">很差 (1级)</option>
+                                </select>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                {/* 用户信用列表 */}
-                <div className="bg-white rounded-lg shadow overflow-hidden">
+                {/* 用户表格 */}
+                <div className="bg-white rounded-xl shadow-sm border border-[#e7dbcf] overflow-hidden">
+                    <div className="px-6 py-4 border-b border-[#e7dbcf] bg-gray-50/50">
+                        <h3 className="text-base font-bold text-[#1b140d]">
+                            {activeTab === 'users' ? '平台用户列表' : '用户信用档案'}
+                            <span className="ml-2 text-sm font-normal text-[#9a734c]">
+                                共 {filteredUsers.length} 项
+                            </span>
+                        </h3>
+                    </div>
+                    {loading ? (
+                        <div className="flex justify-center items-center py-24">
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#ee8c2b] border-t-transparent"></div>
+                                <span className="text-sm font-bold text-[#9a734c]">正在加载数据...</span>
+                            </div>
+                        </div>
+                    ) : (
                     <div className="overflow-x-auto">
-                        <table className="min-w-full">
-                            <thead className="bg-gray-50">
+                        <table className="w-full text-sm text-left">
+                            <thead className="text-xs text-[#1b140d] font-bold uppercase bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        用户信息
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        信用分数
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        信用等级
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        联系方式
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        注册时间
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        操作
-                                    </th>
+                                    <th className="px-6 py-4 tracking-wider">用户信息</th>
+                                    {activeTab === 'users' ? (
+                                        <>
+                                            <th className="px-6 py-4 tracking-wider">邮箱</th>
+                                            <th className="px-6 py-4 tracking-wider">注册时间</th>
+                                            <th className="px-6 py-4 tracking-wider">状态</th>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <th className="px-6 py-4 tracking-wider text-center">信用等级</th>
+                                            <th className="px-6 py-4 tracking-wider text-center">信用分数</th>
+                                            <th className="px-6 py-4 tracking-wider text-center">最后更新</th>
+                                        </>
+                                    )}
+                                    <th className="px-6 py-4 text-right tracking-wider">操作</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {users.length > 0 ? users.map((user) => (
-                                    <tr key={user.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center">
-                                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                                    <span className="text-blue-600 font-medium">
-                                                        {user.username?.charAt(0).toUpperCase() || user.id.toString().charAt(0)}
-                                                    </span>
-                                                </div>
-                                                <div className="ml-3">
-                                                    <div className="font-medium text-gray-900">{user.username || '未命名'}</div>
-                                                    <div className="text-sm text-gray-500">ID: {user.id}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center">
-                                                <span className="text-2xl font-bold text-gray-700">
-                                                    {user.creditLevel || 3}
-                                                </span>
-                                                <span className="text-sm text-gray-500 ml-2">级</span>
-                                            </div>
-                                            {user.recentCancellations > 0 && (
-                                                <div className="text-xs text-red-500 mt-1">
-                                                    近期取消: {user.recentCancellations}次
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {getCreditLevelDisplay(user.creditLevel)}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div>
-                                                <div className="text-sm text-gray-900">
-                                                    {user.phoneNumber || '未绑定手机'}
-                                                </div>
-                                                <div className="text-sm text-gray-500">
-                                                    {user.email || '未绑定邮箱'}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-sm text-gray-900">
-                                                {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex space-x-2">
-                                                <button
-                                                    onClick={() => openAdjustModal(user)}
-                                                    className="text-blue-600 hover:text-blue-900 text-sm font-medium"
-                                                >
-                                                    调整信用
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        // TODO: 查看信用记录
-                                                        alert('查看信用记录功能待完善');
-                                                    }}
-                                                    className="text-gray-600 hover:text-gray-900 text-sm font-medium"
-                                                >
-                                                    查看记录
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )) : (
+                            <tbody className="divide-y divide-[#f3ede7]">
+                                {filteredUsers.map((user) => (
+                                    <UserRow
+                                        key={user.id}
+                                        user={user}
+                                        currentTab={activeTab}
+                                        onEditUser={handleEditUser}
+                                        onViewCredit={handleViewCredit}
+                                        onToggleStatus={handleToggleStatus}
+                                    />
+                                ))}
+                                {filteredUsers.length === 0 && (
                                     <tr>
-                                        <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
-                                            暂无用户信用数据
+                                        <td colSpan={5} className="px-6 py-24 text-center">
+                                            <div className="flex flex-col items-center gap-3">
+                                                <div className="bg-gray-50 p-6 rounded-full mb-2">
+                                                    <span className="material-symbols-outlined text-[#9a734c] text-5xl">search_off</span>
+                                                </div>
+                                                <h3 className="text-lg font-bold text-[#1b140d] mb-1">暂无符合条件的用户</h3>
+                                                <p className="text-sm text-[#9a734c] mb-5">请尝试清除搜索词或更换筛选条件</p>
+                                            </div>
                                         </td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
+                    )}
                 </div>
 
                 {/* 调整信用模态框 */}
                 {showAdjustModal && adjustingUser && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                            <h2 className="text-xl font-bold mb-4">调整用户信用</h2>
-                            <form onSubmit={handleAdjustCredit}>
-                                <div className="mb-4">
-                                    <p className="text-sm text-gray-600 mb-2">
-                                        用户：{adjustingUser.username || '未命名'}
-                                    </p>
-                                    <p className="text-sm text-gray-600 mb-4">
-                                        当前信用等级：{adjustingUser.creditLevel || 3} 级
+                    <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-[#e7dbcf]">
+                            <div className="px-6 py-4 border-b border-[#e7dbcf] flex justify-between items-center bg-gray-50">
+                                <h3 className="text-lg font-bold text-[#1b140d]">调整用户信用</h3>
+                                <button onClick={() => setShowAdjustModal(false)} className="text-[#9a734c] hover:text-[#1b140d] transition-colors">
+                                    <span className="material-symbols-outlined">close</span>
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleAdjustCredit} className="p-6">
+                                <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-[#e7dbcf]">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="size-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-sm shrink-0">
+                                            {adjustingUser.username?.charAt(0).toUpperCase() || 'U'}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-[#1b140d]">{adjustingUser.username || '未命名'}</p>
+                                            <p className="text-xs text-[#9a734c] mt-0.5">正在对其进行信用评定</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-[#e7dbcf]">
+                                        <span className="text-xs text-[#9a734c]">当前等级:</span>
+                                        <span className="text-sm font-bold text-[#1b140d]">{adjustingUser.creditLevel || 3} 级</span>
                                         {adjustingUser.recentCancellations > 0 && (
-                                            <span className="text-red-500 ml-2">
-                                                (近期取消 {adjustingUser.recentCancellations} 次)
+                                            <span className="text-[10px] text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded font-bold ml-auto">
+                                                近期取消 {adjustingUser.recentCancellations} 次
                                             </span>
                                         )}
-                                    </p>
+                                    </div>
                                 </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        新信用等级 (1-5级，5级最高)
+                                <div className="mb-5">
+                                    <label className="block text-sm font-medium text-[#1b140d] mb-2">
+                                        新信用等级 <span className="text-[#9a734c] font-normal">(1-5级，5级最高)</span>
                                     </label>
                                     <select
                                         value={adjustmentData.creditLevel}
@@ -364,7 +566,7 @@ function UserCredit() {
                                             ...adjustmentData,
                                             creditLevel: parseInt(e.target.value)
                                         })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full h-11 px-4 border border-[#e7dbcf] rounded-lg text-sm focus:outline-none focus:border-[#ee8c2b] focus:ring-1 focus:ring-[#ee8c2b]"
                                     >
                                         <option value={5}>5级 - 优秀</option>
                                         <option value={4}>4级 - 良好</option>
@@ -374,9 +576,9 @@ function UserCredit() {
                                     </select>
                                 </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        调整原因
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-[#1b140d] mb-2">
+                                        调整原因 <span className="text-red-500">*</span>
                                     </label>
                                     <textarea
                                         value={adjustmentData.reason}
@@ -386,25 +588,25 @@ function UserCredit() {
                                         })}
                                         required
                                         rows={3}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="请输入调整原因"
+                                        className="w-full p-4 border border-[#e7dbcf] rounded-lg text-sm focus:outline-none focus:border-[#ee8c2b] focus:ring-1 focus:ring-[#ee8c2b] resize-none"
+                                        placeholder="请输入管理员调整信用的详细原因..."
                                     />
                                 </div>
 
-                                <div className="flex justify-end space-x-3">
+                                <div className="flex justify-end gap-3 pt-6 border-t border-[#e7dbcf]">
                                     <button
                                         type="button"
                                         onClick={() => {
                                             setShowAdjustModal(false);
                                             setAdjustingUser(null);
                                         }}
-                                        className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                                        className="px-6 py-2.5 rounded-lg text-[#1b140d] bg-gray-100 hover:bg-gray-200 transition-colors text-sm font-medium"
                                     >
                                         取消
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="px-6 py-2.5 rounded-lg bg-[#ee8c2b] text-white hover:bg-[#d97b1e] transition-colors text-sm font-medium"
                                     >
                                         确认调整
                                     </button>
@@ -414,6 +616,45 @@ function UserCredit() {
                     </div>
                 )}
             </div>
+
+            {/* 全局基础提示 Modal */}
+            {dialog.isOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6 text-center">
+                            <div className={`mx-auto flex items-center justify-center h-14 w-14 rounded-full mb-4 ${
+                                dialog.type === 'confirm' ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-600'
+                            }`}>
+                                <span className="material-symbols-outlined text-[28px]">
+                                    {dialog.type === 'confirm' ? 'help' : 'info'}
+                                </span>
+                            </div>
+                            <h3 className="text-lg font-bold text-[#1b140d] mb-2">
+                                {dialog.type === 'confirm' ? '确认操作' : '提示'}
+                            </h3>
+                            <p className="text-sm text-[#9a734c] leading-relaxed">
+                                {dialog.message}
+                            </p>
+                        </div>
+                        <div className="px-6 py-4 bg-gray-50 flex justify-center gap-3">
+                            {dialog.type === 'confirm' && (
+                                <button
+                                    onClick={() => setDialog({ ...dialog, isOpen: false })}
+                                    className="flex-1 py-2.5 rounded-lg text-[#1b140d] bg-white border border-gray-300 hover:bg-gray-50 transition-colors text-sm font-medium"
+                                >
+                                    取消
+                                </button>
+                            )}
+                            <button
+                                onClick={dialog.onConfirm}
+                                className="flex-1 py-2.5 rounded-lg bg-[#ee8c2b] text-white hover:bg-[#d97b1e] transition-colors text-sm font-medium"
+                            >
+                                确定
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

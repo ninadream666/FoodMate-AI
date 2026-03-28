@@ -29,8 +29,8 @@ import SmartPricing from './pages/merchant/SmartPricing'; // 引入 AI 定价页
 // 管理端页面
 import AdminLayout from './components/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
-import ServicesNew from './pages/admin/ServicesNew';
-import SettlementsNew from './pages/admin/SettlementsNew';
+import Services from './pages/admin/Services';
+import Settlements from './pages/admin/Settlements';
 import Commissions from './pages/admin/Commissions';
 import Merchants from './pages/admin/Merchants';
 import Orders from './pages/admin/Orders';
@@ -193,8 +193,8 @@ function App() {
           >
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
-            <Route path="services" element={<ServicesNew />} />
-            <Route path="settlements" element={<SettlementsNew />} />
+            <Route path="services" element={<Services />} />
+            <Route path="settlements" element={<Settlements />} />
             <Route path="commissions" element={<Commissions />} />
             <Route path="merchants" element={<Merchants />} />
             <Route path="orders" element={<Orders />} />

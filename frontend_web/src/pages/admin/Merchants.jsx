@@ -207,7 +207,7 @@ const MerchantManagement = () => {
                 {/* 页面标题 */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
                     <div className="flex flex-col gap-2">
-                        <h1 className="text-3xl font-extrabold tracking-tight text-text-primary">
+                        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-text-primary">
                             商家管理
                         </h1>
                         <p className="text-text-secondary text-sm font-medium">

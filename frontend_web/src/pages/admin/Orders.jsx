@@ -11,51 +11,51 @@ const StatusBadge = ({ status }) => {
             case 'WAIT_PAY':
             case 'UNPAID':
             case '待付款':
-                return { text: '待付款', class: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/10 dark:text-yellow-400' };
+                return { text: '待付款', class: 'bg-warning-bg text-warning border border-warning/20' };
             case 'PAID':
             case 'PAYMENT_COMPLETED':
             case '已付款':
             case '已支付':
-                return { text: '已支付', class: 'bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-400' };
+                return { text: '已支付', class: 'bg-info-bg text-info border border-info/20' };
             case 'CONFIRMED':
             case 'ACCEPTED':
             case '已接单':
-                return { text: '已接单', class: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-400' };
+                return { text: '已接单', class: 'bg-primary-bg text-primary border border-primary/20' };
             case 'PREPARING':
             case 'COOKING':
             case '制作中':
-                return { text: '制作中', class: 'bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-400' };
+                return { text: '制作中', class: 'bg-primary-soft text-primary border border-primary/20' };
             case 'DELIVERING':
             case 'SHIPPING':
             case '配送中':
-                return { text: '配送中', class: 'bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-400' };
+                return { text: '配送中', class: 'bg-warning-bg text-warning border border-warning/20' };
             case 'COMPLETED':
             case 'FINISHED':
             case 'DELIVERED':
             case '已完成':
-                return { text: '已完成', class: 'bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-400' };
+                return { text: '已完成', class: 'bg-success-bg text-success border border-success/20' };
             case 'CANCELLED':
             case 'CANCELED':
             case 'CANCEL':
             case '已取消':
-                return { text: '已取消', class: 'bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-400' };
+                return { text: '已取消', class: 'bg-error-bg text-error border border-error/20' };
             case 'REFUNDED':
             case 'REFUND':
             case '已退款':
-                return { text: '已退款', class: 'bg-gray-100 text-gray-800 dark:bg-gray-500/10 dark:text-gray-400' };
+                return { text: '已退款', class: 'bg-background-section text-text-secondary border border-border-light' };
             default:
                 // 如果是小写的paid等，也要正确处理
                 const lowerStatus = normalizedStatus.toLowerCase();
                 if (lowerStatus === 'paid' || lowerStatus === 'payment_completed') {
-                    return { text: '已支付', class: 'bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-400' };
+                    return { text: '已支付', class: 'bg-info-bg text-info border border-info/20' };
                 }
-                return { text: status || '未知', class: 'bg-gray-100 text-gray-800 dark:bg-gray-500/10 dark:text-gray-400' };
+                return { text: status || '未知', class: 'bg-background-section text-text-secondary border border-border-light' };
         }
     };
 
     const statusInfo = getStatusInfo(status);
     return (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.class}`}>
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold ${statusInfo.class}`}>
             {statusInfo.text}
         </span>
     );
@@ -63,16 +63,17 @@ const StatusBadge = ({ status }) => {
 
 // 统计卡片组件
 const StatCard = ({ label, value, trend, icon, iconColor, iconBg }) => (
-    <div className="bg-white dark:bg-[#1a120b] p-5 rounded-xl border border-[#f3ede7] dark:border-[#3a2d20] shadow-sm flex flex-col gap-1">
+    <div className="bg-surface p-6 rounded-2xl border border-border-light shadow-sm hover:shadow-card transition-shadow flex flex-col gap-2">
         <div className="flex items-center justify-between">
-            <span className="text-[#9a734c] dark:text-[#cc9f70] text-sm font-medium">{label}</span>
-            <span className={`material-symbols-outlined ${iconColor} ${iconBg} p-1 rounded-md`}>
-                {icon}
-            </span>
+            <span className="text-text-secondary text-sm font-bold">{label}</span>
+            <div className={`size-10 rounded-xl flex items-center justify-center ${iconBg} ${iconColor}`}>
+                <span className="material-symbols-outlined">{icon}</span>
+            </div>
         </div>
-        <div className="flex items-end gap-2 mt-2">
-            <span className="text-2xl font-bold text-[#1b140d] dark:text-white">{value}</span>
-            <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${trend.includes('+') ? 'text-green-600 bg-green-50 dark:bg-green-500/10 dark:text-green-400' : 'text-red-600 bg-red-50 dark:bg-red-500/10 dark:text-red-400'}`}>
+        <div className="flex items-center gap-3 mt-1">
+            <span className="text-3xl font-extrabold text-text-primary tracking-tight">{value}</span>
+            <span className={`flex items-center text-xs font-bold px-2 py-1 rounded-md ${trend.includes('+') ? 'text-success bg-success-bg' : 'text-error bg-error-bg'}`}>
+                <span className="material-symbols-outlined text-[14px] mr-0.5">{trend.includes('+') ? 'trending_up' : 'trending_down'}</span>
                 {trend}
             </span>
         </div>
@@ -357,103 +358,103 @@ const OrderRow = ({ order, onViewDetails, onUpdateStatus, onSyncPaymentStatus })
     const paymentStatus = getPaymentStatus();
 
     return (
-        <tr className="hover:bg-gray-50 dark:hover:bg-[#2a2018] transition-colors">
-            <td className="px-6 py-4">
+        <tr className="hover:bg-surface-hover transition-colors border-b border-divider last:border-b-0">
+            <td className="px-6 py-4 text-left">
                 <div className="flex flex-col">
-                    <span className="font-mono font-medium text-[#1b140d] dark:text-white">
+                    <span className="font-mono font-bold text-text-primary text-sm">
                         {orderNumber}
                     </span>
-                    <span className="text-xs text-[#9a734c] dark:text-[#cc9f70]">
+                    <span className="text-xs text-text-tertiary font-medium mt-0.5">
                         {getOrderTime()}
                     </span>
                 </div>
             </td>
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-[#ee8c2b]/10 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-[#ee8c2b] text-sm">person</span>
+            <td className="px-6 py-4 text-center">
+                <div className="flex items-center justify-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-background-section border border-border-light flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-text-secondary text-[16px]">person</span>
                     </div>
-                    <div className="flex flex-col">
-                        <span className="text-[#1b140d] dark:text-white text-sm">
+                    <div className="flex flex-col items-start text-left">
+                        <span className="text-text-primary font-bold text-sm line-clamp-1">
                             {customerName}
                         </span>
                         {order.userId && (
-                            <span className="text-xs text-[#9a734c] dark:text-[#cc9f70]">
+                            <span className="text-[10px] text-text-tertiary">
                                 ID: {order.userId}
                             </span>
                         )}
                     </div>
                 </div>
             </td>
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-[#ee8c2b]/10 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-[#ee8c2b] text-sm">store</span>
+            <td className="px-6 py-4 text-center">
+                <div className="flex items-center justify-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-background-section border border-border-light flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-text-secondary text-[16px]">store</span>
                     </div>
-                    <div className="flex flex-col">
-                        <span className="text-[#1b140d] dark:text-white text-sm">
+                    <div className="flex flex-col items-start text-left">
+                        <span className="text-text-primary font-bold text-sm line-clamp-1">
                             {merchantName}
                         </span>
                         {order.merchantId && (
-                            <span className="text-xs text-[#9a734c] dark:text-[#cc9f70]">
+                            <span className="text-[10px] text-text-tertiary">
                                 ID: {order.merchantId}
                             </span>
                         )}
                     </div>
                 </div>
             </td>
-            <td className="px-6 py-4">
-                <span className="font-bold text-[#1b140d] dark:text-white">
+            <td className="px-6 py-4 text-center">
+                <span className="font-black font-display text-text-primary text-base tracking-tight">
                     ¥{totalAmount.toFixed(2)}
                 </span>
             </td>
-            <td className="px-6 py-4">
+            <td className="px-6 py-4 text-center">
                 <StatusBadge status={orderStatus} />
             </td>
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-2">
-                    <div className="flex items-center justify-center w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/30">
-                        <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-sm">
+            <td className="px-6 py-4 text-center">
+                <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-info-bg border border-info/20 text-info">
+                        <span className="material-symbols-outlined text-[16px]">
                             {paymentMethod === 'WECHAT' ? 'payment' :
                                 paymentMethod === 'ALIPAY' ? 'account_balance_wallet' :
                                     paymentMethod === 'CARD' || paymentMethod === 'CREDIT_CARD' || paymentMethod === 'DEBIT_CARD' ? 'credit_card' :
                                         paymentMethod === 'CASH' ? 'payments' : 'payment'}
                         </span>
                     </div>
-                    <div className="flex flex-col">
-                        <span className="text-sm text-[#1b140d] dark:text-white">
+                    <div className="flex flex-col items-start text-left">
+                        <span className="text-sm font-bold text-text-primary">
                             {paymentMethodDescription || '未支付'}
                         </span>
                         {paymentMethod && paymentMethod !== paymentMethodDescription && (
-                            <span className="text-xs text-gray-500">
+                            <span className="text-[10px] text-text-tertiary">
                                 {paymentMethod}
                             </span>
                         )}
                     </div>
                 </div>
             </td>
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-2">
+            <td className="px-6 py-4 text-center">
+                <div className="flex items-center justify-center gap-1">
                     <button
                         onClick={() => onViewDetails(order)}
-                        className="p-1.5 rounded-lg text-[#9a734c] hover:text-[#ee8c2b] hover:bg-[#ee8c2b]/10 transition-colors"
+                        className="p-2 rounded-lg text-text-tertiary hover:text-primary hover:bg-primary-soft transition-colors"
                         title="查看详情"
                     >
-                        <span className="material-symbols-outlined text-base">visibility</span>
+                        <span className="material-symbols-outlined text-[20px]">visibility</span>
                     </button>
                     <button
                         onClick={() => onUpdateStatus(order)}
-                        className="p-1.5 rounded-lg text-[#9a734c] hover:text-[#ee8c2b] hover:bg-[#ee8c2b]/10 transition-colors"
+                        className="p-2 rounded-lg text-text-tertiary hover:text-primary hover:bg-primary-soft transition-colors"
                         title="更新状态"
                     >
-                        <span className="material-symbols-outlined text-base">edit</span>
+                        <span className="material-symbols-outlined text-[20px]">edit</span>
                     </button>
                     <button
                         onClick={() => onSyncPaymentStatus(order)}
-                        className="p-1.5 rounded-lg text-[#9a734c] hover:text-green-600 hover:bg-green-100 transition-colors"
+                        className="p-2 rounded-lg text-text-tertiary hover:text-success hover:bg-success-bg transition-colors"
                         title="同步支付状态"
                     >
-                        <span className="material-symbols-outlined text-base">sync</span>
+                        <span className="material-symbols-outlined text-[20px]">sync</span>
                     </button>
                 </div>
             </td>
@@ -512,10 +513,17 @@ const OrderManagement = () => {
     const [selectedStatus, setSelectedStatus] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    
+    // Modal states
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [newOrderStatus, setNewOrderStatus] = useState('');
     const [newPaymentStatus, setNewPaymentStatus] = useState('');
+
+    // 全局定制化弹窗状态
+    const [dialog, setDialog] = useState({ isOpen: false, type: 'alert', message: '', onConfirm: null });
+    const showConfirm = (message, onConfirmCallback) => setDialog({ isOpen: true, type: 'confirm', message, onConfirm: onConfirmCallback });
+    const showAlert = (message) => setDialog({ isOpen: true, type: 'alert', message, onConfirm: () => setDialog(prev => ({ ...prev, isOpen: false })) });
 
     // 获取订单数据
     useEffect(() => {
@@ -720,6 +728,7 @@ const OrderManagement = () => {
             setLoading(false);
         }
     };
+    
     // 同步支付状态
     const handleSyncPaymentStatus = async (order) => {
         try {
@@ -752,7 +761,7 @@ const OrderManagement = () => {
                     })
                 );
 
-                alert(`订单 ${orderId} 状态已从后端同步更新`);
+                showAlert(`订单 ${orderId} 状态已从后端同步更新`);
                 return;
             } catch (apiError) {
                 console.warn(`⚠️ 无法从后端获取订单详情，使用本地同步方案:`, apiError.message);
@@ -789,10 +798,10 @@ const OrderManagement = () => {
                 })
             );
 
-            alert('支付状态已同步为已支付');
+            showAlert('支付状态已同步为已支付');
         } catch (error) {
             console.error('同步支付状态失败:', error);
-            alert('同步失败，请重试');
+            showAlert('同步失败，请重试');
         }
     };
 
@@ -824,60 +833,60 @@ const OrderManagement = () => {
             );
 
             setShowUpdateModal(false);
-            alert('订单状态已更新');
+            showAlert('订单状态已更新');
         } catch (error) {
             console.error('更新订单状态失败:', error);
-            alert('更新失败，请重试');
+            showAlert('更新失败，请重试');
         }
     };
 
     // 批量同步支付状态
     const handleBatchSyncPaymentStatus = async () => {
         if (orders.length === 0) {
-            alert('没有订单需要同步');
+            showAlert('没有订单需要同步');
             return;
         }
 
-        const confirmation = confirm(`确定要将所有 ${orders.length} 个订单的支付状态同步为已支付吗？`);
-        if (!confirmation) return;
+        showConfirm(`确定要将所有 ${orders.length} 个订单的支付状态同步为已支付吗？`, async () => {
+            setDialog(prev => ({ ...prev, isOpen: false }));
+            try {
+                console.log(`🔄 批量同步 ${orders.length} 个订单的支付状态`);
 
-        try {
-            console.log(`🔄 批量同步 ${orders.length} 个订单的支付状态`);
+                // 这里可以调用后端API来批量同步支付状态
+                // await orderService.batchSyncPaymentStatus(orders.map(o => o.id || o.orderId || o._id));
 
-            // 这里可以调用后端API来批量同步支付状态
-            // await orderService.batchSyncPaymentStatus(orders.map(o => o.id || o.orderId || o._id));
+                // 更新本地状态，将所有订单的支付状态设置为已支付
+                setOrders(prevOrders =>
+                    prevOrders.map(o => {
+                        // 确定新的订单状态
+                        let newOrderStatus = o.status;
+                        if (o.status === 'PENDING' || o.status === 'pending' ||
+                            o.status === 'WAIT_PAY' || o.status === 'wait_pay' ||
+                            o.status === 'UNPAID' || o.status === 'unpaid') {
+                            newOrderStatus = 'PAID';
+                        }
 
-            // 更新本地状态，将所有订单的支付状态设置为已支付
-            setOrders(prevOrders =>
-                prevOrders.map(o => {
-                    // 确定新的订单状态
-                    let newOrderStatus = o.status;
-                    if (o.status === 'PENDING' || o.status === 'pending' ||
-                        o.status === 'WAIT_PAY' || o.status === 'wait_pay' ||
-                        o.status === 'UNPAID' || o.status === 'unpaid') {
-                        newOrderStatus = 'PAID';
-                    }
+                        return {
+                            ...o,
+                            // 更新支付状态
+                            paymentStatus: 'paid',
+                            isPaid: true,
+                            paid: true,
+                            // 更新订单状态
+                            status: newOrderStatus,
+                            orderStatus: newOrderStatus,
+                            // 更新支付时间
+                            paidAt: o.paidAt || new Date().toISOString()
+                        };
+                    })
+                );
 
-                    return {
-                        ...o,
-                        // 更新支付状态
-                        paymentStatus: 'paid',
-                        isPaid: true,
-                        paid: true,
-                        // 更新订单状态
-                        status: newOrderStatus,
-                        orderStatus: newOrderStatus,
-                        // 更新支付时间
-                        paidAt: o.paidAt || new Date().toISOString()
-                    };
-                })
-            );
-
-            alert(`已成功同步 ${orders.length} 个订单的支付状态`);
-        } catch (error) {
-            console.error('批量同步支付状态失败:', error);
-            alert('批量同步失败，请重试');
-        }
+                showAlert(`已成功同步 ${orders.length} 个订单的支付状态`);
+            } catch (error) {
+                console.error('批量同步支付状态失败:', error);
+                showAlert('批量同步失败，请重试');
+            }
+        });
     };
 
     const fetchStats = async () => {
@@ -924,7 +933,10 @@ const OrderManagement = () => {
 
     const handleUpdateStatus = async (order) => {
         console.log('更新订单状态:', order);
-        // TODO: 打开状态更新对话框
+        setSelectedOrder(order);
+        setNewOrderStatus(order.status?.toLowerCase() || 'pending');
+        setNewPaymentStatus(order.paymentStatus?.toLowerCase() || 'pending');
+        setShowUpdateModal(true);
     };
 
     const handleSearch = (e) => {
@@ -954,14 +966,14 @@ const OrderManagement = () => {
     // 如果还在检查权限，显示加载状态
     if (authChecking) {
         return (
-            <div className="min-h-screen bg-[#f8f7f6] dark:bg-[#221910] flex items-center justify-center">
+            <div className="min-h-[60vh] flex items-center justify-center bg-transparent">
                 <div className="text-center">
-                    <div className="w-8 h-8 border-4 border-[#ee8c2b] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-[#9a734c] dark:text-[#cc9f70] mb-4">正在验证权限...</p>
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-text-secondary font-bold mb-4">正在验证权限...</p>
 
                     {/* 紧急修复按钮 */}
-                    <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                        <p className="text-sm text-yellow-700 dark:text-yellow-400 mb-3">如果页面一直加载，可能是权限验证问题</p>
+                    <div className="mt-6 p-4 bg-warning-bg rounded-xl border border-warning/20 shadow-sm">
+                        <p className="text-sm font-bold text-warning mb-3">如果页面一直加载，可能是权限验证问题</p>
                         <button
                             onClick={() => {
                                 // 设置临时管理员权限
@@ -975,11 +987,11 @@ const OrderManagement = () => {
                                 console.log('🔧 已设置临时管理员权限');
                                 setAuthChecking(false);
                             }}
-                            className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors"
+                            className="bg-warning text-white px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition-colors shadow-sm"
                         >
                             使用临时权限访问
                         </button>
-                        <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-2">
+                        <p className="text-xs text-warning/70 font-bold mt-3">
                             这是开发环境的快速修复方案
                         </p>
                     </div>
@@ -989,21 +1001,21 @@ const OrderManagement = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#f8f7f6] dark:bg-[#221910] text-[#1b140d] dark:text-white font-['Inter']">
-            <div className="space-y-8 p-6 md:p-8">
+        <div className="bg-transparent text-text-primary font-sans animate-in fade-in duration-500">
+            <div className="space-y-6 p-6 md:p-8 max-w-[1400px] mx-auto">
                 {/* 页面标题 */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div className="flex flex-col gap-2">
-                        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#1b140d] dark:text-white">
+                        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-text-primary">
                             订单管理
                         </h1>
-                        <p className="text-[#9a734c] dark:text-[#cc9f70] text-base">
-                            查看并管理系统中的所有订单
+                        <p className="text-text-secondary text-sm font-medium">
+                            查看并管理系统中的所有订单交易流水
                         </p>
                     </div>
                     <div className="flex gap-3">
-                        <button className="flex items-center gap-2 h-10 px-4 bg-white dark:bg-[#3a2d20] border border-[#e7dbcf] dark:border-[#5a4632] rounded-lg text-[#1b140d] dark:text-white text-sm font-bold hover:bg-gray-50 dark:hover:bg-[#4a3a2a] shadow-sm">
-                            <span className="material-symbols-outlined text-lg">download</span>
+                        <button className="flex items-center gap-2 h-10 px-4 bg-surface border border-border-light rounded-xl text-text-secondary text-sm font-bold hover:bg-surface-hover hover:text-primary transition-colors shadow-sm">
+                            <span className="material-symbols-outlined text-[18px]">download</span>
                             <span>导出数据</span>
                         </button>
                     </div>
@@ -1016,30 +1028,30 @@ const OrderManagement = () => {
                         value={formatNumber(stats.totalOrders)}
                         trend="+12%"
                         icon="receipt_long"
-                        iconColor="text-blue-600"
-                        iconBg="bg-blue-50"
+                        iconColor="text-info"
+                        iconBg="bg-info-bg"
                     />
                     <StatCard
                         label="总营收"
                         value={formatCurrency(stats.totalRevenue)}
                         trend="+15%"
                         icon="payments"
-                        iconColor="text-[#ee8c2b]"
-                        iconBg="bg-orange-50"
+                        iconColor="text-primary"
+                        iconBg="bg-primary-bg"
                     />
                 </div>
 
                 {/* 搜索与筛选 */}
-                <div className="bg-white dark:bg-[#1a120b] p-4 rounded-xl border border-[#e7dbcf] dark:border-[#3a2d20] shadow-sm flex flex-col lg:flex-row gap-4 justify-between items-center">
+                <div className="bg-surface p-4 rounded-2xl border border-border-light shadow-sm flex flex-col lg:flex-row gap-4 justify-between items-center">
                     <div className="w-full lg:max-w-md relative group">
                         <input
-                            className="w-full h-11 pl-11 pr-4 rounded-lg bg-[#fcfaf8] dark:bg-[#2a2018] border border-[#e7dbcf] dark:border-[#4a3a2a] text-[#1b140d] dark:text-white text-sm focus:ring-2 focus:ring-[#ee8c2b]/50 focus:border-[#ee8c2b] transition-all placeholder:text-[#9a734c] dark:placeholder:text-[#8a6a4b]"
+                            className="w-full h-11 pl-11 pr-4 rounded-xl bg-background-section border border-transparent focus:border-border-light text-text-primary text-sm focus:ring-2 focus:ring-primary/20 focus:bg-surface transition-all outline-none"
                             placeholder="搜索订单号、用户或商家..."
                             type="text"
                             value={searchTerm}
                             onChange={handleSearch}
                         />
-                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9a734c] dark:text-[#8a6a4b] group-focus-within:text-[#ee8c2b]">search</span>
+                        <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-primary transition-colors text-[20px]">search</span>
                     </div>
 
                     <div className="flex flex-wrap gap-2 items-center">
@@ -1057,58 +1069,57 @@ const OrderManagement = () => {
                             <button
                                 key={key}
                                 onClick={() => handleStatusFilter(key)}
-                                className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${selectedStatus === key
-                                    ? 'bg-[#ee8c2b] text-white border-[#ee8c2b]'
-                                    : 'bg-white dark:bg-[#2a2018] border-[#e7dbcf] dark:border-[#4a3a2a] text-[#1b140d] dark:text-white hover:bg-gray-50 dark:hover:bg-[#3a2d20]'
+                                className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${selectedStatus === key
+                                    ? 'bg-primary text-white shadow-md'
+                                    : 'bg-surface border border-border-light text-text-secondary hover:bg-surface-hover hover:text-primary'
                                     }`}
                             >
                                 {label}
                             </button>
                         ))}
                         <button
-                            className="text-[#ee8c2b] font-medium text-sm hover:underline ml-2"
-                            onClick={() => {
-                                setSelectedStatus('all');
-                                setSearchTerm('');
-                            }}
+                            className="text-primary font-bold text-sm hover:opacity-80 transition-opacity ml-2"
+                            onClick={() => { setSelectedStatus('all'); setSearchTerm(''); }}
                         >
                             重置
                         </button>
+                        <div className="w-px h-6 bg-border-light mx-2"></div>
                         <button
                             onClick={handleBatchSyncPaymentStatus}
-                            className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm flex items-center gap-2"
+                            className="px-4 py-2 bg-success-bg text-success border border-success/20 rounded-xl hover:bg-success hover:text-white transition-colors font-bold text-sm flex items-center gap-2 shadow-sm"
                             title="批量同步所有订单的支付状态"
                         >
                             <span className="material-symbols-outlined text-sm">sync</span>
-                            批量同步支付状态
+                            批量同步
                         </button>
                     </div>
                 </div>
 
                 {/* 订单表格 */}
-                <div className="bg-white dark:bg-[#1a120b] rounded-xl border border-[#e7dbcf] dark:border-[#3a2d20] shadow-sm overflow-hidden">
+                <div className="bg-surface rounded-2xl border border-border-light shadow-sm overflow-hidden">
                     {loading ? (
-                        <div className="p-8 text-center">
-                            <div className="flex items-center justify-center gap-2 text-[#9a734c] dark:text-[#cc9f70]">
-                                <div className="w-4 h-4 border-2 border-[#ee8c2b] border-t-transparent rounded-full animate-spin"></div>
-                                加载中...
+                        <div className="p-20 text-center">
+                            <div className="flex flex-col items-center justify-center gap-3 text-text-tertiary">
+                                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                <span className="font-bold text-sm">加载数据中...</span>
                             </div>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-[#fcfaf8] dark:bg-[#2a2018] border-b border-[#e7dbcf] dark:border-[#3a2d20]">
-                                        <th className="px-6 py-3 text-xs font-bold text-[#9a734c] dark:text-[#cc9f70] uppercase tracking-wider">订单号</th>
-                                        <th className="px-6 py-3 text-xs font-bold text-[#9a734c] dark:text-[#cc9f70] uppercase tracking-wider">用户</th>
-                                        <th className="px-6 py-3 text-xs font-bold text-[#9a734c] dark:text-[#cc9f70] uppercase tracking-wider">商家</th>
-                                        <th className="px-6 py-3 text-xs font-bold text-[#9a734c] dark:text-[#cc9f70] uppercase tracking-wider">金额</th>
-                                        <th className="px-6 py-3 text-xs font-bold text-[#9a734c] dark:text-[#cc9f70] uppercase tracking-wider">状态</th>
-                                        <th className="px-6 py-3 text-xs font-bold text-[#9a734c] dark:text-[#cc9f70] uppercase tracking-wider">支付方式</th>
-                                        <th className="px-6 py-3 text-xs font-bold text-[#9a734c] dark:text-[#cc9f70] uppercase tracking-wider">操作</th>
+                            <table className="w-full text-left">
+                                <thead className="bg-background-section border-b border-border-light">
+                                    <tr>
+                                        {/* 首列左对齐，其余居中 */}
+                                        <th className="px-6 py-4 text-sm font-bold text-text-primary uppercase tracking-widest text-left whitespace-nowrap">订单号</th>
+                                        <th className="px-6 py-4 text-sm font-bold text-text-primary uppercase tracking-widest text-center whitespace-nowrap">用户</th>
+                                        <th className="px-6 py-4 text-sm font-bold text-text-primary uppercase tracking-widest text-center whitespace-nowrap">商家</th>
+                                        <th className="px-6 py-4 text-sm font-bold text-text-primary uppercase tracking-widest text-center whitespace-nowrap">金额</th>
+                                        <th className="px-6 py-4 text-sm font-bold text-text-primary uppercase tracking-widest text-center whitespace-nowrap">状态</th>
+                                        <th className="px-6 py-4 text-sm font-bold text-text-primary uppercase tracking-widest text-center whitespace-nowrap">支付方式</th>
+                                        <th className="px-6 py-4 text-sm font-bold text-text-primary uppercase tracking-widest text-center whitespace-nowrap">操作</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#e7dbcf] dark:divide-[#3a2d20]">
+                                <tbody>
                                     {orders.length > 0 ? (
                                         orders.map((order) => (
                                             <OrderRow
@@ -1121,8 +1132,8 @@ const OrderManagement = () => {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="6" className="p-8 text-center text-[#9a734c] dark:text-[#cc9f70]">
-                                                暂无订单数据
+                                            <td colSpan="7" className="px-6 py-20 text-center text-text-tertiary font-bold text-base">
+                                                暂无符合条件的订单数据
                                             </td>
                                         </tr>
                                     )}
@@ -1134,51 +1145,52 @@ const OrderManagement = () => {
 
                 {/* 分页 */}
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm text-[#9a734c] dark:text-[#cc9f70]">
-                            显示第 {((currentPage - 1) * 10) + 1} - {Math.min(currentPage * 10, orders.length)} 条，
-                            共 {orders.length} 条
+                    <div className="flex items-center justify-between bg-surface px-6 py-4 rounded-2xl border border-border-light shadow-sm">
+                        <p className="text-sm font-medium text-text-secondary">
+                            显示第 <span className="font-bold text-text-primary">{((currentPage - 1) * 10) + 1}</span> - <span className="font-bold text-text-primary">{Math.min(currentPage * 10, orders.length)}</span> 条，
+                            共 <span className="font-bold text-text-primary">{orders.length}</span> 条
                         </p>
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                                 disabled={currentPage === 1}
-                                className="px-3 py-1 rounded bg-white dark:bg-[#2a2018] border border-[#e7dbcf] dark:border-[#4a3a2a] disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center justify-center w-8 h-8 rounded-lg border border-border-light text-text-secondary hover:bg-surface-hover hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                上一页
+                                <span className="material-symbols-outlined text-[20px]">chevron_left</span>
                             </button>
-                            <span className="text-sm text-[#9a734c] dark:text-[#cc9f70]">
+                            <span className="text-sm font-bold text-text-secondary px-2">
                                 {currentPage} / {totalPages}
                             </span>
                             <button
                                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                                 disabled={currentPage === totalPages}
-                                className="px-3 py-1 rounded bg-white dark:bg-[#2a2018] border border-[#e7dbcf] dark:border-[#4a3a2a] disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center justify-center w-8 h-8 rounded-lg border border-border-light text-text-secondary hover:bg-surface-hover hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                下一页
+                                <span className="material-symbols-outlined text-[20px]">chevron_right</span>
                             </button>
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* 更新状态模态框 */}
+            {/* 更新状态定制化 Modal */}
             {showUpdateModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-[#1a120b] rounded-xl p-6 w-full max-w-md mx-4">
-                        <h3 className="text-lg font-bold text-[#1b140d] dark:text-white mb-4">
-                            更新订单状态
-                        </h3>
+                <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-overlay backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-surface w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200 border border-border-light">
+                        <div className="px-6 py-4 border-b border-border-light flex justify-between items-center bg-background-section">
+                            <h3 className="text-lg font-bold text-text-primary">更新订单状态</h3>
+                            <button onClick={() => setShowUpdateModal(false)} className="text-text-tertiary hover:text-text-primary transition-colors">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
 
-                        <div className="space-y-4">
+                        <div className="p-6 space-y-5">
                             <div>
-                                <label className="block text-sm font-medium text-[#9a734c] dark:text-[#cc9f70] mb-2">
-                                    订单状态
-                                </label>
+                                <label className="block text-sm font-bold text-text-primary mb-2">订单状态</label>
                                 <select
                                     value={newOrderStatus}
                                     onChange={(e) => setNewOrderStatus(e.target.value)}
-                                    className="w-full px-3 py-2 border border-[#e7dbcf] dark:border-[#3a2d20] rounded-lg bg-white dark:bg-[#2a2018] text-[#1b140d] dark:text-white focus:ring-2 focus:ring-[#ee8c2b] focus:border-transparent"
+                                    className="w-full h-11 px-4 border border-border-light rounded-xl bg-background focus:bg-surface text-text-primary focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-medium text-sm"
                                 >
                                     <option value="pending">待处理</option>
                                     <option value="paid">已支付</option>
@@ -1189,15 +1201,12 @@ const OrderManagement = () => {
                                     <option value="cancelled">已取消</option>
                                 </select>
                             </div>
-
                             <div>
-                                <label className="block text-sm font-medium text-[#9a734c] dark:text-[#cc9f70] mb-2">
-                                    支付状态
-                                </label>
+                                <label className="block text-sm font-bold text-text-primary mb-2">支付状态</label>
                                 <select
                                     value={newPaymentStatus}
                                     onChange={(e) => setNewPaymentStatus(e.target.value)}
-                                    className="w-full px-3 py-2 border border-[#e7dbcf] dark:border-[#3a2d20] rounded-lg bg-white dark:bg-[#2a2018] text-[#1b140d] dark:text-white focus:ring-2 focus:ring-[#ee8c2b] focus:border-transparent"
+                                    className="w-full h-11 px-4 border border-border-light rounded-xl bg-background focus:bg-surface text-text-primary focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-medium text-sm"
                                 >
                                     <option value="pending">待支付</option>
                                     <option value="paid">已支付</option>
@@ -1207,18 +1216,51 @@ const OrderManagement = () => {
                             </div>
                         </div>
 
-                        <div className="flex gap-3 mt-6">
-                            <button
-                                onClick={() => setShowUpdateModal(false)}
-                                className="flex-1 px-4 py-2 text-[#9a734c] dark:text-[#cc9f70] border border-[#e7dbcf] dark:border-[#3a2d20] rounded-lg hover:bg-[#f3ede7] dark:hover:bg-[#2a2018] transition-colors"
-                            >
+                        <div className="px-6 py-4 bg-background border-t border-border-light flex justify-end gap-3">
+                            <button onClick={() => setShowUpdateModal(false)} className="flex-1 py-2.5 rounded-xl font-bold text-text-secondary hover:bg-surface transition-colors border border-border-light shadow-sm text-sm">
                                 取消
                             </button>
-                            <button
-                                onClick={handleConfirmUpdateStatus}
-                                className="flex-1 px-4 py-2 bg-[#ee8c2b] text-white rounded-lg hover:opacity-90 transition-opacity"
-                            >
+                            <button onClick={handleConfirmUpdateStatus} className="flex-1 py-2.5 rounded-xl font-bold bg-primary text-white hover:opacity-90 transition-colors shadow-primary text-sm">
                                 确认更新
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 全局定制化基础 Modal 弹窗 */}
+            {dialog.isOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-overlay backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-surface rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-border-light">
+                        <div className="p-6 text-center">
+                            <div className={`mx-auto flex items-center justify-center h-14 w-14 rounded-full mb-4 ${
+                                dialog.type === 'confirm' ? 'bg-primary-soft text-primary' : 'bg-info-bg text-info'
+                            }`}>
+                                <span className="material-symbols-outlined text-[28px]">
+                                    {dialog.type === 'confirm' ? 'help' : 'info'}
+                                </span>
+                            </div>
+                            <h3 className="text-lg font-extrabold text-text-primary mb-2">
+                                {dialog.type === 'confirm' ? '确认操作' : '提示'}
+                            </h3>
+                            <p className="text-sm text-text-secondary leading-relaxed">
+                                {dialog.message}
+                            </p>
+                        </div>
+                        <div className="px-6 py-4 bg-background-section border-t border-border-light flex justify-center gap-3">
+                            {dialog.type === 'confirm' && (
+                                <button
+                                    onClick={() => setDialog({ ...dialog, isOpen: false })}
+                                    className="flex-1 py-2.5 rounded-xl font-bold text-text-secondary hover:bg-surface transition-colors border border-border-light shadow-sm text-sm"
+                                >
+                                    取消
+                                </button>
+                            )}
+                            <button
+                                onClick={dialog.onConfirm}
+                                className="flex-1 py-2.5 rounded-xl font-bold bg-primary text-white hover:opacity-90 transition-colors shadow-primary text-sm"
+                            >
+                                确定
                             </button>
                         </div>
                     </div>

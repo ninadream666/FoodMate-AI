@@ -271,7 +271,7 @@ const Dashboard = () => {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                         <div>
-                            <h2 className="text-2xl font-extrabold text-text-primary tracking-tight">平台数据概览</h2>
+                            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-text-primary">平台数据概览</h2>
                         </div>
                         <button
                             onClick={refreshDashboardData}
