@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  /* 补充基础底色与文本颜色，确保全局统一 */
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* * NordicTheme - Web 端全局主题配置
+ * 仅保留安全的颜色与阴影特效变量，防止破坏默认排版网格
+ */
+@theme {
+  /* =========================================
+     主色调 (Colors) 
+     ========================================= */
+  --color-primary: #F2784B;
+  --color-primary-light: #F9A882;
+  --color-primary-dark: #D9613A;
+  --color-primary-bg: #FFF6F2;
+  --color-primary-soft: #FDEEE8;
+
+  --color-secondary: #5DA97A;
+  --color-secondary-light: #B5DDCA;
+  --color-accent: #7BA3C4;
+
+  --color-white: #FFFFFF;
+  --color-background: #FAFAF8;
+  --color-background-start: #FFFFFF;
+  --color-background-end: #F4F2EE;
+  --color-background-section: #F7F6F3;
+
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #FDFCFB;
+  --color-surface-frosted: rgba(255, 255, 255, 0.92);
+
+  --color-border: #EDE9E3;
+  --color-border-light: #F5F2ED;
+  --color-divider: #F2EFEA;
+
+  --color-text-primary: #2C3038;
+  --color-text-secondary: #6E7581;
+  --color-text-tertiary: #A0A7B0;
+  --color-text-disabled: #CDD1D6;
+  --color-text-on-primary: #FFFFFF;
+
+  --color-success: #5DA97A;
+  --color-success-bg: #EDF7F1;
+  --color-warning: #E5A84B;
+  --color-warning-bg: #FDF6E8;
+  --color-error: #D96054;
+  --color-error-bg: #FDF0EF;
+  --color-info: #7BA3C4;
+  --color-info-bg: #EEF4FA;
+
+  --color-card-bg: rgba(255, 255, 255, 0.88);
+  --color-card-border: rgba(0, 0, 0, 0.04);
+
+  /* =========================================
+     阴影配置 (Shadows - 针对可点元素) 
+     ========================================= */
+  --shadow-primary: 0 4px 12px 0 rgba(242, 120, 75, 0.22);
+  --shadow-frosted: 0 3px 12px 0 rgba(44, 48, 56, 0.04);
+  --shadow-card: 0 3px 10px 0 rgba(44, 48, 56, 0.05);
+}
+
+/* =========================================
+   全局重置与自定义工具类 (Utilities)
+   ========================================= */
+@layer utilities {
+  /* 暖灰背景渐变 (Image2) */
+  .bg-nordic-gradient {
+    background-image: linear-gradient(to bottom, var(--color-background-start), var(--color-background-end));
+  }
+
+  /* 磨砂卡片基础样式 (Image3) */
+  .glass-card {
+    background-color: var(--color-card-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--color-card-border);
+    /* 采用原生相对单位以保证兼容 */
+    border-radius: 1rem; 
+    box-shadow: var(--shadow-frosted);
+  }
+
+  /* 导航栏/顶栏 磨砂面板 */
+  .glass-panel {
+    background-color: var(--color-surface-frosted);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  /* 隐藏滚动条但保留滚动功能 (北欧风极简必需) */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

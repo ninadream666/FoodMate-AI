@@ -22,8 +22,7 @@ public class MerchantRefundService {
 
     /**
      * 商家批准取消/退款
-     * 
-     * @param merchantId 商家ID
+     * * @param merchantId 商家ID
      * @param orderId 订单ID
      * @param approved 是否同意
      * @param rejectReason 拒绝原因（可选）
@@ -52,21 +51,22 @@ public class MerchantRefundService {
                         .body(Map.of("error", "无法获取订单信息"));
             }
 
-            // 验证订单是否属于该商家
-            Long orderMerchantId = ((Number) orderData.get("merchantId")).longValue();
-            if (!orderMerchantId.equals(merchantId)) {
+            // 安全解析长整型，防止 ClassCastException
+            Long orderMerchantId = parseLongSafe(orderData.get("merchantId"));
+            if (orderMerchantId == null || !orderMerchantId.equals(merchantId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("error", "该订单不属于当前商家"));
             }
 
-            // 验证订单状态，确保在 PENDING_CANCEL 状态
+            // [修复点] 兼容微服务间状态常量命名不一致的问题 (CANCEL_PENDING vs PENDING_CANCEL)
             String orderStatus = (String) orderData.get("status");
-            if (!"PENDING_CANCEL".equals(orderStatus)) {
+            if (!"PENDING_CANCEL".equals(orderStatus) && !"CANCEL_PENDING".equals(orderStatus)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "订单不在待审批状态", "currentStatus", orderStatus));
             }
 
-            Long userId = ((Number) orderData.get("userId")).longValue();
+            // 安全解析长整型
+            Long userId = parseLongSafe(orderData.get("userId"));
             
             if (approved) {
                 // 2. 计算退款金额
@@ -80,15 +80,17 @@ public class MerchantRefundService {
                 }
                 
                 // 4. 触发用户服务更新信用等级
-                try {
-                    Map<String, Object> cancellationData = new HashMap<>();
-                    cancellationData.put("orderId", orderId);
-                    cancellationData.put("cancelReason", "商家已批准退款");
-                    userServiceClient.recordCancellation(userId, cancellationData);
-                    log.info("已通知用户服务记录取消：userId={}, orderId={}", userId, orderId);
-                } catch (Exception e) {
-                    log.error("调用用户服务失败：{}", e.getMessage());
-                    // 不影响主流程
+                if (userId != null) {
+                    try {
+                        Map<String, Object> cancellationData = new HashMap<>();
+                        cancellationData.put("orderId", orderId);
+                        cancellationData.put("cancelReason", "商家已批准退款");
+                        userServiceClient.recordCancellation(userId, cancellationData);
+                        log.info("已通知用户服务记录取消：userId={}, orderId={}", userId, orderId);
+                    } catch (Exception e) {
+                        log.error("调用用户服务失败：{}", e.getMessage());
+                        // 不影响主流程
+                    }
                 }
                 
                 // TODO: 5. 触发支付服务（未来实现）
@@ -119,6 +121,21 @@ public class MerchantRefundService {
             log.error("处理退款审批失败：orderId={}, error={}", orderId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "处理失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 辅助方法：安全地将 Object (String 或 Number) 转换为 Long
+     */
+    private Long parseLongSafe(Object value) {
+        if (value == null) return null;
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        try {
+            return Long.valueOf(value.toString());
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 

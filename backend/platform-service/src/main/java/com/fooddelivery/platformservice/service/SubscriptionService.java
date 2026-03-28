@@ -45,13 +45,12 @@ public class SubscriptionService {
     }
 
     /**
-     * 订阅服务
+     * 订阅服务 (修复版：优先复用已有记录，避免触发唯一索引冲突)
      */
     @Transactional
     public SubscriptionDTO subscribeService(Long merchantId, SubscribeServiceRequest request) {
         Long serviceId = request.getServiceId();
 
-        // 检查服务是否存在且启用
         PlatformService service = platformServiceRepository.findById(serviceId)
                 .orElseThrow(() -> new BusinessException("服务不存在"));
 
@@ -59,25 +58,37 @@ public class SubscriptionService {
             throw new BusinessException("该服务当前不可用");
         }
 
-        // 检查是否已订阅
-        boolean alreadySubscribed = subscriptionRepository
-                .existsByMerchantIdAndServiceIdAndStatus(merchantId, serviceId, SubscriptionStatus.ACTIVE);
+        // 查找历史是否留存过该记录（包含已取消、已过期）
+        List<MerchantServiceSubscription> existingRecords = subscriptionRepository
+                .findByMerchantIdAndServiceId(merchantId, serviceId);
+        
+        MerchantServiceSubscription subscription = null;
 
-        if (alreadySubscribed) {
-            throw new BusinessException("您已订阅该服务");
+        for (MerchantServiceSubscription record : existingRecords) {
+            if (record.getStatus() == SubscriptionStatus.ACTIVE) {
+                throw new BusinessException("您已订阅该服务");
+            }
+            subscription = record; // 拿到最新的一条作为复用目标
         }
 
-        // 创建订阅
-        MerchantServiceSubscription subscription = MerchantServiceSubscription.builder()
-                .merchantId(merchantId)
-                .service(service)
-                .status(SubscriptionStatus.ACTIVE)
-                .subscribedAt(LocalDateTime.now())
-                .build();
+        // 如果完全没有历史，才进行 Insert
+        if (subscription == null) {
+            subscription = MerchantServiceSubscription.builder()
+                    .merchantId(merchantId)
+                    .service(service)
+                    .build();
+        }
 
-        // 如果是按月计费，设置过期时间
+        // 复用该记录，状态置为 ACTIVE
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setSubscribedAt(LocalDateTime.now());
+        subscription.setCancelledAt(null);
+        subscription.setCancelReason(null);
+
         if (service.getBillingCycle() == BillingCycle.MONTHLY) {
             subscription.setExpiresAt(LocalDateTime.now().plusMonths(1));
+        } else {
+            subscription.setExpiresAt(null);
         }
 
         subscription = subscriptionRepository.save(subscription);
@@ -87,29 +98,44 @@ public class SubscriptionService {
     }
 
     /**
-     * 取消订阅
+     * 取消订阅 (终极修复版：强制先 Delete 再 Update，完美规避数据库约束碰撞)
      */
     @Transactional
     public void cancelSubscription(Long merchantId, Long subscriptionId, CancelSubscriptionRequest request) {
         MerchantServiceSubscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new BusinessException("订阅记录不存在"));
 
-        // 验证归属
         if (!subscription.getMerchantId().equals(merchantId)) {
             throw new BusinessException("无权操作此订阅");
         }
 
-        // 检查状态
         if (subscription.getStatus() != SubscriptionStatus.ACTIVE) {
             throw new BusinessException("该订阅已取消或已过期");
         }
 
-        // 检查是否是强制服务
         if (subscription.getService().getIsMandatory()) {
             throw new BusinessException("基础服务不可取消");
         }
 
-        // 取消订阅
+        // === 防碰撞核心逻辑 ===
+        // 解决 Hibernate 默认先 Update 后 Delete 导致的 Unique 索引冲突
+        List<MerchantServiceSubscription> existingRecords = subscriptionRepository
+                .findByMerchantIdAndServiceId(merchantId, subscription.getService().getId());
+        
+        for (MerchantServiceSubscription oldRecord : existingRecords) {
+            if (!oldRecord.getId().equals(subscriptionId) && oldRecord.getStatus() == SubscriptionStatus.CANCELLED) {
+                try {
+                    subscriptionRepository.delete(oldRecord);
+                    subscriptionRepository.flush(); // 强制立刻执行 Delete SQL，为后面的更新腾出唯一索引空间
+                } catch (Exception e) {
+                    log.warn("无法物理删除旧订阅记录，转为软废弃: {}", e.getMessage());
+                    oldRecord.setStatus(SubscriptionStatus.EXPIRED);
+                    subscriptionRepository.saveAndFlush(oldRecord);
+                }
+            }
+        }
+
+        // 正常取消当前订阅
         subscription.setStatus(SubscriptionStatus.CANCELLED);
         subscription.setCancelledAt(LocalDateTime.now());
         subscription.setCancelReason(request != null ? request.getReason() : null);
@@ -120,10 +146,8 @@ public class SubscriptionService {
     }
 
     /**
-     * 为新商家初始化强制订阅
-     * 当新商家入驻时调用
+     * 初始化必须的基础服务订阅
      */
-    @Transactional
     public void initMandatorySubscriptions(Long merchantId) {
         List<PlatformService> mandatoryServices = platformServiceRepository
                 .findByIsMandatoryTrueAndStatus(ServiceStatus.ACTIVE);
