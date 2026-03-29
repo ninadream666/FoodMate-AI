@@ -42,7 +42,15 @@ cd ..
 4. 端口等具体的配置选择尽量新增或者修改靠后的内容，尽量不要修改已完成的部分。
 
 ## 真机连接测试
+
 目录： C:\Users\用户名\AppData\Local\Android\Sdk\platform-tools
 .\adb.exe pair <手机IP>:<端口号>
 .\adb.exe connect <手机IP>:<端口号>
 
+## 语音识别gguf模型文件初始化问题
+
+文件：frontend\src\services\VoiceInferenceService.ts
+文本位置：const downloadUrl = 'http://100.80.56.118:9099/models/model_1500_q8.gguf';
+IP地址替换为电脑的局域网IP，并在backend/static下运行python -m http.server 9099
+
+后续部署到服务器上另有方法。

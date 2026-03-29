@@ -282,31 +282,33 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                             </TouchableOpacity>
                         </View>
                         
-                        <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>🔥 热量估算:</Text>
-                            <Text style={styles.detailValue}>{selectedItem?.calories}</Text>
-                        </View>
-                        
-                        <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>🥦 主要成分:</Text>
-                            <Text style={styles.detailValue}>{selectedItem?.ingredients?.join(', ')}</Text>
-                        </View>
+                        <ScrollView style={styles.detailScroll}>
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>🔥 热量估算:</Text>
+                                <Text style={styles.detailValue}>{selectedItem?.calories}</Text>
+                            </View>
+                            
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>🥦 主要成分:</Text>
+                                <Text style={styles.detailValue}>{selectedItem?.ingredients?.join(', ')}</Text>
+                            </View>
 
-                        {selectedItem?.warnings && (
-                            <View style={[styles.detailRow, { marginTop: 10, backgroundColor: '#fff3e0', padding: 8, borderRadius: 8 }]}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, width: 60 }}>
-                                    <Feather name="alert-triangle" size={14} color="#e65100" />
-                                    <Text style={[styles.detailLabel, { color: '#e65100' }]}>注意:</Text>
+                            {selectedItem?.warnings && (
+                                <View style={[styles.detailRow, { marginTop: 10, backgroundColor: '#fff3e0', padding: 8, borderRadius: 8 }]}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, width: 60 }}>
+                                        <Feather name="alert-triangle" size={14} color="#e65100" />
+                                        <Text style={[styles.detailLabel, { color: '#e65100' }]}>注意:</Text>
+                                    </View>
+                                    <Text style={[styles.detailValue, { color: '#e65100' }]}>{selectedItem?.warnings}</Text>
                                 </View>
-                                <Text style={[styles.detailValue, { color: '#e65100' }]}>{selectedItem?.warnings}</Text>
-                            </View>
-                        )}
-                        
-                        {selectedItem?.is_recommended && (
-                            <View style={{ marginTop: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                                <Feather name="check-circle" size={18} color="#4caf50" />
-                                <Text style={{ marginLeft: 5, color: '#4caf50', fontWeight: 'bold' }}>AI 推荐健康选择</Text>
-                            </View>
+                            )}
+                            
+                            {selectedItem?.is_recommended && (
+                                <View style={{ marginTop: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Feather name="check-circle" size={18} color="#4caf50" />
+                                    <Text style={{ marginLeft: 5, color: '#4caf50', fontWeight: 'bold' }}>AI 推荐健康选择</Text>
+                                </View>
+                            )}
 
                             {/* 完整显示长段落的健康警告 */}
                             {selectedItem?.warnings ? (
