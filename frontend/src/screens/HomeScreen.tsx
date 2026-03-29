@@ -72,7 +72,7 @@ const HomeScreen = ({ navigation }: any) => {
     const [tempImage, setTempImage] = useState<any>(null); // 临时存储选中的图片
     const [selectedTags, setSelectedTags] = useState<string[]>([]); // 用户选的标签
     const [preferencesModalVisible, setPreferencesModalVisible] = useState(false);
-    
+
     // --- 新增: NutriVision 模式选择状态 ---
     const [modeSelectionVisible, setModeSelectionVisible] = useState(false);
     const [selectedVisionMode, setSelectedVisionMode] = useState<'menu' | 'food'>('menu');
@@ -127,6 +127,7 @@ const HomeScreen = ({ navigation }: any) => {
                 loadData(loc);
             } catch (e) {
                 console.error('初始定位失败:', e);
+                // 移除了前端默认坐标兜底，信任后端的默认位置处理
             }
         };
         initLocation();
@@ -301,19 +302,19 @@ const HomeScreen = ({ navigation }: any) => {
             if (!voiceInferenceService.isInitialized) {
                 setIsEngineInitializing(true);
                 setEngineInitProgress(0);
-                
+
                 // 开始带下载进度的初始化
                 await voiceInferenceService.init((progress) => {
                     setEngineInitProgress(progress);
                 });
-                
+
                 // 完成后给予 600ms 平滑过渡展示100%画面
                 setTimeout(() => {
                     setIsEngineInitializing(false);
                     // 隐藏加载框后再正式开始录音
                     setRealtimeText('请说话...');
                     setIsListening(true);
-                    
+
                     voiceInferenceService.startListening(
                         (partialText) => {
                             if (partialText) setRealtimeText(partialText);
@@ -605,7 +606,7 @@ const HomeScreen = ({ navigation }: any) => {
     const handleModeSelect = (mode: 'menu' | 'food') => {
         setModeSelectionVisible(false);
         setSelectedVisionMode(mode);
-        
+
         // 增加一点点延迟让动画更平滑
         setTimeout(() => {
             Alert.alert(
@@ -677,7 +678,7 @@ const HomeScreen = ({ navigation }: any) => {
                 }
             }
             // --- 动态权限申请逻辑结束 ---
-            
+
             await launchCamera(options, callback);
         } else {
             await launchImageLibrary(options, callback);
@@ -692,7 +693,7 @@ const HomeScreen = ({ navigation }: any) => {
                 imageUri: tempImage.uri,
                 imageBase64: tempImage.base64,
                 healthTags: selectedTags,
-                mode: selectedVisionMode 
+                mode: selectedVisionMode
             });
         }
     };
@@ -719,17 +720,16 @@ const HomeScreen = ({ navigation }: any) => {
         }
     };
 
-    const renderHeader = () => {
-        if (!isSynergyMode) return null; // 删除了旧状态和定位栏，只有触发健康守卫时才渲染这一块作为提示横幅
-        
-        return (
-            <View style={styles.headerContainer}>
+    const renderHeader = () => (
+        <View style={styles.headerContainer}>
+
+            {isSynergyMode && (
                 <View style={styles.synergyBanner}>
                     <Text style={styles.synergyBannerText}>✨ 本地健康守卫已启动：为您筛选符合隐私约束的安全餐品</Text>
                 </View>
+            )}
             </View>
         );
-    };
 
     // --- 动画插值计算 ---
     const scanTranslateY = scanAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 300] });
@@ -742,6 +742,42 @@ const HomeScreen = ({ navigation }: any) => {
     return (
         <View style={{ flex: 1, backgroundColor: '#E8E4DD' }}>
             <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
+
+            {/* 【修复】：隐藏的业务组件（无UI）。专门用于在后台维持定位监听和天气状态刷新，替代被删掉的代码 */}
+            <View style={{ display: 'none' }}>
+                <LocationDisplay
+                    onLocationChange={(loc) => {
+                        const isCurrentDefault = currentLocation &&
+                            Math.abs(currentLocation.latitude - 39.9042) < 0.001 &&
+                            Math.abs(currentLocation.longitude - 116.4074) < 0.001;
+                        const isNewRealGPS = loc &&
+                            !(Math.abs(loc.latitude - 39.9042) < 0.001 && Math.abs(loc.longitude - 116.4074) < 0.001);
+                        
+                        if (isCurrentDefault && isNewRealGPS) {
+                            setCurrentLocation(loc);
+                            loadData(loc);
+                            return;
+                        }
+                        
+                        if (currentLocation && hasInitialData) {
+                            const latDiff = Math.abs(loc.latitude - currentLocation.latitude);
+                            const lonDiff = Math.abs(loc.longitude - currentLocation.longitude);
+                            if (latDiff < 0.001 && lonDiff < 0.001) return;
+                        }
+                        
+                        setCurrentLocation(loc);
+                        if (shouldReload(loc)) debouncedLoadData(loc);
+                    }}
+                    showRefresh={false}
+                />
+                <StatusCapsule
+                    weather={weatherData ? {
+                        condition: weatherData.condition,
+                        temperature: weatherData.temperature,
+                    } : undefined}
+                    onPress={() => {}}
+                />
+            </View>
 
             {/* 固定顶部导航栏 */}
             <View style={[styles.topNavBar, { paddingTop: insets.top + spacing.sm }]}>
@@ -965,23 +1001,23 @@ const HomeScreen = ({ navigation }: any) => {
                         <Text style={styles.modalSubtitle}>请根据您的拍摄内容选择对应模式</Text>
 
                         <View style={{ width: '100%', gap: spacing.md, marginBottom: spacing.xl }}>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={[styles.modeCard, { borderColor: colors.primary }]}
                                 onPress={() => handleModeSelect('food')}
                             >
-                                <View style={styles.modeIconBox}><Text style={{fontSize: 28}}>🍱</Text></View>
-                                <View style={{flex: 1}}>
-                                    <Text style={styles.modeTitle}>拍单道菜品 <Text style={{color: colors.primary, fontSize: 12}}>极速</Text></Text>
+                                <View style={styles.modeIconBox}><Text style={{ fontSize: 28 }}>🍱</Text></View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.modeTitle}>拍单道菜品 <Text style={{ color: colors.primary, fontSize: 12 }}>极速</Text></Text>
                                     <Text style={styles.modeDesc}>启用自研本地 CV 模型，瞬间识别食物种类并联调云端知识图谱。</Text>
                                 </View>
                             </TouchableOpacity>
 
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={styles.modeCard}
                                 onPress={() => handleModeSelect('menu')}
                             >
-                                <View style={[styles.modeIconBox, { backgroundColor: '#e3f2fd' }]}><Text style={{fontSize: 28}}>📋</Text></View>
-                                <View style={{flex: 1}}>
+                                <View style={[styles.modeIconBox, { backgroundColor: '#e3f2fd' }]}><Text style={{ fontSize: 28 }}>📋</Text></View>
+                                <View style={{ flex: 1 }}>
                                     <Text style={styles.modeTitle}>拍复杂菜单</Text>
                                     <Text style={styles.modeDesc}>启用云端多模态大语言模型，直接进行整页菜单 OCR 与分析。</Text>
                                 </View>
@@ -1688,7 +1724,7 @@ const styles = StyleSheet.create({
         color: colors.textSecondary,
         marginBottom: spacing.xl,
     },
-    
+
     // --- 新增: 模式选择弹窗样式 ---
     modeCard: {
         flexDirection: 'row',
