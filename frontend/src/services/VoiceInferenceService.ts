@@ -41,7 +41,6 @@ class VoiceInferenceService {
 
     /**
      * 初始化 Vosk 和 端侧 LLM
-     * 【修改处】：增加了进度回调参数，用于首屏动态下载大模型
      */
     public async init(onProgress?: (progress: number) => void) {
         if (this.isInitialized) {
@@ -67,24 +66,33 @@ class VoiceInferenceService {
             throw error; 
         }
 
-        // --- 2. 独立初始化 Llama 大模型引擎 (加入网络动态下载机制) ---
+        // --- 2. 独立初始化 Llama 大模型引擎 (加入网络动态下载与防损坏机制) ---
         try {
             await new Promise(resolve => setTimeout(resolve, 1500));
             console.log('🧠 [LLM] 准备加载微调后的端侧大模型...');
 
             const modelFileName = 'model_1500_q8.gguf';
             const destPath = `${RNFS.DocumentDirectoryPath}/${modelFileName}`;
-            const exists = await RNFS.exists(destPath);
             
-            if (!exists) {
-                console.log(`📦 [LLM] 初次运行：正在从云端下载大模型文件...`);
-                // 【注意修改这里】：替换为你本机的实际局域网 IPv4 地址。测试时在 backend/static 下运行 python -m http.server 9099
-                const downloadUrl = 'http://100.80.56.118:9099/models/model_1500_q8.gguf';
+            // 【硬核修复】：不仅检查是否存在，还要严查文件体积，防范 0 字节导致 C++ 引擎崩溃！
+            const fileStat = await RNFS.stat(destPath).catch(() => null);
+            const exists = fileStat !== null && fileStat.isFile();
+            const minValidSize = 50 * 1024 * 1024; // 假设正常的模型至少大于 50MB
+
+            if (!exists || Number(fileStat.size) < minValidSize) {
+                if (exists) {
+                    console.log(`📦 [LLM] 警告：发现损坏或不完整的残缺模型 (${fileStat?.size} Bytes)，正在强制清理...`);
+                    await RNFS.unlink(destPath).catch(() => {});
+                }
+
+                console.log(`📦 [LLM] 初次运行：正在通过 USB 物理隧道从电脑下载模型...`);
+                // 【硬核修复】：使用 127.0.0.1 配合 adb reverse 实现物理线缆级极速稳定下载
+                const downloadUrl = 'http://127.0.0.1:9099/models/model_1500_q8.gguf';
 
                 const downloadOptions = {
                     fromUrl: downloadUrl,
                     toFile: destPath,
-                    progressDivider: 1, // 每1%进度触发一次回调
+                    progressDivider: 1, 
                     progress: (res: any) => {
                         const progressPercent = Math.round((res.bytesWritten / res.contentLength) * 100);
                         if (onProgress) onProgress(progressPercent);
@@ -101,19 +109,23 @@ class VoiceInferenceService {
                 }
             } else {
                 if (onProgress) onProgress(100);
-                console.log(`✅ [LLM] 检测到模型已存在沙盒中，直接加载物理路径: ${destPath}`);
+                console.log(`✅ [LLM] 检测到完整模型已存在沙盒中，体积: ${(Number(fileStat.size)/1024/1024).toFixed(2)}MB。直接加载!`);
             }
 
             this.llamaContext = await initLlama({
                 model: destPath,
                 use_mlock: false, 
                 use_mmap: true,  
-                n_ctx: 1024, // 增加上下文长度以支持多轮对话
+                n_ctx: 1024,
             });
             console.log('✅ [LLM] 大模型加载完毕，随时待命！');
         } catch (error) {
             console.warn('⚠️ [LLM] 大模型初始化/下载失败 (将降级使用基础语音服务):', error);
             this.llamaContext = null; 
+            
+            // 如果出错，顺手把可能下载了一半的残缺文件清理掉，保护下一次运行
+            const destPath = `${RNFS.DocumentDirectoryPath}/model_1500_q8.gguf`;
+            await RNFS.unlink(destPath).catch(() => {});
         }
 
         // --- 3. 终极事件拦截网（全通道监听） ---
@@ -123,17 +135,11 @@ class VoiceInferenceService {
         console.log('✅ [端云协同] 本地双引擎初始化流程结束！');
     }
 
-    /**
-     * 清空多轮对话状态 (例如：点餐完成、或用户手动重置时调用)
-     */
     public clearSession() {
         this.dialogueHistory = [];
         console.log('🧹 [LLM] 多轮对话记忆已清空，开启全新点餐 Session。');
     }
 
-    /**
-     * 终极事件拦截网：同时监听所有可能的 React Native 底层通信通道
-     */
     private setupBulletproofEventListeners() {
         const processPartial = (source: string, e: any) => {
             if (!this.isRecording) return;
@@ -242,18 +248,13 @@ class VoiceInferenceService {
         }
     }
 
-    /**
-     * 构建支持多轮上下文的 ChatML Prompt
-     */
     private buildMultiTurnPrompt(newText: string): string {
         let prompt = `<|im_start|>system\n${this.SYSTEM_PROMPT}\n<|im_end|>\n`;
         
-        // 追加历史对话记录
         for (const msg of this.dialogueHistory) {
             prompt += `<|im_start|>${msg.role}\n${msg.content}\n<|im_end|>\n`;
         }
         
-        // 追加最新一轮的用户输入，并开启 assistant 生成槽
         prompt += `<|im_start|>user\n${newText}\n<|im_end|>\n<|im_start|>assistant\n{`;
         return prompt;
     }
@@ -266,7 +267,6 @@ class VoiceInferenceService {
 
         console.log(`🧠 [LLM] 端侧意图提纯 (第 ${this.dialogueHistory.length / 2 + 1} 轮)，原始文本:`, text);
 
-        // 1. 构建包含多轮上下文的 Prompt
         const prompt = this.buildMultiTurnPrompt(text);
 
         try {
@@ -276,7 +276,6 @@ class VoiceInferenceService {
                 temperature: 0.1, 
             });
 
-            // 2. 清洗结果 (因为我们给的 prompt 末尾强制带了 '{' 以约束 JSON 格式输出)
             let jsonStr = "{" + result.text;
             jsonStr = jsonStr.replace(/<\|im_end\|>/g, '').trim();
             const firstBrace = jsonStr.indexOf('{');
@@ -287,10 +286,8 @@ class VoiceInferenceService {
 
             console.log('🛡️ [LLM] 端侧提纯结果:', jsonStr);
 
-            // 3. 将本轮的用户输入和 AI 输出加入记忆，供下一轮使用
             this.dialogueHistory.push({ role: 'user', content: text });
             
-            // 为了防止历史记录里的 JSON 出现格式错误污染下一次推理，最好存一下格式化后的
             try {
                 const parsedResult = JSON.parse(jsonStr);
                 this.dialogueHistory.push({ role: 'assistant', content: JSON.stringify(parsedResult, null, 0) });
