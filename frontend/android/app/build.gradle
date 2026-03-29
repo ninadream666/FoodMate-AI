@@ -124,4 +124,5 @@ dependencies {
 
     // OPPO Health SDK - 运动健康数据接入
     implementation 'com.heytap.health:sdk:2.1.7'
+    // implementation fileTree(dir: "libs", include: ["*.jar", "*.aar"])
 }

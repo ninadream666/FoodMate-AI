@@ -16,7 +16,9 @@ import {
     Alert,
     Image,
     Animated,
-    Easing
+    Easing,
+    PermissionsAndroid,
+    Platform
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { merchantService } from '../services/merchantService';
@@ -65,6 +67,10 @@ const HomeScreen = ({ navigation }: any) => {
     const [tempImage, setTempImage] = useState<any>(null); // 临时存储选中的图片
     const [selectedTags, setSelectedTags] = useState<string[]>([]); // 用户选的标签
     const [preferencesModalVisible, setPreferencesModalVisible] = useState(false);
+    
+    // --- 新增: NutriVision 模式选择状态 ---
+    const [modeSelectionVisible, setModeSelectionVisible] = useState(false);
+    const [selectedVisionMode, setSelectedVisionMode] = useState<'menu' | 'food'>('menu');
 
     // 常用健康标签
     const HEALTH_TAGS = ["花生过敏", "海鲜过敏", "乳糖不耐受", "低糖", "低脂", "高蛋白", "素食"];
@@ -547,20 +553,31 @@ const HomeScreen = ({ navigation }: any) => {
         navigation.replace('Login');
     };
 
-    // --- NutriVision 处理逻辑 ---
+    // --- NutriVision 处理逻辑 (双轨制改造) ---
     const startNutriVision = () => {
-        Alert.alert(
-            "实景菜单营养透视",
-            "请拍摄或上传菜单照片",
-            [
-                { text: "取消", style: "cancel" },
-                { text: "从相册选择", onPress: () => pickImage('gallery') },
-                { text: "拍照", onPress: () => pickImage('camera') },
-            ]
-        );
+        // 第一步：先弹出模式选择，展示双轨制的黑科技
+        setModeSelectionVisible(true);
     };
 
-    const pickImage = async (type: 'camera' | 'gallery') => {
+    const handleModeSelect = (mode: 'menu' | 'food') => {
+        setModeSelectionVisible(false);
+        setSelectedVisionMode(mode);
+        
+        // 增加一点点延迟让动画更平滑
+        setTimeout(() => {
+            Alert.alert(
+                mode === 'food' ? "实景单品透视" : "全菜单营养扫雷",
+                "请拍摄或上传您的美食照片",
+                [
+                    { text: "取消", style: "cancel" },
+                    { text: "从相册选择", onPress: () => pickImage('gallery', mode) },
+                    { text: "拍照", onPress: () => pickImage('camera', mode) },
+                ]
+            );
+        }, 300);
+    };
+
+    const pickImage = async (type: 'camera' | 'gallery', mode: 'menu' | 'food') => {
         const options: any = {
             mediaType: 'photo',
             includeBase64: true,
@@ -594,6 +611,30 @@ const HomeScreen = ({ navigation }: any) => {
         };
 
         if (type === 'camera') {
+            // --- 动态权限申请逻辑开始 ---
+            if (Platform.OS === 'android') {
+                try {
+                    const granted = await PermissionsAndroid.request(
+                        PermissionsAndroid.PERMISSIONS.CAMERA,
+                        {
+                            title: "需要相机权限",
+                            message: "NutriVision 需要使用您的相机来拍摄菜品以进行营养分析。",
+                            buttonNeutral: "稍后询问",
+                            buttonNegative: "取消",
+                            buttonPositive: "确定"
+                        }
+                    );
+                    if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                        Alert.alert("权限被拒绝", "我们需要相机权限才能为您提供营养透视功能，请在系统设置中开启。");
+                        return; // 如果用户拒绝权限，直接返回，不再调起相机，避免报错
+                    }
+                } catch (err) {
+                    console.warn(err);
+                    return;
+                }
+            }
+            // --- 动态权限申请逻辑结束 ---
+            
             await launchCamera(options, callback);
         } else {
             await launchImageLibrary(options, callback);
@@ -603,10 +644,12 @@ const HomeScreen = ({ navigation }: any) => {
     const confirmAnalysis = () => {
         setPreferencesModalVisible(false);
         if (tempImage) {
+            // 将选中的模式向下传递，驱动不同的 API 和 UI
             navigation.navigate('NutriVisionResult', {
                 imageUri: tempImage.uri,
                 imageBase64: tempImage.base64,
-                healthTags: selectedTags
+                healthTags: selectedTags,
+                mode: selectedVisionMode 
             });
         }
     };
@@ -635,6 +678,188 @@ const HomeScreen = ({ navigation }: any) => {
 
     const renderHeader = () => (
         <View style={styles.headerContainer}>
+            <LocationDisplay
+                onLocationChange={(loc) => {
+                    // 使用防抖处理位置变化
+                    const isCurrentDefault = currentLocation &&
+                        Math.abs(currentLocation.latitude - 39.9042) < 0.001 &&
+                        Math.abs(currentLocation.longitude - 116.4074) < 0.001;
+                    const isNewRealGPS = loc &&
+                        !(Math.abs(loc.latitude - 39.9042) < 0.001 && Math.abs(loc.longitude - 116.4074) < 0.001);
+
+                    // 首次从默认位置切换到真实位置，立即加载
+                    if (isCurrentDefault && isNewRealGPS) {
+                        setCurrentLocation(loc);
+                        loadData(loc);
+                        return;
+                    }
+
+                    // 微小变化时直接忽略
+                    if (currentLocation && hasInitialData) {
+                        const latDiff = Math.abs(loc.latitude - currentLocation.latitude);
+                        const lonDiff = Math.abs(loc.longitude - currentLocation.longitude);
+                        if (latDiff < 0.001 && lonDiff < 0.001) {
+                            return;
+                        }
+                    }
+
+                    setCurrentLocation(loc);
+                    // 使用防抖处理位置变化触发的数据加载
+                    if (shouldReload(loc)) {
+                        debouncedLoadData(loc);
+                    }
+                }}
+                showRefresh={true}
+            />
+
+            <StatusCapsule
+                weather={weatherData ? {
+                    condition: weatherData.condition,
+                    temperature: weatherData.temperature,
+                } : undefined}
+                onPress={() => {
+                    console.log('状态胶囊被点击');
+                }}
+            />
+
+            <View style={styles.welcomeRow}>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.welcomeText}>今天吃点什么?</Text>
+                    <Text style={styles.userName}>{user?.username || user?.nickname || '朋友'}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('OrderList')}
+                        style={{ padding: spacing.sm }}
+                    >
+                        <Text style={{ color: colors.textPrimary, fontWeight: fontWeight.semibold, fontSize: fontSize.sm }}>📜 订单</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+                        <Text style={styles.logoutText}>退出</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            <TouchableOpacity style={styles.visionCard} onPress={startNutriVision}>
+                <View style={styles.visionIconContainer}>
+                    <Text style={{ fontSize: 24 }}>📸</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.visionTitle}>拍一拍：实景营养透视</Text>
+                    <Text style={styles.visionSubtitle}>可拍菜单和菜品！热量、过敏原分析，定制健康推荐</Text>
+                </View>
+                <View style={styles.visionArrow}>
+                    <Text style={{ color: '#fff' }}>→</Text>
+                </View>
+            </TouchableOpacity>
+
+            {__DEV__ && (
+                <View style={{ marginBottom: spacing.md }}>
+                    <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                setShowDevPanel(true);
+                            }}
+                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.primarySoft, borderRadius: borderRadius.lg, alignItems: 'center' }}
+                        >
+                            <Text style={{ color: colors.primary, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🏃 健康模拟</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('LocationDebug')}
+                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.infoBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
+                        >
+                            <Text style={{ color: colors.info, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🔍 位置调试</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                health.simulateJustFinishedWorkout();
+                                setShowActiveRecommendation(true);
+                            }}
+                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.errorBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
+                        >
+                            <Text style={{ color: colors.error, fontWeight: fontWeight.bold, fontSize: fontSize.md }}>💪 模拟刚跑完步</Text>
+                            <Text style={{ color: colors.error, fontSize: fontSize.xs, marginTop: 2 }}>心率145 / 步数12000</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => {
+                                health.setDevMode(true);
+                                health.setSimulatedLightLux(20);
+                            }}
+                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.infoBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
+                        >
+                            <Text style={{ color: colors.accent, fontWeight: fontWeight.bold, fontSize: fontSize.md }}>🌙 模拟暗光场景</Text>
+                            <Text style={{ color: colors.accent, fontSize: fontSize.xs, marginTop: 2 }}>20 lux / 夜间室内</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                const rainWeather: WeatherData = {
+                                    condition: '大雨',
+                                    temperature: 18,
+                                    humidity: 95,
+                                    windSpeed: 20,
+                                    icon: '🌧️',
+                                    isRaining: true,
+                                    isHeavyRain: true,
+                                    isExtreme: false,
+                                    deliveryImpact: 'severe',
+                                    recommendation: '外面雨很大，已为您优先筛选配送运力充足、包装防水的商家',
+                                };
+                                setWeatherData(rainWeather);
+                                setShowWeatherAlert(true);
+                            }}
+                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.successBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
+                        >
+                            <Text style={{ color: colors.success, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🌧️ 模拟大雨</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => {
+                                const hotWeather: WeatherData = {
+                                    condition: '晴',
+                                    temperature: 38,
+                                    humidity: 40,
+                                    windSpeed: 5,
+                                    icon: '☀️',
+                                    isRaining: false,
+                                    isHeavyRain: false,
+                                    isExtreme: false,
+                                    deliveryImpact: 'minor',
+                                    recommendation: '天气炎热，为您推荐清凉解暑的美食',
+                                };
+                                setWeatherData(hotWeather);
+                                setShowWeatherAlert(true);
+                            }}
+                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.errorBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
+                        >
+                            <Text style={{ color: colors.error, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🥵 模拟高温</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
+
+            <View style={styles.searchContainer}>
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="搜索餐厅、菜系..."
+                    value={searchText}
+                    onChangeText={setSearchText}
+                />
+                <TouchableOpacity style={styles.searchButton}>
+                    <Text style={{ color: '#fff' }}>🔍</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.micButton, isListening && styles.micButtonActive]}
+                    onPress={startVoiceAssistant}
+                >
+                    <Text style={{ color: isListening ? colors.textOnPrimary : colors.primary, fontSize: 18 }}>
+                        {isListening ? '👂' : '🎤'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
             {isSynergyMode && (
                 <View style={styles.synergyBanner}>
                     <Text style={styles.synergyBannerText}>✨ 本地健康守卫已启动：为您筛选符合隐私约束的安全餐品</Text>
@@ -851,6 +1076,53 @@ const HomeScreen = ({ navigation }: any) => {
                 </View>
             </Modal>
 
+            {/* --- 新增：双轨制视觉模式选择弹窗 --- */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={modeSelectionVisible}
+                onRequestClose={() => setModeSelectionVisible(false)}
+            >
+                <View style={styles.modalCenteredView}>
+                    <View style={styles.modalView}>
+                        <Text style={styles.modalTitle}>选择视觉引擎</Text>
+                        <Text style={styles.modalSubtitle}>请根据您的拍摄内容选择对应模式</Text>
+
+                        <View style={{ width: '100%', gap: spacing.md, marginBottom: spacing.xl }}>
+                            <TouchableOpacity 
+                                style={[styles.modeCard, { borderColor: colors.primary }]}
+                                onPress={() => handleModeSelect('food')}
+                            >
+                                <View style={styles.modeIconBox}><Text style={{fontSize: 28}}>🍱</Text></View>
+                                <View style={{flex: 1}}>
+                                    <Text style={styles.modeTitle}>拍单道菜品 <Text style={{color: colors.primary, fontSize: 12}}>极速</Text></Text>
+                                    <Text style={styles.modeDesc}>启用自研本地 CV 模型，瞬间识别食物种类并联调云端知识图谱。</Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity 
+                                style={styles.modeCard}
+                                onPress={() => handleModeSelect('menu')}
+                            >
+                                <View style={[styles.modeIconBox, { backgroundColor: '#e3f2fd' }]}><Text style={{fontSize: 28}}>📋</Text></View>
+                                <View style={{flex: 1}}>
+                                    <Text style={styles.modeTitle}>拍复杂菜单</Text>
+                                    <Text style={styles.modeDesc}>启用云端多模态大语言模型，直接进行整页菜单 OCR 与分析。</Text>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.modalBtn, styles.modalBtnCancel, { width: '100%' }]}
+                            onPress={() => setModeSelectionVisible(false)}
+                        >
+                            <Text style={styles.modalBtnTextCancel}>取消</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* 健康标签偏好弹窗 */}
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -1540,6 +1812,39 @@ const styles = StyleSheet.create({
         color: colors.textSecondary,
         marginBottom: spacing.xl,
     },
+    
+    // --- 新增: 模式选择弹窗样式 ---
+    modeCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.surface,
+        borderWidth: 1.5,
+        borderColor: colors.borderLight,
+        borderRadius: borderRadius.lg,
+        padding: spacing.lg,
+        ...shadows.sm,
+    },
+    modeIconBox: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: colors.primaryBg,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: spacing.md,
+    },
+    modeTitle: {
+        fontSize: fontSize.md,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+        marginBottom: 4,
+    },
+    modeDesc: {
+        fontSize: fontSize.xs,
+        color: colors.textTertiary,
+        lineHeight: 18,
+    },
+
     tagsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',

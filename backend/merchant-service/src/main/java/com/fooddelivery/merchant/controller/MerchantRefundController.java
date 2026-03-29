@@ -30,12 +30,6 @@ public class MerchantRefundController {
 
     /**
      * 商家批准或拒绝取消/退款
-     * 
-     * POST /merchants/{merchantId}/orders/{orderId}/approve-cancel
-     * {
-     *   "approved": true/false,
-     *   "rejectReason": "原因（可选）"
-     * }
      */
     @PatchMapping("/{merchantId}/orders/{orderId}/approve-cancel")
     public ResponseEntity<?> approveCancellation(
@@ -53,8 +47,8 @@ public class MerchantRefundController {
                     .body(Map.of("error", "需要商家权限"));
         }
         
-        // 提取当前登录用户的userId
-        Long currentUserId = (Long) authentication.getPrincipal();
+        // [修复点] 安全提取当前登录用户的userId
+        Long currentUserId = getCurrentUserIdSafe(authentication);
         
         // 验证该userId是否拥有该merchantId的店铺
         Optional<Merchant> merchantOpt = merchantRepository.findByIdAndOwnerUserId(merchantId, currentUserId);
@@ -70,8 +64,6 @@ public class MerchantRefundController {
 
     /**
      * 商家查看待审批的退款列表
-     * 
-     * GET /merchants/{merchantId}/pending-refunds
      */
     @GetMapping("/{merchantId}/pending-refunds")
     public ResponseEntity<?> getPendingRefunds(
@@ -84,7 +76,8 @@ public class MerchantRefundController {
                     .body(Map.of("error", "需要商家权限"));
         }
         
-        Long currentUserId = (Long) authentication.getPrincipal();
+        // [修复点] 安全提取当前登录用户的userId
+        Long currentUserId = getCurrentUserIdSafe(authentication);
         
         // 验证该userId是否拥有该merchantId的店铺
         Optional<Merchant> merchantOpt = merchantRepository.findByIdAndOwnerUserId(merchantId, currentUserId);
@@ -107,16 +100,10 @@ public class MerchantRefundController {
 
     /**
      * 商家查看销售数据
-     * 
-     * GET /merchants/{merchantId}/sales
      */
     @GetMapping("/{merchantId}/sales")
     public ResponseEntity<?> getSalesData(@PathVariable Long merchantId) {
         // TODO: 聚合订单服务的销售数据
-        // - 销售额：确认订单的总金额
-        // - 平台抽成：10%
-        // - 利润：销售额 - 平台抽成
-
         return ResponseEntity.ok(Map.of(
                 "message", "销售数据统计功能即将实现",
                 "merchantId", merchantId
@@ -134,5 +121,15 @@ public class MerchantRefundController {
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch(auth -> auth.equalsIgnoreCase("ROLE_" + role));
     }
-}
 
+    /**
+     * 辅助方法：安全提取当前登录用户的 userId，防止 String 与 Long 转换异常
+     */
+    private Long getCurrentUserIdSafe(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof Long) {
+            return (Long) principal;
+        }
+        return Long.parseLong(principal.toString());
+    }
+}

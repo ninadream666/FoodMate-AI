@@ -36,6 +36,11 @@ public interface MerchantServiceSubscriptionRepository extends JpaRepository<Mer
     boolean existsByMerchantIdAndServiceIdAndStatus(Long merchantId, Long serviceId, SubscriptionStatus status);
 
     /**
+     * 本次新增：查找某个商家对某个服务的所有历史记录（无视状态，用于复用记录，防 500 报错）
+     */
+    List<MerchantServiceSubscription> findByMerchantIdAndServiceId(Long merchantId, Long serviceId);
+
+    /**
      * 查找商家的有效且按单计费的订阅（用于分成计算）
      */
     @Query("SELECT s FROM MerchantServiceSubscription s " +
