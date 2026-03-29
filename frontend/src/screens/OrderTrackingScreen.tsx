@@ -97,7 +97,7 @@ const OrderTrackingScreen = ({ route, navigation }: any) => {
                         <Text style={styles.riderTag}>金牌骑手</Text>
                     </View>
                     <TouchableOpacity style={styles.callBtn} onPress={handleContactRider}>
-                        <Text style={styles.callText}>📞 联系</Text>
+                        <Text style={styles.callText}>联系</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -167,13 +167,18 @@ const styles = StyleSheet.create({
     },
 
     card: {
-        backgroundColor: colors.cardBg,
+        backgroundColor: '#FFFFFF',
         marginHorizontal: spacing.lg,
         marginTop: spacing.md,
         padding: spacing.lg,
         borderRadius: borderRadius.xl,
         borderWidth: 1,
-        borderColor: colors.cardBorder,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     sectionTitle: {
         fontSize: fontSize.lg,

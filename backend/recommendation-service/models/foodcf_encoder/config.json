@@ -1,0 +1,13 @@
+{
+    "model_type": "foodcf_encoder",
+    "base_model": "Alibaba-NLP/gte-Qwen2-1.5B-instruct",
+    "embed_dim": 128,
+    "matryoshka_dims": [
+        128,
+        64,
+        32
+    ],
+    "latent_tokens": 4,
+    "lora_rank": 64,
+    "lora_applied": true
+}

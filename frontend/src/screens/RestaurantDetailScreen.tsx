@@ -9,7 +9,9 @@ import {
     StatusBar,
     Animated,
     Platform,
+    TouchableOpacity,
 } from 'react-native';
+import Feather from 'react-native-vector-icons/Feather';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { merchantService } from '../services/merchantService';
 import MenuListItem from '../components/MenuListItem';
@@ -38,6 +40,7 @@ const organizeMenuByCategory = (menuItems: any[]) => {
 const RestaurantDetailScreen = ({ route, navigation }: any) => {
     const { restaurant } = route.params || {};
     const id = restaurant?.id || route.params?.id;
+    console.log('🏪 餐厅数据:', JSON.stringify({ image: restaurant?.image, imageUrl: restaurant?.imageUrl, features: restaurant?.features?.image }, null, 2));
 
     const [sections, setSections] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -48,14 +51,34 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
         loadMenu();
         navigation.setOptions({
             title: restaurant?.name || '餐厅详情',
-            headerTransparent: true,
-            headerTintColor: colors.white,
-            headerStyle: { backgroundColor: 'transparent' },
+            headerTransparent: false,
+            headerTintColor: colors.textPrimary,
+            headerStyle: { backgroundColor: '#FFFFFF' },
             headerTitleStyle: {
                 color: colors.textPrimary,
                 fontWeight: fontWeight.semibold,
                 fontSize: fontSize.lg,
             },
+            headerLeft: () => (
+                <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    style={{
+                        paddingHorizontal: 4,
+                        paddingVertical: 4,
+                    }}
+                >
+                    <Feather
+                        name="chevron-left"
+                        size={24}
+                        color={colors.textPrimary}
+                        style={{
+                            textShadowColor: 'rgba(0,0,0,0.2)',
+                            textShadowOffset: { width: 0, height: 1 },
+                            textShadowRadius: 3,
+                        }}
+                    />
+                </TouchableOpacity>
+            ),
         });
     }, []);
 
@@ -119,60 +142,42 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-            <Animated.ScrollView
-                style={{ flex: 1 }}
-                onScroll={Animated.event(
-                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                    { useNativeDriver: false }
-                )}
-                scrollEventThrottle={16}
-            >
-                {/* ========== 餐厅横幅区 ========== */}
+            {/* ========== 固定顶部：餐厅横幅 + 信息卡片 ========== */}
+            <View>
                 <View style={styles.bannerWrapper}>
-                    <Animated.View style={[styles.bannerImageWrapper, { opacity: bannerOpacity, transform: [{ scale: bannerScale }] }]}>
-                        <Image
-                            source={{ uri: restaurant?.image || restaurant?.imageUrl }}
-                            style={styles.banner}
-                            resizeMode="cover"
-                        />
-                    </Animated.View>
-                    {/* 底部渐变遮罩 */}
+                    <Image
+                        source={{ uri: (() => {
+                            const url = restaurant?.image || restaurant?.imageUrl || restaurant?.features?.image || '';
+                            // 如果是 Unsplash 链接（国内无法访问）或为空，用 picsum 替代
+                            if (!url || url.includes('unsplash.com')) {
+                                return `https://loremflickr.com/800/400/restaurant,food`;
+                            }
+                            return url;
+                        })() }}
+                        style={styles.banner}
+                        resizeMode="cover"
+                    />
                     <View style={styles.bannerGradient} />
                 </View>
 
-                {/* ========== 餐厅信息卡片（磨砂风格浮于横幅上） ========== */}
                 <View style={styles.infoCardWrapper}>
                     <View style={styles.infoCard}>
-                        {/* 餐厅名称 */}
                         <Text style={styles.resName}>{restaurant?.name}</Text>
-
-                        {/* 评分 + 配送信息行 */}
                         <View style={styles.metaRow}>
-                            {/* 评分徽章 */}
                             <View style={styles.ratingBadge}>
                                 <Text style={styles.ratingStar}>★</Text>
                                 <Text style={styles.ratingText}>{restaurant?.rating || 4.5}</Text>
                             </View>
-
-                            {/* 分隔点 */}
                             <View style={styles.metaDot} />
-
-                            {/* 配送时间 */}
                             <View style={styles.deliveryInfo}>
                                 <Text style={styles.deliveryIcon}>🕐</Text>
                                 <Text style={styles.deliveryText}>约30分钟</Text>
                             </View>
-
-                            {/* 分隔点 */}
                             <View style={styles.metaDot} />
-
-                            {/* 免配送费标签 */}
                             <View style={styles.freeDeliveryTag}>
                                 <Text style={styles.freeDeliveryText}>免配送费</Text>
                             </View>
                         </View>
-
-                        {/* 标签行 */}
                         <View style={styles.tagRow}>
                             {(restaurant?.tags || ['品质商家', '准时达', '好评如潮']).map((tag: string, index: number) => (
                                 <View key={index} style={styles.tag}>
@@ -182,28 +187,30 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
                         </View>
                     </View>
                 </View>
+            </View>
 
-                {/* ========== 菜单分类列表 ========== */}
+            {/* ========== 可滚动菜单列表 ========== */}
+            <Animated.ScrollView
+                style={{ flex: 1 }}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+                scrollEventThrottle={16}
+            >
                 {sections.map((section, sectionIndex) => (
                     <View key={section.title} style={styles.sectionWrapper}>
-                        {/* 分类标题 */}
                         <View style={styles.sectionHeader}>
                             <View style={styles.sectionAccent} />
                             <Text style={styles.sectionTitle}>{section.title}</Text>
                             <Text style={styles.sectionCount}>{section.data.length}道</Text>
                         </View>
-
-                        {/* 菜品列表 */}
                         {section.data.map((item: any) => (
                             <MenuListItem key={item.id.toString()} dish={item} onAdd={handleAddToCart} />
                         ))}
-
-                        {/* 分组间留白区隔（非最后一组） */}
                         {sectionIndex < sections.length - 1 && <View style={styles.sectionDivider} />}
                     </View>
                 ))}
-
-                {/* 底部留白（给购物车栏让出空间） */}
                 <View style={{ height: 120 }} />
             </Animated.ScrollView>
 
@@ -244,7 +251,7 @@ const styles = StyleSheet.create({
 
     // ============ 横幅区 ============
     bannerWrapper: {
-        height: 240,
+        height: 180,
         overflow: 'hidden',
         backgroundColor: colors.backgroundGradientEnd,
     },
@@ -276,9 +283,9 @@ const styles = StyleSheet.create({
 
     // ============ 信息卡片（磨砂风格 Image3） ============
     infoCardWrapper: {
-        marginTop: -spacing.xxxl,
+        marginTop: -spacing.xxl,
         paddingHorizontal: spacing.lg,
-        marginBottom: spacing.xl,
+        marginBottom: spacing.md,
         zIndex: 10,
     },
     infoCard: {
@@ -383,7 +390,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: spacing.lg,
         paddingHorizontal: spacing.xl,
-        backgroundColor: colors.backgroundSection,
+        backgroundColor: '#E8E4DD',
         marginHorizontal: spacing.lg,
         marginTop: spacing.sm,
         borderRadius: borderRadius.lg,

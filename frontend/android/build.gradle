@@ -19,3 +19,17 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+// 强制所有子项目使用统一的 AGP 版本，避免第三方库（如 @react-native-community/blur）
+// 自带旧版 AGP 3.5.3 导致构建失败
+subprojects { sub ->
+    sub.buildscript {
+        repositories {
+            google()
+            mavenCentral()
+        }
+        dependencies {
+            classpath("com.android.tools.build:gradle:8.2.1")
+        }
+    }
+}

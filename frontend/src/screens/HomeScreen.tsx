@@ -1,4 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import Feather from 'react-native-vector-icons/Feather';
+import LinearGradient from 'react-native-linear-gradient';
+import { BlurView } from '@react-native-community/blur';
 import {
     View,
     Text,
@@ -15,7 +18,7 @@ import {
     Animated,
     Easing
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { merchantService } from '../services/merchantService';
 import { recommendationService } from '../services/recommendationService'; // 1. 引入推荐服务
 import { edgeSynergyService } from '../services/edgeSynergyService'; // 引入端云协同服务引擎
@@ -34,10 +37,12 @@ import weatherService, { WeatherData } from '../services/weatherService'; // 天
 import { debounce, cacheService } from '../utils/cacheUtils'; // 防抖和缓存工具
 
 const HomeScreen = ({ navigation }: any) => {
+    const insets = useSafeAreaInsets();
     const [restaurants, setRestaurants] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchText, setSearchText] = useState('');
+    const [activeSearchKeyword, setActiveSearchKeyword] = useState('');
     const [user, setUser] = useState<any>(null);
     const [currentLocation, setCurrentLocation] = useState<any>(null);
     const [lastLoadTime, setLastLoadTime] = useState(0); // 记录上次加载时间
@@ -69,6 +74,7 @@ const HomeScreen = ({ navigation }: any) => {
     const [showActiveRecommendation, setShowActiveRecommendation] = useState(false);
     // 开发者面板状态
     const [showDevPanel, setShowDevPanel] = useState(false);
+    const [showDevModal, setShowDevModal] = useState(false);
     // 天气感知弹窗状态
     const [showWeatherAlert, setShowWeatherAlert] = useState(false);
     // 上一次运动状态（用于检测变化）
@@ -105,7 +111,17 @@ const HomeScreen = ({ navigation }: any) => {
         // 🧠 初始化 Vosk 和 端侧大模型 (SLM)
         voiceInferenceService.init().catch(e => console.error("语音/大模型初始化失败:", e));
 
-        // 不要立即调用loadData，等待LocationDisplay提供位置
+        // 直接获取位置并加载数据
+        const initLocation = async () => {
+            try {
+                const loc = await locationService.getLocationWithPermission();
+                setCurrentLocation(loc);
+                loadData(loc);
+            } catch (e) {
+                console.error('初始定位失败:', e);
+            }
+        };
+        initLocation();
     }, []);
 
     // --- 新增: 端云协同双阶段动画控制 ---
@@ -419,7 +435,7 @@ const HomeScreen = ({ navigation }: any) => {
                     isLoadingRef.current = false;
                     clearTimeout(timeoutId);
                     // 后台静默更新天气
-                    weatherPromise.catch(() => {});
+                    weatherPromise.catch(() => { });
                     return;
                 }
             }
@@ -595,6 +611,20 @@ const HomeScreen = ({ navigation }: any) => {
         }
     };
 
+    // 搜索过滤（仅在点击搜索按钮后生效）
+    const filteredRestaurants = useMemo(() => {
+        if (!activeSearchKeyword) return restaurants;
+        const keyword = activeSearchKeyword.toLowerCase();
+        return restaurants.filter((r: any) => {
+            const name = (r.name || '').toLowerCase();
+            const desc = (r.description || '').toLowerCase();
+            const reason = (r.reason || r.recommendation_reason || '').toLowerCase();
+            const cuisine = (r.cuisine || r.category || '').toLowerCase();
+            const tags = Array.isArray(r.tags) ? r.tags.join(' ').toLowerCase() : '';
+            return name.includes(keyword) || desc.includes(keyword) || reason.includes(keyword) || cuisine.includes(keyword) || tags.includes(keyword);
+        });
+    }, [restaurants, activeSearchKeyword]);
+
     const toggleTag = (tag: string) => {
         if (selectedTags.includes(tag)) {
             setSelectedTags(prev => prev.filter(t => t !== tag));
@@ -605,188 +635,6 @@ const HomeScreen = ({ navigation }: any) => {
 
     const renderHeader = () => (
         <View style={styles.headerContainer}>
-            <LocationDisplay
-                onLocationChange={(loc) => {
-                    // 使用防抖处理位置变化
-                    const isCurrentDefault = currentLocation &&
-                        Math.abs(currentLocation.latitude - 39.9042) < 0.001 &&
-                        Math.abs(currentLocation.longitude - 116.4074) < 0.001;
-                    const isNewRealGPS = loc &&
-                        !(Math.abs(loc.latitude - 39.9042) < 0.001 && Math.abs(loc.longitude - 116.4074) < 0.001);
-
-                    // 首次从默认位置切换到真实位置，立即加载
-                    if (isCurrentDefault && isNewRealGPS) {
-                        setCurrentLocation(loc);
-                        loadData(loc);
-                        return;
-                    }
-
-                    // 微小变化时直接忽略
-                    if (currentLocation && hasInitialData) {
-                        const latDiff = Math.abs(loc.latitude - currentLocation.latitude);
-                        const lonDiff = Math.abs(loc.longitude - currentLocation.longitude);
-                        if (latDiff < 0.001 && lonDiff < 0.001) {
-                            return;
-                        }
-                    }
-
-                    setCurrentLocation(loc);
-                    // 使用防抖处理位置变化触发的数据加载
-                    if (shouldReload(loc)) {
-                        debouncedLoadData(loc);
-                    }
-                }}
-                showRefresh={true}
-            />
-
-            <StatusCapsule
-                weather={weatherData ? {
-                    condition: weatherData.condition,
-                    temperature: weatherData.temperature,
-                } : undefined}
-                onPress={() => {
-                    console.log('状态胶囊被点击');
-                }}
-            />
-
-            <View style={styles.welcomeRow}>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.welcomeText}>今天吃点什么?</Text>
-                    <Text style={styles.userName}>{user?.username || user?.nickname || '朋友'}</Text>
-                </View>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('OrderList')}
-                        style={{ padding: spacing.sm }}
-                    >
-                        <Text style={{ color: colors.textPrimary, fontWeight: fontWeight.semibold, fontSize: fontSize.sm }}>📜 订单</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-                        <Text style={styles.logoutText}>退出</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-            <TouchableOpacity style={styles.visionCard} onPress={startNutriVision}>
-                <View style={styles.visionIconContainer}>
-                    <Text style={{ fontSize: 24 }}>📸</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.visionTitle}>拍一拍：实景菜单营养透视</Text>
-                    <Text style={styles.visionSubtitle}>AI 识别热量、过敏原，定制健康推荐</Text>
-                </View>
-                <View style={styles.visionArrow}>
-                    <Text style={{ color: '#fff' }}>→</Text>
-                </View>
-            </TouchableOpacity>
-
-            {__DEV__ && (
-                <View style={{ marginBottom: spacing.md }}>
-                    <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}>
-                        <TouchableOpacity
-                            onPress={() => {
-                                setShowDevPanel(true);
-                            }}
-                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.primarySoft, borderRadius: borderRadius.lg, alignItems: 'center' }}
-                        >
-                            <Text style={{ color: colors.primary, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🏃 健康模拟</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={() => navigation.navigate('LocationDebug')}
-                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.infoBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
-                        >
-                            <Text style={{ color: colors.info, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🔍 位置调试</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}>
-                        <TouchableOpacity
-                            onPress={() => {
-                                health.simulateJustFinishedWorkout();
-                                setShowActiveRecommendation(true);
-                            }}
-                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.errorBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
-                        >
-                            <Text style={{ color: colors.error, fontWeight: fontWeight.bold, fontSize: fontSize.md }}>💪 模拟刚跑完步</Text>
-                            <Text style={{ color: colors.error, fontSize: fontSize.xs, marginTop: 2 }}>心率145 / 步数12000</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={() => {
-                                health.setDevMode(true);
-                                health.setSimulatedLightLux(20);
-                            }}
-                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.infoBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
-                        >
-                            <Text style={{ color: colors.accent, fontWeight: fontWeight.bold, fontSize: fontSize.md }}>🌙 模拟暗光场景</Text>
-                            <Text style={{ color: colors.accent, fontSize: fontSize.xs, marginTop: 2 }}>20 lux / 夜间室内</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-                        <TouchableOpacity
-                            onPress={() => {
-                                const rainWeather: WeatherData = {
-                                    condition: '大雨',
-                                    temperature: 18,
-                                    humidity: 95,
-                                    windSpeed: 20,
-                                    icon: '🌧️',
-                                    isRaining: true,
-                                    isHeavyRain: true,
-                                    isExtreme: false,
-                                    deliveryImpact: 'severe',
-                                    recommendation: '外面雨很大，已为您优先筛选配送运力充足、包装防水的商家',
-                                };
-                                setWeatherData(rainWeather);
-                                setShowWeatherAlert(true);
-                            }}
-                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.successBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
-                        >
-                            <Text style={{ color: colors.success, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🌧️ 模拟大雨</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={() => {
-                                const hotWeather: WeatherData = {
-                                    condition: '晴',
-                                    temperature: 38,
-                                    humidity: 40,
-                                    windSpeed: 5,
-                                    icon: '☀️',
-                                    isRaining: false,
-                                    isHeavyRain: false,
-                                    isExtreme: false,
-                                    deliveryImpact: 'minor',
-                                    recommendation: '天气炎热，为您推荐清凉解暑的美食',
-                                };
-                                setWeatherData(hotWeather);
-                                setShowWeatherAlert(true);
-                            }}
-                            style={{ flex: 1, padding: spacing.md, backgroundColor: colors.errorBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
-                        >
-                            <Text style={{ color: colors.error, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🥵 模拟高温</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            )}
-
-            <View style={styles.searchContainer}>
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder="搜索餐厅、菜系..."
-                    value={searchText}
-                    onChangeText={setSearchText}
-                />
-                <TouchableOpacity style={styles.searchButton}>
-                    <Text style={{ color: '#fff' }}>🔍</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.micButton, isListening && styles.micButtonActive]}
-                    onPress={startVoiceAssistant}
-                >
-                    <Text style={{ color: isListening ? colors.textOnPrimary : colors.primary, fontSize: 18 }}>
-                        {isListening ? '👂' : '🎤'}
-                    </Text>
-                </TouchableOpacity>
-            </View>
-
             {isSynergyMode && (
                 <View style={styles.synergyBanner}>
                     <Text style={styles.synergyBannerText}>✨ 本地健康守卫已启动：为您筛选符合隐私约束的安全餐品</Text>
@@ -804,11 +652,63 @@ const HomeScreen = ({ navigation }: any) => {
     const floatTranslateY = floatAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -15] });
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        <View style={{ flex: 1, backgroundColor: '#E8E4DD' }}>
+            <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
+
+            {/* 固定顶部导航栏 */}
+            <View style={[styles.topNavBar, { paddingTop: insets.top + spacing.sm }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={styles.welcomeText}>今天吃点什么?</Text>
+                    <TouchableOpacity onPress={() => setShowDevModal(true)} style={{ padding: spacing.xs, marginLeft: spacing.xs }}>
+                        <Feather name="cloud" size={14} color={colors.textTertiary} />
+                    </TouchableOpacity>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={styles.userName}>{user?.username || user?.nickname || '朋友'}</Text>
+                    <View style={styles.searchContainer}>
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="搜索..."
+                            value={searchText}
+                            onChangeText={setSearchText}
+                        />
+                        <TouchableOpacity activeOpacity={0.7} onPress={() => { setActiveSearchKeyword(searchText.trim()); }}>
+                            <LinearGradient
+                                colors={['#F2784B', '#D9613A']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.searchButton}
+                            >
+                                <Feather name="search" size={16} color="#fff" />
+                            </LinearGradient>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            activeOpacity={0.7}
+                            onPress={startVoiceAssistant}
+                        >
+                            <LinearGradient
+                                colors={isListening
+                                    ? ['#F2784B', '#C4522E']
+                                    : ['#FFF0E8', '#F9D4C0']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={[styles.micButton, isListening && styles.micButtonActive]}
+                            >
+                                <Feather name={isListening ? 'radio' : 'mic'} size={16} color={isListening ? colors.textOnPrimary : colors.primary} />
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+            <LinearGradient
+                colors={['rgba(0,0,0,0.03)', 'transparent']}
+                style={styles.topNavShadowGradient}
+                pointerEvents="none"
+            />
 
             <FlatList
-                data={restaurants}
+                style={{ flex: 1 }}
+                data={filteredRestaurants}
                 keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
                 renderItem={({ item }) => {
                     const displayItem = { ...item };
@@ -832,7 +732,9 @@ const HomeScreen = ({ navigation }: any) => {
                 ListEmptyComponent={
                     !(loading || synergyPhase > 0) ? (
                         <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>暂时没有推荐餐厅</Text>
+                            <Text style={styles.emptyText}>
+                                {activeSearchKeyword ? `未找到"${activeSearchKeyword}"相关餐厅` : '暂时没有推荐餐厅'}
+                            </Text>
                         </View>
                     ) : null
                 }
@@ -986,10 +888,18 @@ const HomeScreen = ({ navigation }: any) => {
                                 <Text style={styles.modalBtnTextCancel}>取消</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.modalBtn, styles.modalBtnConfirm]}
                                 onPress={confirmAnalysis}
+                                activeOpacity={0.7}
+                                style={{ flex: 1 }}
                             >
-                                <Text style={styles.modalBtnTextConfirm}>开始分析</Text>
+                                <LinearGradient
+                                    colors={['#FFA07A', '#C4422E']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={[styles.modalBtn, styles.modalBtnConfirm]}
+                                >
+                                    <Text style={styles.modalBtnTextConfirm}>开始分析</Text>
+                                </LinearGradient>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -1013,6 +923,142 @@ const HomeScreen = ({ navigation }: any) => {
                 onClose={() => setShowDevPanel(false)}
             />
 
+            {/* 开发模拟工具弹窗 */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={showDevModal}
+                onRequestClose={() => setShowDevModal(false)}
+            >
+                <View style={styles.modalCenteredView}>
+                    <View style={[styles.modalView, { width: '92%' }]}>
+                        <Text style={styles.modalTitle}>开发模拟工具</Text>
+                        <Text style={styles.modalSubtitle}>快速模拟各种场景进行调试</Text>
+
+                        {/* 状态胶囊 */}
+                        <View style={{ width: '100%', marginBottom: spacing.md }}>
+                            <StatusCapsule
+                                weather={weatherData ? {
+                                    condition: weatherData.condition,
+                                    temperature: weatherData.temperature,
+                                } : undefined}
+                                onPress={() => {
+                                    console.log('状态胶囊被点击');
+                                }}
+                            />
+                        </View>
+
+                        {/* 位置信息卡片 */}
+                        <View style={{ width: '100%', marginBottom: spacing.md }}>
+                            <LocationDisplay
+                                onLocationChange={(loc) => {
+                                    const isCurrentDefault = currentLocation &&
+                                        Math.abs(currentLocation.latitude - 39.9042) < 0.001 &&
+                                        Math.abs(currentLocation.longitude - 116.4074) < 0.001;
+                                    const isNewRealGPS = loc &&
+                                        !(Math.abs(loc.latitude - 39.9042) < 0.001 && Math.abs(loc.longitude - 116.4074) < 0.001);
+                                    if (isCurrentDefault && isNewRealGPS) {
+                                        setCurrentLocation(loc);
+                                        loadData(loc);
+                                        return;
+                                    }
+                                    if (currentLocation && hasInitialData) {
+                                        const latDiff = Math.abs(loc.latitude - currentLocation.latitude);
+                                        const lonDiff = Math.abs(loc.longitude - currentLocation.longitude);
+                                        if (latDiff < 0.001 && lonDiff < 0.001) return;
+                                    }
+                                    setCurrentLocation(loc);
+                                    if (shouldReload(loc)) debouncedLoadData(loc);
+                                }}
+                                showRefresh={true}
+                            />
+                        </View>
+
+                        <View style={{ width: '100%', gap: spacing.sm }}>
+                            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                                <TouchableOpacity
+                                    onPress={() => { setShowDevModal(false); setShowDevPanel(true); }}
+                                    style={{ flex: 1, padding: spacing.md, backgroundColor: colors.primarySoft, borderRadius: borderRadius.lg, alignItems: 'center' }}
+                                >
+                                    <Text style={{ color: colors.primary, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🏃 健康模拟</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => { setShowDevModal(false); navigation.navigate('LocationDebug'); }}
+                                    style={{ flex: 1, padding: spacing.md, backgroundColor: colors.infoBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
+                                >
+                                    <Text style={{ color: colors.info, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🔍 位置调试</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setShowDevModal(false);
+                                        health.simulateJustFinishedWorkout();
+                                        setShowActiveRecommendation(true);
+                                    }}
+                                    style={{ flex: 1, padding: spacing.md, backgroundColor: colors.errorBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
+                                >
+                                    <Text style={{ color: colors.error, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>💪 模拟跑完步</Text>
+                                    <Text style={{ color: colors.error, fontSize: fontSize.xs, marginTop: 2 }}>心率145 / 步数12000</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setShowDevModal(false);
+                                        health.setDevMode(true);
+                                        health.setSimulatedLightLux(20);
+                                    }}
+                                    style={{ flex: 1, padding: spacing.md, backgroundColor: colors.infoBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
+                                >
+                                    <Text style={{ color: colors.accent, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🌙 模拟暗光</Text>
+                                    <Text style={{ color: colors.accent, fontSize: fontSize.xs, marginTop: 2 }}>20 lux / 夜间室内</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setShowDevModal(false);
+                                        const rainWeather: WeatherData = {
+                                            condition: '大雨', temperature: 18, humidity: 95, windSpeed: 20,
+                                            icon: '🌧️', isRaining: true, isHeavyRain: true, isExtreme: false,
+                                            deliveryImpact: 'severe',
+                                            recommendation: '外面雨很大，已为您优先筛选配送运力充足、包装防水的商家',
+                                        };
+                                        setWeatherData(rainWeather);
+                                        setShowWeatherAlert(true);
+                                    }}
+                                    style={{ flex: 1, padding: spacing.md, backgroundColor: colors.successBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
+                                >
+                                    <Text style={{ color: colors.success, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🌧️ 模拟大雨</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setShowDevModal(false);
+                                        const hotWeather: WeatherData = {
+                                            condition: '晴', temperature: 38, humidity: 40, windSpeed: 5,
+                                            icon: '☀️', isRaining: false, isHeavyRain: false, isExtreme: false,
+                                            deliveryImpact: 'minor',
+                                            recommendation: '天气炎热，为您推荐清凉解暑的美食',
+                                        };
+                                        setWeatherData(hotWeather);
+                                        setShowWeatherAlert(true);
+                                    }}
+                                    style={{ flex: 1, padding: spacing.md, backgroundColor: colors.errorBg, borderRadius: borderRadius.lg, alignItems: 'center' }}
+                                >
+                                    <Text style={{ color: colors.error, fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>🥵 模拟高温</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.modalBtn, styles.modalBtnCancel, { marginTop: spacing.lg, width: '100%', paddingVertical: spacing.lg }]}
+                            onPress={() => setShowDevModal(false)}
+                        >
+                            <Text style={styles.modalBtnTextCancel}>关闭</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
             <WeatherAlertModal
                 visible={showWeatherAlert}
                 weather={weatherData}
@@ -1025,7 +1071,52 @@ const HomeScreen = ({ navigation }: any) => {
                     }
                 }}
             />
-        </SafeAreaView>
+
+            {/* 底部导航栏阴影 + 毛玻璃 */}
+            <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.03)']}
+                style={styles.bottomNavShadowGradient}
+                pointerEvents="none"
+            />
+            <View style={styles.bottomNavBar}>
+                <BlurView
+                    style={StyleSheet.absoluteFill}
+                    blurType="light"
+                    blurAmount={18}
+                    reducedTransparencyFallbackColor="rgba(255,255,255,0.85)"
+                />
+                <LinearGradient
+                    colors={['rgba(255,255,255,0.6)', 'rgba(250,250,248,0.9)']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                />
+                <TouchableOpacity activeOpacity={0.5} style={styles.navItem} onPress={handleRefresh}>
+                    <View style={styles.navIconWrap}>
+                        <Feather name="compass" size={22} color={colors.textPrimary} />
+                    </View>
+                    <Text style={styles.navLabel}>推荐</Text>
+                </TouchableOpacity>
+                <TouchableOpacity activeOpacity={0.5} style={styles.navItem} onPress={startNutriVision}>
+                    <View style={styles.navIconWrap}>
+                        <Feather name="camera" size={22} color={colors.textPrimary} />
+                    </View>
+                    <Text style={styles.navLabel}>拍一拍</Text>
+                </TouchableOpacity>
+                <TouchableOpacity activeOpacity={0.5} style={styles.navItem} onPress={() => navigation.navigate('OrderList')}>
+                    <View style={styles.navIconWrap}>
+                        <Feather name="file-text" size={22} color={colors.textPrimary} />
+                    </View>
+                    <Text style={styles.navLabel}>订单</Text>
+                </TouchableOpacity>
+                <TouchableOpacity activeOpacity={0.5} style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
+                    <View style={styles.navIconWrap}>
+                        <Feather name="user" size={22} color={colors.textPrimary} />
+                    </View>
+                    <Text style={styles.navLabel}>我的</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
     );
 };
 
@@ -1037,12 +1128,23 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.background,
     },
+    topNavShadowGradient: {
+        width: '100%',
+        height: 6,
+    },
+    topNavBar: {
+        backgroundColor: colors.surface,
+        paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.sm,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(0,0,0,0.06)',
+    },
     listContent: {
         padding: spacing.lg,
-        paddingBottom: 48,
+        paddingBottom: 100,
     },
     headerContainer: {
-        marginBottom: spacing.section,
+        marginBottom: spacing.xs,
     },
     welcomeRow: {
         flexDirection: 'row',
@@ -1058,10 +1160,10 @@ const styles = StyleSheet.create({
         letterSpacing: 0.3,
     },
     userName: {
-        fontSize: fontSize.title,
+        fontSize: fontSize.lg,
         fontWeight: fontWeight.bold,
         color: colors.textPrimary,
-        marginTop: spacing.xs,
+        marginRight: spacing.sm,
     },
     logoutBtn: {
         paddingHorizontal: spacing.lg,
@@ -1076,41 +1178,50 @@ const styles = StyleSheet.create({
         fontWeight: fontWeight.semibold,
         fontSize: fontSize.sm,
     },
-    // 搜索栏 - 磨砂效果 + 圆角
+    // 搜索栏
     searchContainer: {
         flexDirection: 'row',
-        gap: spacing.sm,
-        marginBottom: spacing.lg,
+        alignItems: 'center',
+        gap: 6,
+        flex: 1,
+        marginLeft: spacing.md,
     },
     searchInput: {
         flex: 1,
-        backgroundColor: colors.backgroundSection,
+        backgroundColor: '#F0EDE8',
         borderRadius: borderRadius.full,
-        paddingHorizontal: spacing.xl,
-        height: 50,
+        paddingHorizontal: spacing.md,
+        height: 30,
         borderWidth: 1,
-        borderColor: colors.border,
-        fontSize: fontSize.md,
+        borderColor: '#D5D0C8',
+        fontSize: fontSize.xs,
         color: colors.textPrimary,
     },
     searchButton: {
-        width: 50,
-        height: 50,
-        backgroundColor: colors.primary,
+        width: 36,
+        height: 36,
         borderRadius: borderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
-        ...shadows.primary,
+        shadowColor: '#D9613A',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 4,
     },
     micButton: {
-        width: 50,
-        height: 50,
-        backgroundColor: colors.surface,
+        width: 36,
+        height: 36,
         borderRadius: borderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 1.5,
-        borderColor: colors.primaryLight,
+        borderWidth: 1,
+        borderColor: 'rgba(242,120,75,0.15)',
+        shadowColor: '#2C3038',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     micButtonActive: {
         backgroundColor: colors.primary,
@@ -1472,8 +1583,11 @@ const styles = StyleSheet.create({
         backgroundColor: colors.backgroundSection,
     },
     modalBtnConfirm: {
-        backgroundColor: colors.primary,
-        ...shadows.primary,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 8,
     },
     modalBtnTextCancel: {
         color: colors.textSecondary,
@@ -1482,6 +1596,31 @@ const styles = StyleSheet.create({
     modalBtnTextConfirm: {
         color: colors.textOnPrimary,
         fontWeight: fontWeight.bold,
+    },
+
+    // --- 底部导航栏 ---
+    bottomNavShadowGradient: {
+        width: '100%',
+        height: 3,
+    },
+    bottomNavBar: {
+        flexDirection: 'row',
+        width: '100%',
+        overflow: 'hidden',
+    },
+    navItem: {
+        flex: 1,
+        alignItems: 'center',
+        paddingVertical: 10,
+    },
+    navIconWrap: {
+        marginBottom: 2,
+    },
+    navLabel: {
+        fontSize: fontSize.xs,
+        color: colors.textSecondary,
+        fontWeight: fontWeight.semibold,
+        letterSpacing: 0.3,
     },
 });
 

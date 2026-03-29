@@ -60,7 +60,7 @@ const ServiceMarketplaceScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
+    container: { flex: 1, backgroundColor: '#F0EDE8' },
     card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center' },
     name: { fontSize: 16, fontWeight: 'bold', color: '#333' },
     desc: { fontSize: 12, color: '#666', marginVertical: 4 },

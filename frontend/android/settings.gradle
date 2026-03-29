@@ -12,6 +12,7 @@ dependencyResolutionManagement {
         maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
         google()
         mavenCentral()
+        maven { url 'https://jitpack.io' }
         // OPPO Health SDK Maven Repository (Releases)
         maven {
             url 'https://maven.columbus.heytapmobi.com/repository/heytap-health-releases/'

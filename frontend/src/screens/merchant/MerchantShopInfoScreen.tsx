@@ -18,7 +18,7 @@ const MerchantShopInfoScreen = () => {
     };
 
     if (loading) return <ActivityIndicator style={{ marginTop: 50 }} color="#e85a2d" />;
-    if (!merchant) return <View style={styles.container}><Text>加载失败</Text></View>;
+    if (!merchant) return <View style={styles.container}><Text style={{ textAlign: 'center', marginTop: 50, color: '#999', fontSize: 16 }}>暂无店铺信息，请先完成商家入驻</Text></View>;
 
     const InfoItem = ({ label, value }: any) => (
         <View style={styles.item}>
@@ -49,7 +49,7 @@ const MerchantShopInfoScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
+    container: { flex: 1, backgroundColor: '#F0EDE8' },
     card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16 },
     header: { fontSize: 18, fontWeight: 'bold', marginBottom: 16, color: '#333' },
     item: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12, borderBottomWidth: 1, borderBottomColor: '#f9f9f9', paddingBottom: 8 },

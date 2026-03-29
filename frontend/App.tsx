@@ -1,7 +1,16 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+const AppTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: '#FAFAF8',
+    card: '#FFFFFF',
+  },
+};
 
 // 健康上下文 Provider
 import { HealthProvider } from './src/hooks/useHealthContext';
@@ -40,8 +49,11 @@ function App(): React.JSX.Element {
   return (
     <SafeAreaProvider>
       <HealthProvider>
-        <NavigationContainer>
-          <Stack.Navigator initialRouteName="Login">
+        <NavigationContainer theme={AppTheme}>
+          <Stack.Navigator
+            initialRouteName="Login"
+            screenOptions={{ contentStyle: { backgroundColor: '#FAFAF8' } }}
+          >
 
             {/* 登录页 */}
             <Stack.Screen
@@ -54,28 +66,32 @@ function App(): React.JSX.Element {
             <Stack.Screen
               name="Home"
               component={HomeScreen}
-              options={{ title: '美食广场', headerBackVisible: false }}
+              options={{ headerShown: false }}
             />
 
-          {/* 实景菜单营养透视结果页*/}
-          <Stack.Screen
-            name="NutriVisionResult"
-            component={NutriVisionResultScreen}
-            options={{ headerShown: false }} // 全屏显示
-          />
+            {/* 实景菜单营养透视结果页*/}
+            <Stack.Screen
+              name="NutriVisionResult"
+              component={NutriVisionResultScreen}
+              options={{ headerShown: false }} // 全屏显示
+            />
 
-          {/* 管理端 (PC端功能，App端保留入口) */}
-          <Stack.Screen
-            name="AdminDashboard"
-            component={AdminDashboardScreen}
-            options={{ title: '系统管理', headerBackVisible: false }}
-          />
+            {/* 管理端 (PC端功能，App端保留入口) */}
+            <Stack.Screen
+              name="AdminDashboard"
+              component={AdminDashboardScreen}
+              options={{ title: '系统管理', headerBackVisible: false }}
+            />
 
             {/* 核心业务流程 */}
             <Stack.Screen
               name="RestaurantDetail"
               component={RestaurantDetailScreen}
-              options={{ title: '餐厅详情' }}
+              options={{
+                title: '餐厅详情',
+                headerStyle: { backgroundColor: '#FFFFFF' },
+                headerShadowVisible: true,
+              }}
             />
             <Stack.Screen
               name="Cart"

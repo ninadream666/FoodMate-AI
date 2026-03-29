@@ -204,6 +204,7 @@ export default {
     post: (service, endpoint, data, options = {}) => request(service, endpoint, { method: 'POST', body: data, ...options }),
     put: (service, endpoint, data, options = {}) => request(service, endpoint, { method: 'PUT', body: data, ...options }),
     del: (service, endpoint, options = {}) => request(service, endpoint, { method: 'DELETE', ...options }),
+    patch: (service, endpoint, data, options = {}) => request(service, endpoint, { method: 'PATCH', body: data, ...options }),
     // 清除缓存方法
     clearCache: (type) => cacheService.clear(type),
     clearAllCache: () => cacheService.clearAll(),

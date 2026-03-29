@@ -15,7 +15,7 @@ interface OptimizedImageProps extends Omit<FastImageProps, 'source'> {
 }
 
 // 默认占位图
-const DEFAULT_PLACEHOLDER = 'https://via.placeholder.com/300x200/f5f5f5/999999?text=Loading...';
+const DEFAULT_PLACEHOLDER = 'https://loremflickr.com/300/200/food,meal';
 
 // 优化 Google 图片 URL
 const getOptimizedGoogleUrl = (url: string, width: number = 300): string => {

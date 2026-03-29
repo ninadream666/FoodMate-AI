@@ -5,14 +5,14 @@ import api from './apiClient';
 // 使用 Unsplash 作为备用图片源，加载更快且 URL 更短
 const CUISINE_MENUS = {
     '火锅': [
-        { id: 1, name: '麻辣锅底', description: '经典川味麻辣锅底', price: 68.0, category: 'mainCourses', imageUrl: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=200' },
-        { id: 4, name: '精品肥牛', description: '优质牛肉', price: 48.0, category: 'appetizers', imageUrl: 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=200' },
-        { id: 7, name: '酸梅汤', description: '解腻开胃', price: 8.0, category: 'drinks', imageUrl: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=200' },
+        { id: 1, name: '麻辣锅底', description: '经典川味麻辣锅底', price: 68.0, category: 'mainCourses', imageUrl: 'https://loremflickr.com/200/200/hotpot,spicy' },
+        { id: 4, name: '精品肥牛', description: '优质牛肉', price: 48.0, category: 'appetizers', imageUrl: 'https://loremflickr.com/200/200/beef,meat' },
+        { id: 7, name: '酸梅汤', description: '解腻开胃', price: 8.0, category: 'drinks', imageUrl: 'https://loremflickr.com/200/200/juice,drink' },
     ],
     'default': [
-        { id: 101, name: '招牌汉堡', description: '双层牛肉，芝士满满', price: 38.0, category: 'mainCourses', imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200' },
-        { id: 102, name: '炸薯条', description: '金黄酥脆', price: 12.0, category: 'appetizers', imageUrl: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200' },
-        { id: 103, name: '冰可乐', description: '快乐水', price: 6.0, category: 'drinks', imageUrl: 'https://images.unsplash.com/photo-1581006852262-e4307cf6283a?w=200' },
+        { id: 101, name: '招牌汉堡', description: '双层牛肉，芝士满满', price: 38.0, category: 'mainCourses', imageUrl: 'https://loremflickr.com/200/200/burger,hamburger' },
+        { id: 102, name: '炸薯条', description: '金黄酥脆', price: 12.0, category: 'appetizers', imageUrl: 'https://loremflickr.com/200/200/fries,potato' },
+        { id: 103, name: '冰可乐', description: '快乐水', price: 6.0, category: 'drinks', imageUrl: 'https://loremflickr.com/200/200/cola,soda' },
     ]
 };
 

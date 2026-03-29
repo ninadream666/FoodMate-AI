@@ -7,9 +7,9 @@ import OptimizedImage from './OptimizedImage';
 
 // 默认图片列表（已简化 URL）
 const defaultImages = [
-    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
-    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
-    'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400',
+    'https://loremflickr.com/400/300/food,restaurant',
+    'https://loremflickr.com/400/300/dish,cuisine',
+    'https://loremflickr.com/400/300/meal,dinner',
 ];
 
 interface Props {
@@ -23,8 +23,11 @@ const RestaurantCard = memo(({ restaurant, onPress }: Props) => {
 
     // 图片处理：使用 useMemo 避免每次渲染都计算随机图片
     const imageUrl = useMemo(() => {
-        return restaurant.image || restaurant.imageUrl || restaurant.features?.image ||
-            defaultImages[Math.floor(Math.random() * defaultImages.length)];
+        const url = restaurant.image || restaurant.imageUrl || restaurant.features?.image || '';
+        if (!url || url.includes('unsplash.com')) {
+            return defaultImages[Math.floor(Math.random() * defaultImages.length)];
+        }
+        return url;
     }, [restaurant.image, restaurant.imageUrl, restaurant.features?.image]);
 
     // AI评分：优先使用后端返回的 score（60-100），final_score，最后默认85

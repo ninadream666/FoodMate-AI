@@ -1,10 +1,11 @@
 import React, { memo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
 import OptimizedImage from './OptimizedImage';
 
 // 使用更简短的默认图片 URL
-const defaultImage = 'https://images.unsplash.com/photo-1T546069901-ba9599a7e63c?w=200';
+const defaultImage = 'https://loremflickr.com/200/200/food,dish';
 
 interface Props {
     dish: any;
@@ -16,7 +17,7 @@ const MenuListItem = memo(({ dish, onAdd }: Props) => {
         <View style={styles.container}>
             {/* 左侧图片 - 使用优化的图片组件 */}
             <OptimizedImage
-                uri={dish.imageUrl || defaultImage}
+                uri={(!dish.imageUrl || dish.imageUrl.includes('unsplash.com') || dish.imageUrl.includes('picsum.photos')) ? defaultImage : dish.imageUrl}
                 width={150}
                 style={styles.image}
                 priority="low"
@@ -31,8 +32,15 @@ const MenuListItem = memo(({ dish, onAdd }: Props) => {
             </View>
 
             {/* 右侧添加按钮 */}
-            <TouchableOpacity style={styles.addButton} onPress={() => onAdd(dish)}>
-                <Text style={styles.addText}>+</Text>
+            <TouchableOpacity activeOpacity={0.7} onPress={() => onAdd(dish)}>
+                <LinearGradient
+                    colors={['#FFA07A', '#C4422E']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.addButton}
+                >
+                    <Text style={styles.addText}>+</Text>
+                </LinearGradient>
             </TouchableOpacity>
         </View>
     );
@@ -45,11 +53,16 @@ const styles = StyleSheet.create({
         padding: spacing.lg,
         marginHorizontal: spacing.lg,
         marginVertical: spacing.sm,
-        backgroundColor: colors.cardBgSolid,
+        backgroundColor: '#FFFFFF',
         borderRadius: borderRadius.xl,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: colors.cardBorder,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     // 圆角图片 - 磨砂风格（Image3 ClipRRect）
     image: {
@@ -85,10 +98,13 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: borderRadius.full,
-        backgroundColor: colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
-        ...shadows.primary,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 8,
     },
     addText: {
         color: colors.textOnPrimary,

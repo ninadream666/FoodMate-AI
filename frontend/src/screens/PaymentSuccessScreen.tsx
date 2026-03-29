@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 
 const PaymentSuccessScreen = ({ route, navigation }: any) => {
     const { order } = route.params || {};
@@ -56,8 +57,15 @@ const PaymentSuccessScreen = ({ route, navigation }: any) => {
 
                 <View style={styles.divider} />
 
-                <TouchableOpacity style={styles.primaryBtn} onPress={handleViewDetail}>
-                    <Text style={styles.primaryBtnText}>查看订单详情</Text>
+                <TouchableOpacity onPress={handleViewDetail} activeOpacity={0.7} style={{ width: '100%' }}>
+                    <LinearGradient
+                        colors={['#FFA07A', '#C4422E']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.primaryBtn}
+                    >
+                        <Text style={styles.primaryBtnText}>查看订单详情</Text>
+                    </LinearGradient>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.secondaryBtn} onPress={handleHome}>
@@ -74,7 +82,7 @@ import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '..
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: '#FFFFFF',
     },
     content: {
         padding: spacing.xl,
@@ -88,8 +96,12 @@ const styles = StyleSheet.create({
         padding: spacing.xxxl,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: colors.cardBorder,
-        ...shadows.xl,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     iconContainer: {
         width: 80,
@@ -165,12 +177,15 @@ const styles = StyleSheet.create({
     primaryBtn: {
         width: '100%',
         height: 54,
-        backgroundColor: colors.primary,
         borderRadius: borderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: spacing.md,
-        ...shadows.primary,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 8,
     },
     primaryBtnText: {
         color: colors.textOnPrimary,

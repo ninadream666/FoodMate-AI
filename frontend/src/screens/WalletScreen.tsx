@@ -143,7 +143,7 @@ import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '..
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: '#F5F3EF',
     },
 
     balanceCard: {
@@ -183,20 +183,27 @@ const styles = StyleSheet.create({
 
     tabs: {
         flexDirection: 'row',
-        backgroundColor: colors.surface,
-        paddingVertical: spacing.md,
+        backgroundColor: '#FFFFFF',
+        padding: spacing.xs,
         marginHorizontal: spacing.lg,
-        borderRadius: borderRadius.lg,
+        borderRadius: borderRadius.full,
         marginBottom: spacing.md,
+        borderWidth: 1,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     tab: {
         flex: 1,
         alignItems: 'center',
         paddingVertical: spacing.sm,
+        borderRadius: borderRadius.full,
     },
     activeTab: {
-        borderBottomWidth: 2,
-        borderBottomColor: colors.primary,
+        backgroundColor: colors.primary,
     },
     tabText: {
         color: colors.textTertiary,
@@ -204,7 +211,7 @@ const styles = StyleSheet.create({
         fontSize: fontSize.sm,
     },
     activeTabText: {
-        color: colors.primary,
+        color: colors.textOnPrimary,
     },
 
     list: { padding: spacing.lg },

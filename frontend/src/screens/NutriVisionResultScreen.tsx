@@ -12,6 +12,8 @@ import {
     Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import LinearGradient from 'react-native-linear-gradient';
+import Feather from 'react-native-vector-icons/Feather';
 import { nutriVisionService } from '../services/nutriVisionService';
 import NutriVisionLoading from '../components/NutriVisionLoading';
 
@@ -122,7 +124,6 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                                 style={styles.viewOriginalBtn}
                                 onPress={() => setShowOriginalImage(true)}
                             >
-                                <Icon name="visibility" size={16} color="#fff" />
                                 <Text style={styles.viewOriginalText}>查看原图</Text>
                             </TouchableOpacity>
                         </View>
@@ -131,7 +132,6 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                     {/* AI 总结 */}
                     <View style={styles.aiSummaryBox}>
                         <View style={styles.aiHeader}>
-                            <Icon name="auto_awesome" size={20} color="#e85a2d" />
                             <Text style={styles.aiTitle}>AI 智能总结</Text>
                         </View>
                         <Text style={styles.aiText}>
@@ -145,7 +145,6 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
                             <Text style={styles.sectionTitle}>智能小助理推荐</Text>
-                            <Icon name="auto_awesome" size={20} color="#e85a2d" />
                         </View>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.recsScroll}>
                             {result.top_recommendations.map((recName: string, index: number) => {
@@ -155,7 +154,7 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                                     <View key={index} style={styles.recCard}>
                                         <View style={styles.recCardTop}>
                                             <Text style={styles.recName} numberOfLines={1}>{recName}</Text>
-                                            <Icon name="thumb_up" size={16} color="#e85a2d" />
+                                            <Feather name="thumbs-up" size={14} color="#e85a2d" />
                                         </View>
                                         <View style={styles.recBadge}>
                                             <Text style={styles.recBadgeText}>健康首选</Text>
@@ -172,7 +171,7 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
 
                 {/* 3. 详细透视列表 */}
                 <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>全菜单营养明细</Text>
+                    <Text style={[styles.sectionTitle, { marginBottom: 12, marginTop: 8 }]}>全菜单营养明细</Text>
                     
                     {result?.items?.map((item: any, index: number) => (
                         <TouchableOpacity 
@@ -184,15 +183,18 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                                 <View style={styles.itemHeader}>
                                     <Text style={styles.itemName}>{item.name}</Text>
                                     {item.is_recommended && (
-                                        <Icon name="check_circle" size={16} color="#4caf50" />
-                                    )}
-                                    {/* 警告 Badge */}
-                                    {item.warnings && (
-                                        <View style={styles.warningBadge}>
-                                            <Text style={styles.warningText}>⚠️ {item.warnings}</Text>
-                                        </View>
+                                        <Feather name="check-circle" size={14} color="#4caf50" />
                                     )}
                                 </View>
+                                {/* 警告 Badge */}
+                                {item.warnings && (
+                                    <View style={styles.warningBadge}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 4 }}>
+                                            <Feather name="alert-triangle" size={12} color={colors.warning} style={{ marginTop: 2 }} />
+                                            <Text style={[styles.warningText, { flexShrink: 1 }]}>{item.warnings}</Text>
+                                        </View>
+                                    </View>
+                                )}
                                 <Text style={styles.itemIngredients} numberOfLines={1}>
                                     {item.ingredients?.join(', ')}
                                 </Text>
@@ -223,15 +225,17 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                     style={styles.btnSecondary} 
                     onPress={() => navigation.goBack()}
                 >
-                    <Icon name="photo_camera" size={20} color="#333" />
                     <Text style={styles.btnSecondaryText}>重新拍摄</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                    style={styles.btnPrimary} 
-                    onPress={handleSaveRecord}
-                >
-                    <Icon name="favorite" size={20} color="#fff" />
-                    <Text style={styles.btnPrimaryText}>保存到健康记录</Text>
+                <TouchableOpacity onPress={handleSaveRecord} activeOpacity={0.7} style={{ flex: 1 }}>
+                    <LinearGradient
+                        colors={['#FFA07A', '#C4422E']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.btnPrimary}
+                    >
+                        <Text style={styles.btnPrimaryText}>保存到健康记录</Text>
+                    </LinearGradient>
                 </TouchableOpacity>
             </View>
 
@@ -273,14 +277,17 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
 
                         {selectedItem?.warnings && (
                             <View style={[styles.detailRow, { marginTop: 10, backgroundColor: '#fff3e0', padding: 8, borderRadius: 8 }]}>
-                                <Text style={[styles.detailLabel, { color: '#e65100', width: 60 }]}>⚠️ 注意:</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, width: 60 }}>
+                                    <Feather name="alert-triangle" size={14} color="#e65100" />
+                                    <Text style={[styles.detailLabel, { color: '#e65100' }]}>注意:</Text>
+                                </View>
                                 <Text style={[styles.detailValue, { color: '#e65100' }]}>{selectedItem?.warnings}</Text>
                             </View>
                         )}
                         
                         {selectedItem?.is_recommended && (
                             <View style={{ marginTop: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                                <Icon name="check_circle" size={20} color="#4caf50" />
+                                <Feather name="check-circle" size={18} color="#4caf50" />
                                 <Text style={{ marginLeft: 5, color: '#4caf50', fontWeight: 'bold' }}>AI 推荐健康选择</Text>
                             </View>
                         )}
@@ -304,14 +311,14 @@ import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '..
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: '#F0EDE8',
     },
 
     // 导航栏 - 北欧磨砂效果
     navBar: {
         backgroundColor: colors.frostedBgStrong,
-        paddingHorizontal: spacing.lg,
-        paddingBottom: spacing.md,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -329,13 +336,17 @@ const styles = StyleSheet.create({
 
     // 概览卡片 - 北欧磨砂风格
     summaryCard: {
-        backgroundColor: colors.cardBg,
+        backgroundColor: '#FFFFFF',
         borderRadius: borderRadius.xl,
         overflow: 'hidden',
         marginBottom: spacing.xxl,
         borderWidth: 1,
-        borderColor: colors.cardBorder,
-        ...shadows.card,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     summaryImageContainer: {
         height: 160,
@@ -397,15 +408,22 @@ const styles = StyleSheet.create({
     recsScroll: {
         marginHorizontal: -spacing.lg,
         paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.sm,
+        overflow: 'visible',
     },
     recCard: {
         width: 180,
-        backgroundColor: colors.cardBg,
+        backgroundColor: '#FFFFFF',
         borderRadius: borderRadius.lg,
         padding: spacing.md,
         marginRight: spacing.md,
         borderWidth: 1,
-        borderColor: colors.cardBorder,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     recCardTop: {
         flexDirection: 'row',
@@ -438,7 +456,7 @@ const styles = StyleSheet.create({
 
     // 列表项 - 北欧磨砂卡片
     menuItemCard: {
-        backgroundColor: colors.cardBg,
+        backgroundColor: '#FFFFFF',
         padding: spacing.lg,
         borderRadius: borderRadius.lg,
         flexDirection: 'row',
@@ -446,7 +464,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: spacing.md,
         borderWidth: 1,
-        borderColor: colors.cardBorder,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     itemHeader: {
         flexDirection: 'row',
@@ -464,6 +487,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.xs,
         borderRadius: borderRadius.sm,
+        marginTop: spacing.xs,
+        alignSelf: 'flex-start',
     },
     warningText: {
         fontSize: fontSize.xs,
@@ -498,7 +523,7 @@ const styles = StyleSheet.create({
     btnSecondary: {
         flex: 1,
         height: 50,
-        borderRadius: borderRadius.lg,
+        borderRadius: borderRadius.full,
         borderWidth: 1.5,
         borderColor: colors.border,
         flexDirection: 'row',
@@ -506,6 +531,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: spacing.sm,
         backgroundColor: colors.surface,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 8,
     },
     btnSecondaryText: {
         color: colors.textPrimary,
@@ -513,15 +543,17 @@ const styles = StyleSheet.create({
         fontSize: fontSize.sm,
     },
     btnPrimary: {
-        flex: 1.5,
         height: 50,
-        borderRadius: borderRadius.lg,
-        backgroundColor: colors.primary,
+        borderRadius: borderRadius.full,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: spacing.sm,
-        ...shadows.primary,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 8,
     },
     btnPrimaryText: {
         color: colors.textOnPrimary,

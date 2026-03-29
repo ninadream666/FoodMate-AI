@@ -42,142 +42,82 @@ class LocationService {
         return true; // iOS 权限在 Info.plist 中配置
     }
 
-    // 获取当前位置
+    // 获取当前位置（快速优先策略：网络定位和GPS并行竞速）
     async getCurrentLocation() {
         return new Promise((resolve) => {
-            // 检查Geolocation是否可用
             if (!Geolocation) {
                 console.error('❌ Geolocation模块未正确导入');
                 resolve(DEFAULT_LOCATION);
                 return;
             }
 
-            console.log('🚀 开始双策略定位流程...');
-            console.log('📱 设备信息: Platform=' + Platform.OS);
+            // 如果有缓存且不超过60秒，直接返回
+            if (this.currentLocation && (Date.now() - this.lastRequestTime < 60000)) {
+                console.log('⚡ 使用60秒内缓存位置，秒返回');
+                resolve(this.currentLocation);
+                return;
+            }
 
-            let isResolved = false; // 防止多次resolve
+            console.log('🚀 开始并行竞速定位...');
+            const startTime = Date.now();
+            let isResolved = false;
 
-            // 添加额外的超时保护（防止系统层面卡住）
+            const resolveOnce = (location, source) => {
+                if (isResolved) return;
+                isResolved = true;
+                const elapsed = Date.now() - startTime;
+                console.log(`✅ ${source}定位成功! 耗时: ${elapsed}ms`);
+                this.currentLocation = location;
+                resolve(location);
+            };
+
+            // 紧急超时保护
             const emergencyTimeout = setTimeout(() => {
                 if (!isResolved) {
                     isResolved = true;
-                    console.log('⏰ 紧急超时保护触发（30秒），使用默认位置');
+                    console.log('⏰ 超时保护触发（10秒），使用默认位置');
                     resolve(DEFAULT_LOCATION);
                 }
-            }, 30000);
+            }, 10000);
 
-            // 首先尝试高精度定位
-            const highAccuracyOptions = {
-                enableHighAccuracy: true,
-                timeout: 20000,
-                maximumAge: 0,
-                forceRequestLocation: true,
-                forceLocationManager: false,
-                showLocationDialog: true,
-                distanceFilter: 0,
-            };
+            const makeLocation = (position, source) => ({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                address: `纬度: ${position.coords.latitude.toFixed(6)}, 经度: ${position.coords.longitude.toFixed(6)}`
+            });
 
-            console.log('🎆 尝试高精度GPS定位...', highAccuracyOptions);
-            const startTime = Date.now();
-
+            // 策略1: 网络定位（快，允许缓存）
             Geolocation.getCurrentPosition(
                 (position) => {
-                    if (isResolved) return;
-                    isResolved = true;
                     clearTimeout(emergencyTimeout);
-
-                    const elapsed = Date.now() - startTime;
-                    console.log(`✅ 高精度定位成功! 耗时: ${elapsed}ms`, position);
-                    console.log('📍 GPS细节:', {
-                        纬度: position.coords.latitude,
-                        经度: position.coords.longitude,
-                        精度: position.coords.accuracy + 'm',
-                        时间戳: new Date(position.timestamp).toLocaleTimeString()
-                    });
-                    const location = {
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude,
-                        accuracy: position.coords.accuracy,
-                        address: `纬度: ${position.coords.latitude.toFixed(6)}, 经度: ${position.coords.longitude.toFixed(6)}`
-                    };
-                    this.currentLocation = location;
-                    resolve(location);
+                    resolveOnce(makeLocation(position, '网络'), '网络');
                 },
                 (error) => {
-                    if (isResolved) return;
-
-                    const elapsed = Date.now() - startTime;
-                    console.warn(`⚠️ 高精度定位失败(耗时${elapsed}ms)，错误详情:`, {
-                        错误码: error.code,
-                        错误消息: error.message,
-                        TIMEOUT: error.TIMEOUT,
-                        PERMISSION_DENIED: error.PERMISSION_DENIED,
-                        POSITION_UNAVAILABLE: error.POSITION_UNAVAILABLE
-                    });
-
-                    // 如果高精度失败，尝试网络定位
-                    console.log('🌐 切换到网络定位策略...');
-                    const networkStartTime = Date.now();
-                    const networkOptions = {
-                        enableHighAccuracy: false,
-                        timeout: 15000,
-                        maximumAge: 5 * 60 * 1000, // 允许5分钟内的缓存
-                    };
-
-                    Geolocation.getCurrentPosition(
-                        (position) => {
-                            if (isResolved) return;
-                            isResolved = true;
-                            clearTimeout(emergencyTimeout);
-
-                            const networkElapsed = Date.now() - networkStartTime;
-                            console.log(`✅ 网络定位成功! 耗时: ${networkElapsed}ms`, position);
-                            const location = {
-                                latitude: position.coords.latitude,
-                                longitude: position.coords.longitude,
-                                accuracy: position.coords.accuracy,
-                                address: `纬度: ${position.coords.latitude.toFixed(6)}, 经度: ${position.coords.longitude.toFixed(6)} (网络定位)`
-                            };
-                            this.currentLocation = location;
-                            resolve(location);
-                        },
-                        (networkError) => {
-                            if (isResolved) return;
-                            isResolved = true;
-                            clearTimeout(emergencyTimeout);
-
-                            console.error('❌ 网络定位也失败:', networkError);
-                            let message = '定位失败';
-
-                            switch (networkError.code) {
-                                case 1: // PERMISSION_DENIED
-                                    message = '位置权限被拒绝，请在设置中开启位置权限';
-                                    break;
-                                case 2: // POSITION_UNAVAILABLE
-                                    message = '位置服务不可用，请检查GPS或网络';
-                                    break;
-                                case 3: // TIMEOUT
-                                    message = '定位超时，请确保GPS已开启';
-                                    break;
-                                case 4: // PLAY_SERVICE_NOT_AVAILABLE
-                                    message = 'Google Play服务不可用';
-                                    break;
-                                case 5: // SETTINGS_NOT_SATISFIED
-                                    message = '位置设置不满足要求';
-                                    break;
-                                default:
-                                    message = `定位错误 (${networkError.code}): ${networkError.message}`;
-                            }
-
-                            console.log('📍 位置获取最终失败，使用默认位置:', message);
-                            // 移除弹窗，避免干扰用户体验
-                            // Alert.alert('定位提示', message);
-                            resolve(DEFAULT_LOCATION);
-                        },
-                        networkOptions
-                    );
+                    console.warn('⚠️ 网络定位失败:', error.message);
                 },
-                highAccuracyOptions
+                { enableHighAccuracy: false, timeout: 5000, maximumAge: 5 * 60 * 1000 }
+            );
+
+            // 策略2: GPS高精度（慢但准，谁先到用谁）
+            Geolocation.getCurrentPosition(
+                (position) => {
+                    clearTimeout(emergencyTimeout);
+                    resolveOnce(makeLocation(position, 'GPS'), 'GPS');
+                },
+                (error) => {
+                    console.warn('⚠️ GPS定位失败:', error.message);
+                    // 两个都失败时用默认
+                    setTimeout(() => {
+                        if (!isResolved) {
+                            isResolved = true;
+                            clearTimeout(emergencyTimeout);
+                            console.log('📍 所有定位失败，使用默认位置');
+                            resolve(DEFAULT_LOCATION);
+                        }
+                    }, 500);
+                },
+                { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000, forceRequestLocation: true, showLocationDialog: true }
             );
         });
     }

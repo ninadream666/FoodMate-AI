@@ -5,8 +5,8 @@ import { merchantService } from './merchantService';
 // 模拟数据 (兜底用)
 const MOCK_RECOMMENDATIONS = {
     restaurants: [
-        { id: 1, name: '川味观', image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=200', rating: 4.8, deliveryTime: '30-40分钟', tags: ['川菜', '辣味'] },
-        { id: 2, name: '寿司之家', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=200', rating: 4.6, deliveryTime: '25-35分钟', tags: ['日料', '寿司'] },
+        { id: 1, name: '川味观', image: 'https://loremflickr.com/400/300/chinese,food', rating: 4.8, deliveryTime: '30-40分钟', tags: ['川菜', '辣味'] },
+        { id: 2, name: '寿司之家', image: 'https://loremflickr.com/400/300/sushi,japanese', rating: 4.6, deliveryTime: '25-35分钟', tags: ['日料', '寿司'] },
     ],
     total_count: 2,
 };

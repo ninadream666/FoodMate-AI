@@ -53,8 +53,8 @@ const SettlementDashboardScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    statsCard: { backgroundColor: '#e85a2d', padding: 20, borderRadius: 12, marginBottom: 20 },
+    container: { flex: 1, backgroundColor: '#F0EDE8' },
+    statsCard: { backgroundColor: '#F2784B', padding: 20, borderRadius: 12, marginBottom: 20 },
     statsLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 14 },
     statsValue: { color: '#fff', fontSize: 32, fontWeight: 'bold', marginVertical: 8 },
     statsSub: { color: 'rgba(255,255,255,0.9)', fontSize: 12 },

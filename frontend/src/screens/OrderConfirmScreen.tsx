@@ -10,6 +10,7 @@ import {
     ActivityIndicator,
     SafeAreaView
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { orderService } from '../services/orderService';
 import { addressService } from '../services/addressService';
@@ -370,11 +371,18 @@ const OrderConfirmScreen = ({ route, navigation }: any) => {
                     <Text style={styles.footerTotalValue}>¥{total.toFixed(2)}</Text>
                 </View>
                 <TouchableOpacity
-                    style={[styles.payBtn, (!address || loading) && styles.disabledBtn]}
+                    activeOpacity={0.7}
                     onPress={handlePay}
                     disabled={!address || loading}
                 >
-                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.payBtnText}>确认支付</Text>}
+                    <LinearGradient
+                        colors={(!address || loading) ? ['#ccc', '#aaa'] : ['#FFA07A', '#C4422E']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.payBtn}
+                    >
+                        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.payBtnText}>确认支付</Text>}
+                    </LinearGradient>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
@@ -387,16 +395,21 @@ import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '..
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: '#EEEAE4',
     },
     content: { padding: spacing.lg, paddingBottom: 100 },
     card: {
-        backgroundColor: colors.cardBg,
+        backgroundColor: '#FFFFFF',
         borderRadius: borderRadius.xl,
         padding: spacing.lg,
         marginBottom: spacing.lg,
         borderWidth: 1,
-        borderColor: colors.cardBorder,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     cardHeader: {
         flexDirection: 'row',
@@ -513,11 +526,15 @@ const styles = StyleSheet.create({
         right: 0,
         backgroundColor: colors.surface,
         flexDirection: 'row',
-        padding: spacing.lg,
-        borderTopWidth: 1,
-        borderTopColor: colors.borderLight,
+        padding: spacing.xl,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: 'rgba(0,0,0,0.06)',
         alignItems: 'center',
-        ...shadows.sm,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 10,
     },
     footerInfo: { flex: 1 },
     footerTotalLabel: {
@@ -530,23 +547,22 @@ const styles = StyleSheet.create({
         color: colors.primary,
     },
     payBtn: {
-        backgroundColor: colors.primary,
         paddingHorizontal: spacing.xxxl,
-        height: 50,
+        height: 54,
         borderRadius: borderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
-        ...shadows.primary,
-    },
-    disabledBtn: {
-        backgroundColor: colors.textDisabled,
-        shadowOpacity: 0,
-        elevation: 0,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 8,
     },
     payBtnText: {
         color: colors.textOnPrimary,
         fontSize: fontSize.lg,
         fontWeight: fontWeight.bold,
+        letterSpacing: 1,
     },
 });
 
