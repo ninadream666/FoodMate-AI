@@ -35,14 +35,6 @@ venv/
 env/
 encoder_env/
 
-# ML datasets
-ml_data/
-data/
-datasets/
-
-# trained models
-models/
-checkpoints/
 
 # Build / cache
 build/

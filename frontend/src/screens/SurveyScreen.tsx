@@ -9,6 +9,7 @@ import {
     Alert,
     ActivityIndicator
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { profileService } from '../services/profileService';
 
 const SurveyScreen = ({ navigation }: any) => {
@@ -167,11 +168,19 @@ const SurveyScreen = ({ navigation }: any) => {
             {/* 底部按钮 */}
             <View style={styles.footer}>
                 <TouchableOpacity
-                    style={styles.submitBtn}
                     onPress={handleSubmit}
                     disabled={loading}
+                    activeOpacity={0.7}
+                    style={{ width: '100%' }}
                 >
-                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>开启美食之旅</Text>}
+                    <LinearGradient
+                        colors={['#FFA07A', '#C4422E']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.submitBtn}
+                    >
+                        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>开启美食之旅</Text>}
+                    </LinearGradient>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.replace('Home')} style={styles.skipBtn}>
                     <Text style={styles.skipText}>跳过 (稍后设置)</Text>
@@ -187,10 +196,11 @@ import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '..
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: '#F0EDE8',
     },
     content: {
         padding: spacing.xl,
+        paddingTop: 60,
         paddingBottom: 40,
     },
     header: {
@@ -245,13 +255,18 @@ const styles = StyleSheet.create({
     // Card Styles (Flavor) - 北欧磨砂风格
     card: {
         width: '48%',
-        aspectRatio: 1,
-        backgroundColor: colors.cardBg,
+        paddingVertical: spacing.xxl,
+        backgroundColor: '#FFFFFF',
         borderRadius: borderRadius.xl,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 2,
-        borderColor: colors.cardBorder,
+        borderWidth: 1,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     activeCard: {
         borderColor: colors.primary,
@@ -278,12 +293,18 @@ const styles = StyleSheet.create({
         width: '48%',
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         padding: spacing.md,
-        backgroundColor: colors.cardBg,
+        backgroundColor: '#FFFFFF',
         borderRadius: borderRadius.lg,
         marginBottom: spacing.md,
         borderWidth: 1,
-        borderColor: colors.cardBorder,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     activeChip: {
         backgroundColor: colors.primaryBg,
@@ -346,11 +367,14 @@ const styles = StyleSheet.create({
     submitBtn: {
         width: '100%',
         height: 54,
-        backgroundColor: colors.primary,
         borderRadius: borderRadius.full,
         justifyContent: 'center',
         alignItems: 'center',
-        ...shadows.primary,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 8,
     },
     submitText: {
         color: colors.textOnPrimary,

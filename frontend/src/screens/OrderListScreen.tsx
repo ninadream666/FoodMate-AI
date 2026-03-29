@@ -13,6 +13,7 @@ import {
 import { useIsFocused } from '@react-navigation/native';
 import { orderService } from '../services/orderService';
 import { cacheService } from '../utils/cacheUtils';
+import LinearGradient from 'react-native-linear-gradient';
 
 const OrderListScreen = ({ navigation }: any) => {
     const [orders, setOrders] = useState<any[]>([]);
@@ -167,10 +168,17 @@ const OrderListScreen = ({ navigation }: any) => {
                     )}
 
                     <TouchableOpacity
-                        style={[styles.btn, styles.detailBtn]}
                         onPress={() => goToDetail(item)}
+                        activeOpacity={0.7}
                     >
-                        <Text style={styles.detailBtnText}>查看详情</Text>
+                        <LinearGradient
+                            colors={['#FFA07A', '#C4422E']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={[styles.btn, styles.detailBtn]}
+                        >
+                            <Text style={styles.detailBtnText}>查看详情</Text>
+                        </LinearGradient>
                     </TouchableOpacity>
                 </View>
             </TouchableOpacity>
@@ -216,17 +224,21 @@ import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '..
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: '#E8E4DD',
     },
     list: { padding: spacing.lg },
     card: {
-        backgroundColor: colors.cardBg,
+        backgroundColor: '#FFFFFF',
         borderRadius: borderRadius.xl,
         padding: spacing.lg,
         marginBottom: spacing.md,
         borderWidth: 1,
-        borderColor: colors.cardBorder,
-        ...shadows.card,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     cardHeader: {
         flexDirection: 'row',
@@ -301,12 +313,15 @@ const styles = StyleSheet.create({
     },
 
     detailBtn: {
-        borderColor: colors.primary,
-        backgroundColor: colors.primaryBg,
-        ...shadows.sm,
+        borderWidth: 0,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 8,
     },
     detailBtnText: {
-        color: colors.primary,
+        color: colors.textOnPrimary,
         fontSize: fontSize.xs,
         fontWeight: fontWeight.bold,
     },

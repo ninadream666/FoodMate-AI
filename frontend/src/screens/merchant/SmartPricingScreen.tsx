@@ -13,6 +13,7 @@ import {
     SafeAreaView
 } from 'react-native';
 // 注意引用路径：因为在 screens/merchant/ 下，所以是 ../../services
+import LinearGradient from 'react-native-linear-gradient';
 import { aiPricingService } from '../../services/aiPricingService';
 import { merchantService } from '../../services/merchantService';
 
@@ -29,6 +30,7 @@ const SmartPricingScreen = ({ navigation }: any) => {
         autoApprovalThreshold: 0.05
     });
     const [isTriggering, setIsTriggering] = useState(false);
+    const [thresholdText, setThresholdText] = useState(String(Math.round(config.autoApprovalThreshold * 100)));
 
     useEffect(() => {
         initializeMerchant();
@@ -219,23 +221,35 @@ const SmartPricingScreen = ({ navigation }: any) => {
                             <TextInput
                                 style={styles.input}
                                 keyboardType="numeric"
-                                value={String(Math.round(config.autoApprovalThreshold * 100))}
+                                value={thresholdText}
                                 onChangeText={(val) => {
+                                    setThresholdText(val);
+                                }}
+                                onEndEditing={() => {
                                     if (!merchantId) return;
-                                    const num = parseFloat(val) / 100;
-                                    if (!isNaN(num)) {
+                                    const num = parseFloat(thresholdText) / 100;
+                                    if (!isNaN(num) && num >= 0 && num <= 1) {
                                         setConfig(prev => ({ ...prev, autoApprovalThreshold: num }));
                                         aiPricingService.updateThreshold(merchantId, num);
+                                    } else {
+                                        setThresholdText(String(Math.round(config.autoApprovalThreshold * 100)));
                                     }
                                 }}
                             />
                         </View>
                         <TouchableOpacity
-                            style={styles.analyzeBtn}
                             onPress={handleTriggerAnalysis}
                             disabled={isTriggering}
+                            activeOpacity={0.7}
                         >
-                            {isTriggering ? <ActivityIndicator color="#fff" /> : <Text style={styles.analyzeText}>⚡ 立即分析</Text>}
+                            <LinearGradient
+                                colors={['#FFA07A', '#C4422E']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.analyzeBtn}
+                            >
+                                {isTriggering ? <ActivityIndicator color="#fff" /> : <Text style={styles.analyzeText}>立即分析</Text>}
+                            </LinearGradient>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -272,13 +286,13 @@ const SmartPricingScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    panel: { backgroundColor: '#fff', margin: 16, padding: 16, borderRadius: 12, elevation: 2 },
+    container: { flex: 1, backgroundColor: '#F0EDE8' },
+    panel: { backgroundColor: '#FFFFFF', margin: 16, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E0DBD3', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3 },
     panelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     panelTitle: { fontSize: 16, fontWeight: 'bold', color: '#333' },
     panelSubtitle: { fontSize: 12, color: '#999' },
     input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 8, width: 80, marginTop: 5, textAlign: 'center' },
-    analyzeBtn: { backgroundColor: '#333', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, marginLeft: 16 },
+    analyzeBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, marginLeft: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 8 },
     analyzeText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
 
     tabs: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 10 },
@@ -288,7 +302,7 @@ const styles = StyleSheet.create({
     activeTabText: { color: '#333', fontWeight: 'bold' },
 
     list: { paddingHorizontal: 16 },
-    card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, elevation: 2 },
+    card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E0DBD3', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3 },
     cardHeader: { flexDirection: 'row', marginBottom: 12 },
     foodImage: { width: 50, height: 50, borderRadius: 8, backgroundColor: '#eee' },
     headerInfo: { marginLeft: 12, justifyContent: 'center', flex: 1 },

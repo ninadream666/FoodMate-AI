@@ -99,9 +99,6 @@ function LocationDisplay({ onLocationChange, showRefresh = true }: LocationDispl
     return (
         <View style={[styles.container, isDefaultLocation(location) && styles.warningContainer]}>
             <View style={styles.locationInfo}>
-                <Text style={styles.icon}>
-                    {loading ? '🔍' : isDefaultLocation(location) ? '⚠️' : '📍'}
-                </Text>
                 <View style={styles.textContainer}>
                     <Text style={[styles.label, isDefaultLocation(location) && styles.warningLabel]}>
                         {isDefaultLocation(location) ? '⚠️ 定位异常' : '当前位置'}

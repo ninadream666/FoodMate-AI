@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import Feather from 'react-native-vector-icons/Feather';
 
 interface Props {
     cartItems: any[];
@@ -15,7 +17,7 @@ const CartBar = ({ cartItems, onViewCart }: Props) => {
     return (
         <View style={styles.container}>
             <View style={styles.cartIconContainer}>
-                <Text style={styles.icon}>🛒</Text>
+                <Feather name="shopping-cart" size={22} color="#fff" />
                 <View style={styles.badge}>
                     <Text style={styles.badgeText}>{totalCount}</Text>
                 </View>
@@ -26,8 +28,15 @@ const CartBar = ({ cartItems, onViewCart }: Props) => {
                 <Text style={styles.subText}>免配送费</Text>
             </View>
 
-            <TouchableOpacity style={styles.checkoutBtn} onPress={onViewCart}>
-                <Text style={styles.checkoutText}>去结算</Text>
+            <TouchableOpacity activeOpacity={0.7} onPress={onViewCart}>
+                <LinearGradient
+                    colors={['#FFA07A', '#C4422E']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.checkoutBtn}
+                >
+                    <Text style={styles.checkoutText}>去结算</Text>
+                </LinearGradient>
             </TouchableOpacity>
         </View>
     );
@@ -90,11 +99,14 @@ const styles = StyleSheet.create({
         fontSize: fontSize.xs,
     },
     checkoutBtn: {
-        backgroundColor: colors.primary,
         paddingVertical: spacing.sm,
         paddingHorizontal: spacing.lg,
         borderRadius: borderRadius.full,
-        ...shadows.sm,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 8,
     },
     checkoutText: {
         color: colors.textOnPrimary,

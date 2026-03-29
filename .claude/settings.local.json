@@ -14,7 +14,12 @@
       "Bash(npx tsc:*)",
       "Bash(powershell:*)",
       "Bash(.gradlew.bat assembleDebug:*)",
-      "Bash(./gradlew.bat assembleDebug:*)"
+      "Bash(./gradlew.bat assembleDebug:*)",
+      "Bash(grep -r Stack.Navigator /d/FoodMate-AI/frontend --include=*.tsx --include=*.ts --include=*.js)",
+      "Bash(grep -r \"screenOptions\\\\|theme\\\\|cardStyle\\\\|DarkTheme\\\\|DefaultTheme\" /d/FoodMate-AI/frontend --include=*.tsx --include=*.ts --include=*.js)",
+      "Bash(grep -r \"import.*HomeScreen\\\\|<HomeScreen\\\\|Screen.*HomeScreen\" /d/FoodMate-AI/frontend --include=*.tsx --include=*.ts)",
+      "Bash(xargs grep:*)",
+      "Bash(grep:*)"
     ]
   }
 }

@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { profileService } from '../services/profileService';
 import { authService } from '../services/authService';
+import Feather from 'react-native-vector-icons/Feather';
+import LinearGradient from 'react-native-linear-gradient';
 
 const defaultAvatar = 'https://lh3.googleusercontent.com/aida-public/AB6AXuD0SqHYZlIXyFFcCFeErv7z3OCT3dWL1Eb2_7H2rw85kJN-QpFQB9NJg1JxLfHuCIcc9LySyuY9gHTuNFRiQSUFM8n2tPxCcoUCuHVr8uHm0PM8ZtGLP7QMU3v8nwmLVsQjHJV_Xmx8pj2VI06I7Y2sT_i4dCsutqf6twJq3q-ck158JrAnEH2_JJ_3UW8OxWRCet5OikJ1MztLTr8IWYEs2qvK6uAcJ326SNeNfYtyh-5Hrc5P2mZIGeIKpWDoz2AF5UcrzZHEWx8u';
 
@@ -75,36 +77,38 @@ const ProfileScreen = ({ navigation }: any) => {
     );
 
     // 菜单项组件
-    const MenuItem = ({ label, onPress, highlight = false }: any) => (
+    const MenuItem = ({ label, onPress, highlight = false, isLast = false }: any) => (
         <TouchableOpacity
-            style={[styles.menuItem, highlight && styles.highlightItem]}
+            style={[styles.menuItem, highlight && styles.highlightItem, isLast && { borderBottomWidth: 0 }]}
             onPress={onPress}
         >
             <Text style={[styles.menuLabel, highlight && styles.highlightText]}>{label}</Text>
-            <Text style={styles.menuArrow}>{'>'}</Text>
+            <Feather name="chevron-right" size={18} color={colors.textTertiary} />
         </TouchableOpacity>
     );
 
     if (loading) return <ActivityIndicator style={{ marginTop: 50 }} size="large" color={colors.primary} />;
 
     return (
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
             {/* 头部信息 */}
             <View style={styles.header}>
                 <Image
                     source={{ uri: user.avatarUrl || defaultAvatar }}
                     style={styles.avatar}
                 />
-                <View style={styles.userInfo}>
-                    <Text style={styles.username}>{user.username || '用户'}</Text>
+                <View style={{ flex: 1, marginLeft: spacing.lg }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Text style={styles.username}>{user.username || '用户'}</Text>
+                        <TouchableOpacity
+                            style={styles.editBtn}
+                            onPress={() => setEditing(!editing)}
+                        >
+                            <Text style={styles.editBtnText}>{editing ? '取消' : '编辑'}</Text>
+                        </TouchableOpacity>
+                    </View>
                     <Text style={styles.userId}>ID: {user.id || '-'}</Text>
                 </View>
-                <TouchableOpacity
-                    style={styles.editBtn}
-                    onPress={() => setEditing(!editing)}
-                >
-                    <Text style={styles.editBtnText}>{editing ? '取消' : '编辑'}</Text>
-                </TouchableOpacity>
             </View>
 
             {/* 编辑表单区域 */}
@@ -123,8 +127,15 @@ const ProfileScreen = ({ navigation }: any) => {
                         <Text style={styles.label}>邮箱</Text>
                         <TextInput style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="未绑定" />
                     </View>
-                    <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-                        <Text style={styles.saveText}>保存修改</Text>
+                    <TouchableOpacity onPress={handleSave} activeOpacity={0.7}>
+                        <LinearGradient
+                            colors={['#FFA07A', '#C4422E']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.saveBtn}
+                        >
+                            <Text style={styles.saveText}>保存修改</Text>
+                        </LinearGradient>
                     </TouchableOpacity>
                 </View>
             )}
@@ -141,7 +152,7 @@ const ProfileScreen = ({ navigation }: any) => {
                 <MenuItem label="我的订单" onPress={() => navigation.navigate('OrderList')} />
                 <MenuItem label="地址管理" onPress={() => navigation.navigate('AddressList')} />
                 <MenuItem label="我的钱包 & 优惠券" onPress={() => navigation.navigate('Wallet')} />
-                <MenuItem label="隐私政策" onPress={() => { }} />
+                <MenuItem label="隐私政策" onPress={() => { }} isLast />
             </View>
 
             {/* --- 新增：商家入口 --- */}
@@ -154,14 +165,13 @@ const ProfileScreen = ({ navigation }: any) => {
                 <MenuItem
                     label="商家入驻 / 认领店铺"
                     onPress={() => navigation.navigate('MerchantOnboarding')}
+                    isLast
                 />
             </View>
 
             <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
                 <Text style={styles.logoutText}>退出登录</Text>
             </TouchableOpacity>
-
-            <View style={{ height: 40 }} />
         </ScrollView>
     );
 };
@@ -172,10 +182,14 @@ import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '..
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: '#E8E4DD',
+    },
+    contentContainer: {
+        flexGrow: 1,
+        paddingBottom: spacing.lg,
     },
     header: {
-        backgroundColor: colors.surface,
+        backgroundColor: '#FFFFFF',
         padding: spacing.xl,
         flexDirection: 'row',
         alignItems: 'center',
@@ -184,7 +198,12 @@ const styles = StyleSheet.create({
         marginTop: spacing.lg,
         borderRadius: borderRadius.xl,
         borderWidth: 1,
-        borderColor: colors.cardBorder,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     avatar: {
         width: 70,
@@ -218,13 +237,18 @@ const styles = StyleSheet.create({
     },
 
     formCard: {
-        backgroundColor: colors.surface,
+        backgroundColor: '#FFFFFF',
         padding: spacing.xl,
         marginBottom: spacing.md,
         marginHorizontal: spacing.lg,
         borderRadius: borderRadius.xl,
         borderWidth: 1,
-        borderColor: colors.cardBorder,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     sectionTitle: {
         fontSize: fontSize.lg,
@@ -249,12 +273,15 @@ const styles = StyleSheet.create({
         color: colors.textPrimary,
     },
     saveBtn: {
-        backgroundColor: colors.primary,
         padding: spacing.md,
         borderRadius: borderRadius.full,
         alignItems: 'center',
         marginTop: spacing.md,
-        ...shadows.primary,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 8,
     },
     saveText: {
         color: colors.textOnPrimary,
@@ -264,14 +291,19 @@ const styles = StyleSheet.create({
 
     statsRow: {
         flexDirection: 'row',
-        backgroundColor: colors.cardBg,
+        backgroundColor: '#FFFFFF',
         padding: spacing.xl,
         justifyContent: 'space-between',
         marginBottom: spacing.md,
         marginHorizontal: spacing.lg,
         borderRadius: borderRadius.xl,
         borderWidth: 1,
-        borderColor: colors.cardBorder,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     statItem: { alignItems: 'center', flex: 1 },
     statValue: {
@@ -287,19 +319,24 @@ const styles = StyleSheet.create({
     },
 
     menuList: {
-        backgroundColor: colors.surface,
-        paddingVertical: spacing.sm,
-        marginBottom: spacing.lg,
+        backgroundColor: '#FFFFFF',
+        marginBottom: spacing.md,
         marginHorizontal: spacing.lg,
         borderRadius: borderRadius.xl,
         borderWidth: 1,
-        borderColor: colors.cardBorder,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
         overflow: 'hidden',
     },
     menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: spacing.lg,
+        paddingVertical: spacing.lg,
+        paddingHorizontal: spacing.lg,
         borderBottomWidth: 1,
         borderBottomColor: colors.divider,
     },
@@ -316,20 +353,21 @@ const styles = StyleSheet.create({
         color: colors.textPrimary,
         fontWeight: fontWeight.medium,
     },
-    menuArrow: {
-        color: colors.textTertiary,
-        fontSize: fontSize.lg,
-    },
 
     logoutBtn: {
-        backgroundColor: colors.surface,
-        padding: spacing.lg,
+        backgroundColor: '#FFFFFF',
+        padding: spacing.md,
         alignItems: 'center',
-        marginBottom: spacing.xl,
+        marginBottom: spacing.sm,
         marginHorizontal: spacing.lg,
         borderRadius: borderRadius.xl,
         borderWidth: 1,
-        borderColor: colors.errorBg,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     logoutText: {
         color: colors.error,

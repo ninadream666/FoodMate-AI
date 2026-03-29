@@ -9,9 +9,10 @@ import {
     Switch,
     Alert,
     ActivityIndicator,
-    SafeAreaView
+    SafeAreaView,
+    Platform
 } from 'react-native';
-// 注意引用路径
+import LinearGradient from 'react-native-linear-gradient';
 import { merchantService } from '../../services/merchantService';
 
 const MenuManagementScreen = ({ navigation }: any) => {
@@ -120,8 +121,15 @@ const MenuManagementScreen = ({ navigation }: any) => {
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>菜品管理 ({menuItems.length})</Text>
-                <TouchableOpacity style={styles.addBtn} onPress={() => Alert.alert('提示', '请在 PC 端进行批量新增')}>
-                    <Text style={styles.addBtnText}>+ 新增</Text>
+                <TouchableOpacity onPress={() => Alert.alert('提示', '请在 PC 端进行批量新增')} activeOpacity={0.7}>
+                    <LinearGradient
+                        colors={['#FFA07A', '#C4422E']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.addBtn}
+                    >
+                        <Text style={styles.addBtnText}>+ 新增</Text>
+                    </LinearGradient>
                 </TouchableOpacity>
             </View>
 
@@ -140,13 +148,13 @@ const MenuManagementScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fff' },
-    headerTitle: { fontSize: 16, fontWeight: 'bold' },
-    addBtn: { backgroundColor: '#e85a2d', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+    container: { flex: 1, backgroundColor: '#F0EDE8' },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, marginHorizontal: 16, marginTop: 16, marginBottom: 4, backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: '#E0DBD3', ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 }, android: {} }) },
+    headerTitle: { fontSize: 16, fontWeight: 'bold', color: '#333' },
+    addBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 8 },
     addBtnText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
-    list: { padding: 16 },
-    card: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 12, padding: 12, marginBottom: 12, elevation: 1 },
+    list: { paddingVertical: 12 },
+    card: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, marginBottom: 12, marginHorizontal: 16, borderWidth: 1, borderColor: '#E0DBD3', ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 }, android: {} }) },
     image: { width: 80, height: 80, borderRadius: 8, backgroundColor: '#eee' },
     content: { flex: 1, marginLeft: 12, justifyContent: 'space-between' },
     row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

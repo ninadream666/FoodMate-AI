@@ -148,7 +148,7 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView showsVerticalScrollIndicator={false}>
+                    <ScrollView showsVerticalScrollIndicator={false} style={{ flexShrink: 1 }}>
                         {/* 开发者模式开关 */}
                         <View style={styles.row}>
                             <View style={styles.rowLeft}>
@@ -537,6 +537,11 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
                             )}
                         </View>
                     </ScrollView>
+
+                    {/* 底部关闭按钮 */}
+                    <TouchableOpacity style={styles.bottomCloseBtn} onPress={onClose}>
+                        <Text style={styles.bottomCloseBtnText}>关闭</Text>
+                    </TouchableOpacity>
                 </View>
             </View>
         </Modal>
@@ -588,7 +593,8 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface,
         borderTopLeftRadius: borderRadius.xl,
         borderTopRightRadius: borderRadius.xl,
-        padding: spacing.xl,
+        paddingTop: spacing.xl,
+        paddingHorizontal: spacing.xl,
         maxHeight: '90%',
     },
     header: {
@@ -906,6 +912,21 @@ const styles = StyleSheet.create({
     triggerText: {
         fontSize: fontSize.xl,
         opacity: 0.3,
+    },
+    bottomCloseBtn: {
+        backgroundColor: colors.backgroundSection,
+        paddingVertical: spacing.lg,
+        alignItems: 'center',
+        borderTopWidth: 1,
+        borderTopColor: colors.divider,
+        marginHorizontal: -spacing.xl,
+        borderBottomLeftRadius: borderRadius.xl,
+        borderBottomRightRadius: borderRadius.xl,
+    },
+    bottomCloseBtnText: {
+        fontSize: fontSize.md,
+        fontWeight: fontWeight.bold,
+        color: colors.textSecondary,
     },
 });
 

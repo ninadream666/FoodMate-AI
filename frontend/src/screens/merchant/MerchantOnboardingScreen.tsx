@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, SafeAreaView, ActivityIndicator, FlatList } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { merchantService } from '../../services/merchantService';
 
 interface UnclaimedMerchant {
@@ -106,11 +107,9 @@ const MerchantOnboardingScreen = ({ navigation }: any) => {
     // 入驻方式选择
     const renderChooseMode = () => (
         <View style={styles.card}>
-            <Text style={styles.title}>🏪 商家入驻</Text>
-            <Text style={styles.subtitle}>请选择入驻方式</Text>
+            <Text style={styles.title}>请选择入驻方式</Text>
 
             <TouchableOpacity style={styles.optionCard} onPress={() => setMode('create')}>
-                <Text style={styles.optionIcon}>✨</Text>
                 <View style={styles.optionContent}>
                     <Text style={styles.optionTitle}>创建新店铺</Text>
                     <Text style={styles.optionDesc}>全新注册，从零开始打造您的品牌</Text>
@@ -118,7 +117,6 @@ const MerchantOnboardingScreen = ({ navigation }: any) => {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.optionCard} onPress={() => setMode('claim')}>
-                <Text style={styles.optionIcon}>🔗</Text>
                 <View style={styles.optionContent}>
                     <Text style={styles.optionTitle}>认领已有店铺</Text>
                     <Text style={styles.optionDesc}>您的店铺已在平台？点击认领关联</Text>
@@ -129,12 +127,11 @@ const MerchantOnboardingScreen = ({ navigation }: any) => {
 
     // 认领商家界面
     const renderClaimMode = () => (
-        <View style={styles.card}>
+        <View style={[styles.card, { marginTop: 40 }]}>
             <TouchableOpacity style={styles.backLink} onPress={() => setMode('choose')}>
                 <Text style={styles.backText}>← 返回选择</Text>
             </TouchableOpacity>
-            <Text style={styles.title}>🔍 认领店铺</Text>
-            <Text style={styles.subtitle}>搜索并认领您的店铺</Text>
+            <Text style={styles.title}>认领店铺</Text>
 
             <View style={styles.searchRow}>
                 <TextInput
@@ -144,8 +141,10 @@ const MerchantOnboardingScreen = ({ navigation }: any) => {
                     onChangeText={setSearchKeyword}
                     onSubmitEditing={searchUnclaimedMerchants}
                 />
-                <TouchableOpacity style={styles.searchBtn} onPress={searchUnclaimedMerchants}>
-                    <Text style={styles.searchBtnText}>搜索</Text>
+                <TouchableOpacity onPress={searchUnclaimedMerchants} activeOpacity={0.7}>
+                    <LinearGradient colors={['#FFA07A', '#C4422E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.searchBtn}>
+                        <Text style={styles.searchBtnText}>搜索</Text>
+                    </LinearGradient>
                 </TouchableOpacity>
             </View>
 
@@ -174,7 +173,9 @@ const MerchantOnboardingScreen = ({ navigation }: any) => {
                                     <Text style={styles.merchantCuisine}>🍴 {item.cuisineType}</Text>
                                 )}
                             </View>
-                            <Text style={styles.claimBtn}>认领</Text>
+                            <LinearGradient colors={['#FFA07A', '#C4422E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.claimBtnGradient}>
+                                <Text style={styles.claimBtnText}>认领</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
                     )}
                 />
@@ -190,8 +191,10 @@ const MerchantOnboardingScreen = ({ navigation }: any) => {
             <Text style={styles.title}>步骤 1/2: 创建店铺</Text>
             <TextInput style={styles.input} placeholder="店铺名称" value={shopForm.name} onChangeText={t => setShopForm({ ...shopForm, name: t })} />
             <TextInput style={styles.input} placeholder="店铺地址" value={shopForm.address} onChangeText={t => setShopForm({ ...shopForm, address: t })} />
-            <TouchableOpacity style={styles.btn} onPress={handleCreateShop} disabled={loading}>
-                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>下一步</Text>}
+            <TouchableOpacity onPress={handleCreateShop} disabled={loading} activeOpacity={0.7}>
+                <LinearGradient colors={['#FFA07A', '#C4422E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.btn}>
+                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>下一步</Text>}
+                </LinearGradient>
             </TouchableOpacity>
         </View>
     );
@@ -202,8 +205,10 @@ const MerchantOnboardingScreen = ({ navigation }: any) => {
             <TextInput style={styles.input} placeholder="菜品名称" value={dishForm.name} onChangeText={t => setDishForm({ ...dishForm, name: t })} />
             <TextInput style={styles.input} placeholder="价格" keyboardType="numeric" value={dishForm.price} onChangeText={t => setDishForm({ ...dishForm, price: t })} />
             <TextInput style={styles.input} placeholder="分类 (如: 主食)" value={dishForm.category} onChangeText={t => setDishForm({ ...dishForm, category: t })} />
-            <TouchableOpacity style={styles.btn} onPress={handleAddDish} disabled={loading}>
-                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>完成入驻</Text>}
+            <TouchableOpacity onPress={handleAddDish} disabled={loading} activeOpacity={0.7}>
+                <LinearGradient colors={['#FFA07A', '#C4422E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.btn}>
+                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>完成入驻</Text>}
+                </LinearGradient>
             </TouchableOpacity>
         </View>
     );
@@ -213,15 +218,17 @@ const MerchantOnboardingScreen = ({ navigation }: any) => {
             <Text style={{ fontSize: 60 }}>🎉</Text>
             <Text style={[styles.title, { marginTop: 20 }]}>恭喜开业！</Text>
             <Text style={{ color: '#666', marginBottom: 30 }}>您的店铺已成功创建。</Text>
-            <TouchableOpacity style={styles.btn} onPress={() => navigation.replace('MerchantDashboard')}>
-                <Text style={styles.btnText}>前往工作台</Text>
+            <TouchableOpacity onPress={() => navigation.replace('MerchantDashboard')} activeOpacity={0.7}>
+                <LinearGradient colors={['#FFA07A', '#C4422E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.btn}>
+                    <Text style={styles.btnText}>前往工作台</Text>
+                </LinearGradient>
             </TouchableOpacity>
         </View>
     );
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={{ padding: 20 }}>
+            <ScrollView contentContainerStyle={{ padding: 20, flexGrow: 1, justifyContent: mode === 'choose' ? 'center' : 'flex-start', paddingBottom: mode === 'choose' ? 100 : 20 }}>
                 {mode === 'choose' && renderChooseMode()}
                 {mode === 'claim' && renderClaimMode()}
                 {mode === 'create' && step === 1 && renderStep1()}
@@ -233,12 +240,12 @@ const MerchantOnboardingScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    card: { backgroundColor: '#fff', borderRadius: 12, padding: 20, elevation: 3 },
-    title: { fontSize: 20, fontWeight: 'bold', marginBottom: 8, color: '#333' },
+    container: { flex: 1, backgroundColor: '#F0EDE8' },
+    card: { backgroundColor: '#fff', borderRadius: 20, padding: 28, elevation: 3 },
+    title: { fontSize: 20, fontWeight: 'bold', marginBottom: 24, color: '#333' },
     subtitle: { fontSize: 14, color: '#666', marginBottom: 20 },
     input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, marginBottom: 15, fontSize: 16 },
-    btn: { backgroundColor: '#e85a2d', padding: 15, borderRadius: 8, alignItems: 'center' },
+    btn: { padding: 15, borderRadius: 9999, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 8 },
     btnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 
     // 选择模式样式
@@ -247,8 +254,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#f8f8f8',
         borderRadius: 12,
-        padding: 16,
-        marginBottom: 12,
+        padding: 20,
+        marginBottom: 16,
         borderWidth: 1,
         borderColor: '#eee'
     },
@@ -268,11 +275,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ddd',
         borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        fontSize: 14,
         marginRight: 10
     },
-    searchBtn: { backgroundColor: '#e85a2d', paddingHorizontal: 20, borderRadius: 8, justifyContent: 'center' },
+    searchBtn: { paddingHorizontal: 20, borderRadius: 9999, justifyContent: 'center', paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 8 },
     searchBtnText: { color: '#fff', fontWeight: 'bold' },
 
     // 商家列表
@@ -280,16 +288,24 @@ const styles = StyleSheet.create({
     merchantItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f8f8f8',
-        borderRadius: 10,
-        padding: 15,
-        marginBottom: 10
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 2,
     },
     merchantInfo: { flex: 1 },
     merchantName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
     merchantAddress: { fontSize: 12, color: '#666', marginTop: 4 },
     merchantCuisine: { fontSize: 12, color: '#e85a2d', marginTop: 4 },
-    claimBtn: { backgroundColor: '#e85a2d', color: '#fff', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6, overflow: 'hidden', fontWeight: 'bold' },
+    claimBtnGradient: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 9999, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 8 },
+    claimBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
 
     // 空状态
     emptyContainer: { alignItems: 'center', paddingVertical: 40 },

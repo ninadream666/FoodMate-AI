@@ -9,6 +9,7 @@ import {
     ActivityIndicator
 } from 'react-native';
 import { addressService } from '../services/addressService';
+import LinearGradient from 'react-native-linear-gradient';
 
 const AddressEditScreen = ({ navigation }: any) => {
     const [city, setCity] = useState('');
@@ -77,15 +78,22 @@ const AddressEditScreen = ({ navigation }: any) => {
                 </View>
 
                 <TouchableOpacity
-                    style={styles.saveBtn}
                     onPress={handleSave}
                     disabled={loading}
+                    activeOpacity={0.7}
                 >
-                    {loading ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.saveText}>保存地址</Text>
-                    )}
+                    <LinearGradient
+                        colors={['#FFA07A', '#C4422E']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.saveBtn}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.saveText}>保存地址</Text>
+                        )}
+                    </LinearGradient>
                 </TouchableOpacity>
             </View>
         </View>
@@ -98,15 +106,20 @@ import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '..
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: '#F0EDE8',
         padding: spacing.xl,
     },
     form: {
-        backgroundColor: colors.cardBg,
+        backgroundColor: '#FFFFFF',
         borderRadius: borderRadius.xl,
         padding: spacing.xl,
         borderWidth: 1,
-        borderColor: colors.cardBorder,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     inputGroup: { marginBottom: spacing.xl },
     label: {
@@ -126,12 +139,15 @@ const styles = StyleSheet.create({
         color: colors.textPrimary,
     },
     saveBtn: {
-        backgroundColor: colors.primary,
         borderRadius: borderRadius.full,
         paddingVertical: spacing.lg,
         alignItems: 'center',
         marginTop: spacing.md,
-        ...shadows.primary,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 8,
     },
     saveText: {
         color: colors.textOnPrimary,

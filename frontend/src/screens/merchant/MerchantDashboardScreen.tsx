@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
+import Feather from 'react-native-vector-icons/Feather';
 import { merchantService } from '../../services/merchantService';
+import { colors, spacing, borderRadius, fontSize, fontWeight } from '../../theme/NordicTheme';
 
 interface MerchantInfo {
     id: number;
@@ -42,8 +44,8 @@ const MerchantDashboardScreen = ({ navigation }: any) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView>
-                {/* 顶部个人中心入口 - 微信风格 */}
+            <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+                {/* 顶部个人中心入口 */}
                 <TouchableOpacity
                     style={styles.profileSection}
                     onPress={() => navigation.navigate('Profile')}
@@ -55,77 +57,47 @@ const MerchantDashboardScreen = ({ navigation }: any) => {
                         <Text style={styles.shopName}>{merchant?.name || '我的店铺'}</Text>
                         <Text style={styles.profileSubtitle}>个人中心 · 账户设置</Text>
                     </View>
-                    <Text style={styles.arrowIcon}>›</Text>
+                    <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                 </TouchableOpacity>
 
                 {/* 第一组功能列表 */}
                 <View style={styles.menuGroup}>
-                    <TouchableOpacity
-                        style={styles.menuItem}
-                        onPress={() => navigation.navigate('SmartPricing')}
-                    >
+                    <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('SmartPricing')}>
                         <Text style={styles.menuTitle}>AI 智能定价</Text>
-                        <Text style={styles.arrowIcon}>›</Text>
+                        <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>
-
-                    <View style={styles.divider} />
-
-                    <TouchableOpacity
-                        style={styles.menuItem}
-                        onPress={() => navigation.navigate('MenuManagement')}
-                    >
+                    <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('MenuManagement')}>
                         <Text style={styles.menuTitle}>菜单管理</Text>
-                        <Text style={styles.arrowIcon}>›</Text>
+                        <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>
-
-                    <View style={styles.divider} />
-
-                    <TouchableOpacity
-                        style={styles.menuItem}
-                        onPress={() => navigation.navigate('RefundAudit')}
-                    >
+                    <TouchableOpacity style={[styles.menuItem, styles.menuItemLast]} onPress={() => navigation.navigate('RefundAudit')}>
                         <Text style={styles.menuTitle}>退款审批</Text>
-                        <Text style={styles.arrowIcon}>›</Text>
+                        <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>
                 </View>
 
                 {/* 第二组功能列表 */}
                 <View style={styles.menuGroup}>
-                    <TouchableOpacity
-                        style={styles.menuItem}
-                        onPress={() => navigation.navigate('MerchantShopInfo')}
-                    >
+                    <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('MerchantShopInfo')}>
                         <Text style={styles.menuTitle}>店铺信息</Text>
-                        <Text style={styles.arrowIcon}>›</Text>
+                        <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>
-
-                    <View style={styles.divider} />
-
-                    <TouchableOpacity
-                        style={styles.menuItem}
-                        onPress={() => navigation.navigate('SettlementDashboard')}
-                    >
+                    <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('SettlementDashboard')}>
                         <Text style={styles.menuTitle}>财务结算</Text>
-                        <Text style={styles.arrowIcon}>›</Text>
+                        <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>
-
-                    <View style={styles.divider} />
-
-                    <TouchableOpacity
-                        style={styles.menuItem}
-                        onPress={() => navigation.navigate('ServiceMarketplace')}
-                    >
+                    <TouchableOpacity style={[styles.menuItem, styles.menuItemLast]} onPress={() => navigation.navigate('ServiceMarketplace')}>
                         <Text style={styles.menuTitle}>服务市场</Text>
-                        <Text style={styles.arrowIcon}>›</Text>
+                        <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>
                 </View>
 
                 {/* 第三组 - 经营报表 */}
                 <View style={styles.menuGroup}>
-                    <TouchableOpacity style={styles.menuItem} onPress={() => { }}>
+                    <TouchableOpacity style={[styles.menuItem, styles.menuItemLast]} onPress={() => { }}>
                         <Text style={styles.menuTitle}>经营报表</Text>
                         <Text style={styles.menuSubLabel}>请至PC端</Text>
-                        <Text style={styles.arrowIcon}>›</Text>
+                        <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>
                 </View>
             </ScrollView>
@@ -134,75 +106,104 @@ const MerchantDashboardScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    loadingText: { marginTop: 10, color: '#666', fontSize: 14 },
+    container: {
+        flex: 1,
+        backgroundColor: '#E8E4DD',
+    },
+    contentContainer: {
+        flexGrow: 1,
+        paddingBottom: spacing.lg,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: spacing.md,
+        color: colors.textSecondary,
+        fontSize: fontSize.md,
+    },
 
-    // 微信风格个人中心区域
     profileSection: {
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 24,
-        marginBottom: 10,
+        padding: spacing.xl,
+        marginHorizontal: spacing.lg,
+        marginTop: spacing.lg,
+        marginBottom: spacing.md,
+        borderRadius: borderRadius.xl,
+        borderWidth: 1,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
     profileAvatar: {
-        width: 64,
-        height: 64,
-        borderRadius: 8,
-        backgroundColor: '#ff6b35',
+        width: 56,
+        height: 56,
+        borderRadius: borderRadius.lg,
+        backgroundColor: colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
     },
     avatarText: {
-        fontSize: 32,
+        fontSize: 24,
+        color: colors.textOnPrimary,
     },
     profileInfo: {
         flex: 1,
-        marginLeft: 16,
+        marginLeft: spacing.lg,
     },
     shopName: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 4,
+        fontSize: fontSize.xl,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+        marginBottom: spacing.xs,
     },
     profileSubtitle: {
-        fontSize: 14,
-        color: '#999',
-    },
-    arrowIcon: {
-        fontSize: 24,
-        color: '#ccc',
-        fontWeight: '300',
+        fontSize: fontSize.sm,
+        color: colors.textTertiary,
     },
 
-    // 微信风格菜单组
     menuGroup: {
-        backgroundColor: '#fff',
-        marginTop: 10,
+        backgroundColor: '#FFFFFF',
+        marginHorizontal: spacing.lg,
+        marginBottom: spacing.md,
+        borderRadius: borderRadius.xl,
+        borderWidth: 1,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
+        overflow: 'hidden',
     },
     menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
+        paddingVertical: spacing.lg,
+        paddingHorizontal: spacing.lg,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.divider,
+    },
+    menuItemLast: {
+        borderBottomWidth: 0,
     },
     menuTitle: {
         flex: 1,
-        fontSize: 16,
-        color: '#333',
+        fontSize: fontSize.md,
+        color: colors.textPrimary,
+        fontWeight: fontWeight.medium,
     },
     menuSubLabel: {
-        fontSize: 12,
-        color: '#999',
-        marginRight: 8,
-    },
-    divider: {
-        height: 0.5,
-        backgroundColor: '#eee',
-        marginLeft: 20,
+        fontSize: fontSize.xs,
+        color: colors.textTertiary,
+        marginRight: spacing.sm,
     },
 });
 
