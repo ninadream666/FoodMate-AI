@@ -19,7 +19,7 @@ interface DialogueMessage {
 class VoiceInferenceService {
     private vosk: typeof Vosk | null = null;
     private llamaContext: LlamaContext | null = null;
-    private isInitialized = false;
+    public isInitialized = false; // 【修改处】将 private 变为 public，供外部感知
 
     // 状态控制
     private isRecording = false;
@@ -41,9 +41,13 @@ class VoiceInferenceService {
 
     /**
      * 初始化 Vosk 和 端侧 LLM
+     * 【修改处】：增加了进度回调参数，用于首屏动态下载大模型
      */
-    public async init() {
-        if (this.isInitialized) return;
+    public async init(onProgress?: (progress: number) => void) {
+        if (this.isInitialized) {
+            if (onProgress) onProgress(100);
+            return;
+        }
 
         // --- 1. 独立初始化 Vosk 语音引擎 ---
         try {
@@ -63,20 +67,41 @@ class VoiceInferenceService {
             throw error; 
         }
 
-        // --- 2. 独立初始化 Llama 大模型引擎 ---
+        // --- 2. 独立初始化 Llama 大模型引擎 (加入网络动态下载机制) ---
         try {
             await new Promise(resolve => setTimeout(resolve, 1500));
             console.log('🧠 [LLM] 准备加载微调后的端侧大模型...');
 
-            // 【修改这里】：换成我们最新的 1500 条 Q8 冠军模型
             const modelFileName = 'model_1500_q8.gguf';
             const destPath = `${RNFS.DocumentDirectoryPath}/${modelFileName}`;
             const exists = await RNFS.exists(destPath);
             
             if (!exists) {
-                console.log(`📦 [LLM] 初次运行：正在从 APK 安装包中释放大模型文件...`);
-                await RNFS.copyFileAssets(modelFileName, destPath);
-                console.log(`✅ [LLM] 模型释放完成，物理路径: ${destPath}`);
+                console.log(`📦 [LLM] 初次运行：正在从云端下载大模型文件...`);
+                // 【注意修改这里】：替换为你本机的实际局域网 IPv4 地址。测试时在 backend/static 下运行 python -m http.server 9099
+                const downloadUrl = 'http://100.80.56.118:9099/models/model_1500_q8.gguf';
+
+                const downloadOptions = {
+                    fromUrl: downloadUrl,
+                    toFile: destPath,
+                    progressDivider: 1, // 每1%进度触发一次回调
+                    progress: (res: any) => {
+                        const progressPercent = Math.round((res.bytesWritten / res.contentLength) * 100);
+                        if (onProgress) onProgress(progressPercent);
+                        console.log(`📦 [LLM] 下载进度: ${progressPercent}%`);
+                    }
+                };
+
+                const downloadResult = await RNFS.downloadFile(downloadOptions).promise;
+                if (downloadResult.statusCode === 200) {
+                    console.log(`✅ [LLM] 模型下载完成，物理路径: ${destPath}`);
+                    if (onProgress) onProgress(100);
+                } else {
+                    throw new Error(`模型下载失败，HTTP状态码: ${downloadResult.statusCode}`);
+                }
+            } else {
+                if (onProgress) onProgress(100);
+                console.log(`✅ [LLM] 检测到模型已存在沙盒中，直接加载物理路径: ${destPath}`);
             }
 
             this.llamaContext = await initLlama({
@@ -87,7 +112,7 @@ class VoiceInferenceService {
             });
             console.log('✅ [LLM] 大模型加载完毕，随时待命！');
         } catch (error) {
-            console.warn('⚠️ [LLM] 大模型初始化失败 (将降级使用基础语音服务):', error);
+            console.warn('⚠️ [LLM] 大模型初始化/下载失败 (将降级使用基础语音服务):', error);
             this.llamaContext = null; 
         }
 
