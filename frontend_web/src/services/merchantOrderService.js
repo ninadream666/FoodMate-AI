@@ -24,5 +24,25 @@ export const merchantOrderService = {
     };
 
     return await apiClient.patch(`/api/merchants/${merchantId}/orders/${orderId}/approve-cancel`, payload);
-  }
+  },
+
+  // 获取商家待处理订单列表
+  getPendingOrders: async (merchantId) => {
+    return await apiClient.get(`/api/merchants/${merchantId}/orders/pending`);
+  },
+
+  // 商家接单
+  acceptOrder: async (merchantId, orderId) => {
+    return await apiClient.post(`/api/merchants/${merchantId}/orders/${orderId}/accept`);
+  },
+
+  // 商家拒单
+  rejectOrder: async (merchantId, orderId, reason) => {
+    return await apiClient.post(`/api/merchants/${merchantId}/orders/${orderId}/reject`, { reason });
+  },
+
+  // 商家更新订单进度
+  updateProgress: async (merchantId, orderId, status) => {
+    return await apiClient.post(`/api/merchants/${merchantId}/orders/${orderId}/progress`, { status });
+  },
 };

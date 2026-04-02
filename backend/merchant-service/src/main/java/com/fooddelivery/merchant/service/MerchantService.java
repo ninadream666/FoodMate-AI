@@ -8,6 +8,8 @@ import com.fooddelivery.merchant.entity.Merchant;
 import com.fooddelivery.merchant.repository.MerchantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,13 +27,8 @@ public class MerchantService {
     private final MenuService menuService;
 
     @Transactional
+    @CacheEvict(value = "merchants", allEntries = true)
     public MerchantDto createMerchant(Long userId, CreateMerchantRequest request) {
-        // 适配 Repository: findByOwnerUserId 返回 List
-        List<Merchant> existing = merchantRepository.findByOwnerUserId(userId);
-        if (!existing.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Current user already has a registered restaurant");
-        }
-
         Merchant merchant = new Merchant();
         merchant.setOwnerUserId(userId);
         merchant.setName(request.getName());
@@ -44,15 +41,22 @@ public class MerchantService {
     }
 
     public MerchantDto getMerchantByUserId(Long userId) {
-        // 使用 OrderByIdAsc 确保返回顺序确定，始终返回 ID 最小的店铺（即最早创建的）
         List<Merchant> merchants = merchantRepository.findByOwnerUserIdOrderByIdAsc(userId);
         if (merchants.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Merchant not found for user: " + userId);
         }
-        // 暂时限制一个用户一个餐厅，取第一个
         return mapToDto(merchants.get(0));
     }
 
+    public List<MerchantDto> getAllMerchantsByUserId(Long userId) {
+        List<Merchant> merchants = merchantRepository.findByOwnerUserIdOrderByIdAsc(userId);
+        if (merchants.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No merchants found for user: " + userId);
+        }
+        return merchants.stream().map(this::mapToDto).collect(java.util.stream.Collectors.toList());
+    }
+
+    @Cacheable(value = "merchants", key = "#merchantId", unless = "#result == null")
     public MerchantDto getMerchantById(Long merchantId) {
         Merchant merchant = merchantRepository.findById(merchantId)
                 .orElseThrow(
@@ -63,6 +67,7 @@ public class MerchantService {
     /**
      * 通过任意 ID 获取商家（支持数字 ID 和外部 ID）
      */
+    @Cacheable(value = "merchants", key = "'any_' + #merchantId", unless = "#result == null || !#result.isPresent()")
     public Optional<MerchantDto> findByAnyId(String merchantId) {
         // 先尝试作为数字 ID 查询
         try {
@@ -112,12 +117,6 @@ public class MerchantService {
      */
     @Transactional
     public MerchantDto claimMerchant(String merchantId, Long userId) {
-        // 检查用户是否已有商家
-        List<Merchant> existingMerchants = merchantRepository.findByOwnerUserId(userId);
-        if (!existingMerchants.isEmpty()) {
-            throw new RuntimeException("您已有关联的商家，不能再认领其他商家");
-        }
-
         // 查找商家
         Merchant merchant = findEntityByAnyId(merchantId)
                 .orElseThrow(() -> new RuntimeException("商家不存在: " + merchantId));
@@ -344,6 +343,7 @@ public class MerchantService {
     }
 
     @Transactional
+    @CacheEvict(value = "merchants", allEntries = true)
     public MerchantDto updateAutoApprovalSettings(Long merchantId, Boolean enable, Double threshold) {
         Merchant merchant = merchantRepository.findById(merchantId)
                 .orElseThrow(() -> new RuntimeException("Merchant not found: " + merchantId));

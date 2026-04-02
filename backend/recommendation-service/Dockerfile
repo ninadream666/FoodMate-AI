@@ -5,8 +5,10 @@ WORKDIR /app
 # 复制依赖文件
 COPY requirements.txt .
 
-# 安装Python依赖
-RUN pip install --no-cache-dir -r requirements.txt
+# 安装Python依赖（升级pip解决hash校验问题）
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir torch==2.5.1+cpu torchvision==0.20.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir -r requirements.txt
 
 # 复制应用代码
 COPY app/ ./app/

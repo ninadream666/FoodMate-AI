@@ -95,16 +95,19 @@ export const merchantService = {
         return await api.get('merchants', '/my');
     },
 
+    // 9.1 获取当前用户的所有商铺
+    getAllMyMerchants: async () => {
+        return await api.get('merchants', '/my/all');
+    },
+
     // 10. 导入真实餐厅 (AI 推荐服务用)
     importRealRestaurant: async (data) => {
         return await api.post('merchants', '/import', data);
     },
 
-    // 11. [新增] 创建商铺 (入驻用) <-- 之前缺少的代码
+    // 11. 创建商铺 (入驻用)
     createMerchant: async (merchantData) => {
-        // 假设后端创建商铺接口是 POST /api/merchants
-        // 如果你的后端是 POST /api/merchants/apply 或其他路径，请在此修改
-        return await api.post('merchants', '/', merchantData);
+        return await api.post('merchants', '', merchantData);
     },
 
     // 12. 获取未被认领的商家列表

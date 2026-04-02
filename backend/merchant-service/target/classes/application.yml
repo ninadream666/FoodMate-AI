@@ -19,6 +19,17 @@ spring:
     port: ${SPRING_RABBITMQ_PORT:5672}
     username: ${SPRING_RABBITMQ_USERNAME:dev}
     password: ${SPRING_RABBITMQ_PASSWORD:dev123}
+    # 消费重试策略：失败后指数退避重试 3 次，仍失败则进入死信队列
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 1000
+          multiplier: 2.0
+          max-attempts: 3
+          max-interval: 10000
+        default-requeue-rejected: false
+        prefetch: 10
   jpa:
     hibernate:
       ddl-auto: update

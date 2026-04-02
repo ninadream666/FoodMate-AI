@@ -50,6 +50,9 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
 
+                        // 5. 头像静态资源公开访问
+                        .requestMatchers("/users/avatars/**").permitAll()
+
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

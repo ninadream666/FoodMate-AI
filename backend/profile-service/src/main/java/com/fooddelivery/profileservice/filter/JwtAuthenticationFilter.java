@@ -29,20 +29,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        final String jwt = authHeader.substring(7);
-        final String username = jwtUtil.extractUsername(jwt);
+        try {
+            final String jwt = authHeader.substring(7);
+            final String username = jwtUtil.extractUsername(jwt);
 
-        // 只验证签名是否正确，不查数据库
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            // 如果 Token 没过期且签名正确
-            if (jwtUtil.isTokenValid(jwt, username)) {
-                // 创建一个简单的认证对象
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        username, null, new ArrayList<>()
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+            // 只验证签名是否正确，不查数据库
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                // 如果 Token 没过期且签名正确
+                if (jwtUtil.isTokenValid(jwt, username)) {
+                    // 创建一个简单的认证对象
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            username, null, new ArrayList<>()
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (Exception e) {
+            // Token 过期、签名无效、格式错误等情况，不设置认证，后续由 SecurityConfig 拒绝
+            // 不抛出异常，避免 500 错误
         }
         filterChain.doFilter(request, response);
     }

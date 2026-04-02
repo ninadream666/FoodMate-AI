@@ -3,10 +3,10 @@
   xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
   <mirrors>
     <mirror>
-      <id>aliyunmaven</id>
+      <id>tencentmaven</id>
       <mirrorOf>*</mirrorOf>
-      <name>阿里云公共仓库</name>
-      <url>https://maven.aliyun.com/repository/public</url>
+      <name>腾讯云公共仓库</name>
+      <url>https://mirrors.cloud.tencent.com/nexus/repository/maven-public/</url>
     </mirror>
   </mirrors>
 </settings>

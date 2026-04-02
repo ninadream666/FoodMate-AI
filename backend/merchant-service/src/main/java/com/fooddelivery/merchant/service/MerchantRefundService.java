@@ -33,7 +33,8 @@ public class MerchantRefundService {
             Long merchantId,
             Long orderId,
             Boolean approved,
-            String rejectReason) {
+            String rejectReason,
+            String externalId) {
         
         try {
             // 1. 调用订单服务的内部接口，获取订单信息并验证订单是否属于该商家
@@ -51,9 +52,18 @@ public class MerchantRefundService {
                         .body(Map.of("error", "无法获取订单信息"));
             }
 
-            // 安全解析长整型，防止 ClassCastException
-            Long orderMerchantId = parseLongSafe(orderData.get("merchantId"));
-            if (orderMerchantId == null || !orderMerchantId.equals(merchantId)) {
+            // 验证订单是否属于当前商家
+            // 订单的 merchantId 可能是数据库主键（如 "1"）或外部ID（如 "B0LDM1F2K5"）
+            String orderMerchantIdStr = orderData.get("merchantId") != null
+                    ? orderData.get("merchantId").toString() : null;
+            if (orderMerchantIdStr == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "该订单不属于当前商家"));
+            }
+            // 同时比较数据库主键和外部ID
+            boolean isOwner = orderMerchantIdStr.equals(String.valueOf(merchantId))
+                    || (externalId != null && orderMerchantIdStr.equals(externalId));
+            if (!isOwner) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("error", "该订单不属于当前商家"));
             }

@@ -7,8 +7,12 @@ import com.fooddelivery.merchant.dto.RealRestaurantDTO;
 import com.fooddelivery.merchant.entity.Merchant;
 import com.fooddelivery.merchant.repository.MerchantRepository;
 import com.fooddelivery.merchant.service.MerchantService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/merchants")
 @RequiredArgsConstructor
@@ -33,6 +38,7 @@ public class MerchantController {
      * GET /merchants?page=0&size=10&sort=createdAt,desc
      */
     @GetMapping
+    @CircuitBreaker(name = "merchantService", fallbackMethod = "listMerchantsFallback")
     public ResponseEntity<Page<MerchantDto>> listMerchants(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -62,11 +68,19 @@ public class MerchantController {
         return ResponseEntity.ok(merchant);
     }
 
+    @GetMapping("/my/all")
+    public ResponseEntity<List<MerchantDto>> getAllMyMerchants() {
+        Long userId = getCurrentUserId();
+        List<MerchantDto> merchants = merchantService.getAllMerchantsByUserId(userId);
+        return ResponseEntity.ok(merchants);
+    }
+
     /**
      * 获取商家信息（支持数字 ID 和外部 ID）
      * GET /merchants/{id}
      */
     @GetMapping("/{id}")
+    @CircuitBreaker(name = "merchantService", fallbackMethod = "getMerchantFallback")
     public ResponseEntity<MerchantDto> getMerchant(@PathVariable String id) {
         return merchantService.findByAnyId(id)
                 .map(ResponseEntity::ok)
@@ -105,6 +119,7 @@ public class MerchantController {
      * POST /merchants/import/batch
      */
     @PostMapping("/import/batch")
+    @RateLimiter(name = "default")
     public ResponseEntity<?> importRealRestaurantsBatch(@RequestBody BatchImportRequest request) {
         try {
             List<MerchantDto> imported = request.getRestaurants().stream()
@@ -172,6 +187,18 @@ public class MerchantController {
             throw new RuntimeException("Access denied");
         }
         return ResponseEntity.ok(merchantService.updateAutoApprovalSettings(id, null, threshold));
+    }
+
+    // ============ 降级方法 ============
+
+    public ResponseEntity<Page<MerchantDto>> listMerchantsFallback(int page, int size, String sort, Throwable t) {
+        log.warn("[降级] 商家列表查询熔断: {}", t.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Page.empty());
+    }
+
+    public ResponseEntity<MerchantDto> getMerchantFallback(String id, Throwable t) {
+        log.warn("[降级] 商家详情查询熔断: id={}, error={}", id, t.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
     }
 
     // 从 SecurityContext 获取当前用户ID

@@ -19,8 +19,8 @@ const CartScreen = ({ route, navigation }: any) => {
 
     // 计算总价
     const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    // 这里只展示预估，实际费用在 OrderConfirm 页计算
-    const deliveryFee = 5;
+    // 预估配送费（实际费用在 OrderConfirm 页根据距离计算）
+    const deliveryFee = 3;
     const total = subtotal + deliveryFee;
 
     // 更新数量

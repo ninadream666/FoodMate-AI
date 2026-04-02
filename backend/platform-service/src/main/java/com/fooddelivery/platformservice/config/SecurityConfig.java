@@ -72,11 +72,11 @@ public class SecurityConfig {
                                                 .permitAll()
 
                                                 // ========== 业务接口权限控制 ==========
-                                                // 商家接口 (必须放在 admin 前面，因为这是更具体的匹配)
+                                                // 商家接口 - 登录即可访问，具体权限由业务层校验店铺所有权
                                                 .requestMatchers(
                                                                 new AntPathRequestMatcher("/api/merchant/**"),
                                                                 new AntPathRequestMatcher("/merchant/**"))
-                                                .hasAnyRole("MERCHANT", "ADMIN")
+                                                .authenticated()
 
                                                 // 管理员接口
                                                 .requestMatchers(

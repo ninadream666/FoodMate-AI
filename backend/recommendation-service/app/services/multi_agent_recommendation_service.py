@@ -124,8 +124,8 @@ class MultiAgentRecommendationService:
                 location=location,
                 latitude=latitude,
                 longitude=longitude,
-                radius=getattr(request, 'search_radius', 5000),
-                limit=30,
+                radius=getattr(request, 'search_radius', 20000),
+                limit=50,
                 user_query=getattr(request, 'query', "")  # 🆕 传入真实查询词
             )
             
@@ -157,6 +157,11 @@ class MultiAgentRecommendationService:
             
             # 💡 巧妙利用 health_ctx 将纯净的原始意图传递给下游的 DecisionAgent
             health_ctx["pure_query"] = getattr(request, 'query', "")
+
+            # 传递忌口/过敏原到决策引擎，用于硬过滤
+            if hasattr(request, 'allergies') and request.allergies:
+                health_ctx["allergies"] = request.allergies
+                logger.info(f"用户忌口: {request.allergies}")
             
             result = await self.orchestrator.orchestrate(
                 user_query=user_query,
@@ -254,8 +259,8 @@ class MultiAgentRecommendationService:
         location: str,
         latitude: float = None,
         longitude: float = None,
-        radius: int = 5000,
-        limit: int = 30,
+        radius: int = 20000,
+        limit: int = 50,
         user_query: str = ""  # 🆕 接收原始查询
     ) -> List[Dict[str, Any]]:
         """搜索附近餐厅"""
@@ -631,7 +636,7 @@ class MultiAgentRecommendationService:
                 traffic_score = 60.0
             
             # 距离修正
-            if distance > 5000:
+            if distance > 20000:
                 traffic_score *= 0.7
         
         # 季节评分（基于当前月份）
@@ -671,7 +676,7 @@ class MultiAgentRecommendationService:
                 latitude=request.location.latitude,
                 longitude=request.location.longitude,
                 keywords=search_keyword,
-                radius=getattr(request, 'search_radius', 5000),
+                radius=getattr(request, 'search_radius', 20000),
                 limit=request.max_results
             )
             

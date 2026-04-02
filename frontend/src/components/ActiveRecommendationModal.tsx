@@ -8,6 +8,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import LinearGradient from 'react-native-linear-gradient';
 import {
     View,
     Text,
@@ -63,27 +64,27 @@ const ActiveRecommendationModal: React.FC<ActiveRecommendationModalProps> = ({
 
         if (heartRate > 140 || recentSteps30min > 2000) {
             return {
-                title: '🏃 运动结束了',
+                title: '运动结束了',
                 subtitle: `检测到您刚结束30分钟高强度跑步（心率 ${heartRate} bpm，步数 ${dailySteps}）`,
                 recommendation: '为您推荐高蛋白、修复肌肉的轻食套餐，预计30分钟送达',
-                tags: ['🥗 低脂轻食', '🥚 高蛋白', '💪 肌肉修复', '🚀 30分钟达'],
+                tags: ['低脂轻食', '高蛋白', '肌肉修复', '30分钟达'],
             };
         }
 
         if (heartRate > 100 || recentSteps30min > 1000) {
             return {
-                title: '🚶 检测到中等强度运动',
+                title: '检测到中等强度运动',
                 subtitle: `您刚刚完成了一次有氧运动（${recentSteps30min} 步）`,
                 recommendation: '为您推荐均衡营养的健康餐',
-                tags: ['🥗 均衡营养', '🍚 能量补充', '💧 补水'],
+                tags: ['均衡营养', '能量补充', '补水'],
             };
         }
 
         return {
-            title: '👋 运动后恢复',
+            title: '运动后恢复',
             subtitle: '适当补充营养有助于恢复',
             recommendation: '为您推荐适合的餐食',
-            tags: ['🥗 健康轻食', '🍵 养生', '🥤 清爽'],
+            tags: ['健康轻食', '养生', '清爽'],
         };
     };
 
@@ -121,10 +122,7 @@ const ActiveRecommendationModal: React.FC<ActiveRecommendationModalProps> = ({
                         <View style={styles.handle} />
                     </View>
 
-                    {/* 图标 */}
-                    <View style={styles.iconContainer}>
-                        <Text style={styles.icon}>🎉</Text>
-                    </View>
+                    {/* 图标区域已移除 */}
 
                     {/* 标题 */}
                     <Text style={styles.title}>{recommendation.title}</Text>
@@ -132,7 +130,6 @@ const ActiveRecommendationModal: React.FC<ActiveRecommendationModalProps> = ({
 
                     {/* 推荐说明 */}
                     <View style={styles.recommendBox}>
-                        <Text style={styles.recommendIcon}>💡</Text>
                         <Text style={styles.recommendText}>
                             {recommendation.recommendation}
                         </Text>
@@ -150,15 +147,15 @@ const ActiveRecommendationModal: React.FC<ActiveRecommendationModalProps> = ({
                     {/* 数据卡片 */}
                     <View style={styles.statsRow}>
                         <View style={styles.statCard}>
-                            <Text style={styles.statValue}>❤️ {health.heartRate}</Text>
+                            <Text style={styles.statValue}>{health.heartRate}</Text>
                             <Text style={styles.statLabel}>心率 bpm</Text>
                         </View>
                         <View style={styles.statCard}>
-                            <Text style={styles.statValue}>👟 {health.dailySteps}</Text>
+                            <Text style={styles.statValue}>{health.dailySteps}</Text>
                             <Text style={styles.statLabel}>今日步数</Text>
                         </View>
                         <View style={styles.statCard}>
-                            <Text style={styles.statValue}>🔥 {Math.round(health.dailySteps * 0.04)}</Text>
+                            <Text style={styles.statValue}>{Math.round(health.dailySteps * 0.04)}</Text>
                             <Text style={styles.statLabel}>消耗 kcal</Text>
                         </View>
                     </View>
@@ -166,15 +163,23 @@ const ActiveRecommendationModal: React.FC<ActiveRecommendationModalProps> = ({
                     {/* 按钮 */}
                     <View style={styles.buttonRow}>
                         <TouchableOpacity
-                            style={[styles.button, styles.primaryButton]}
+                            activeOpacity={0.7}
+                            style={{ width: '100%' }}
                             onPress={() => {
                                 onViewRecommendations?.();
                                 onClose();
                             }}
                         >
-                            <Text style={styles.primaryButtonText}>
-                                🍽️ 查看推荐餐食
-                            </Text>
+                            <LinearGradient
+                                colors={['#FFA07A', '#C4422E']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.primaryButton}
+                            >
+                                <Text style={styles.primaryButtonText}>
+                                    查看推荐餐食
+                                </Text>
+                            </LinearGradient>
                         </TouchableOpacity>
                     </View>
 
@@ -310,12 +315,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     primaryButton: {
-        backgroundColor: colors.primary,
-        ...shadows.primary,
+        paddingVertical: spacing.lg,
+        borderRadius: borderRadius.xxl,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 8,
     },
     primaryButtonText: {
         fontSize: fontSize.lg,
-        fontWeight: fontWeight.semibold,
+        fontWeight: fontWeight.bold,
         color: colors.textOnPrimary,
     },
     linkButton: {

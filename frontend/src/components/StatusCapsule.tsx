@@ -212,8 +212,12 @@ const StatusCapsule: React.FC<StatusCapsuleProps> = ({
                 {/* 步数指示器（小）*/}
                 {health.dailySteps > 0 && (
                     <View style={styles.stepsIndicator}>
-                        <Text style={styles.stepsText}>
-                            👟 {health.dailySteps.toLocaleString()}
+                        <Text style={styles.stepsText} numberOfLines={1}>
+                            {health.dailySteps >= 10000
+                                ? `${(health.dailySteps / 10000).toFixed(1)}w`
+                                : health.dailySteps >= 1000
+                                    ? `${(health.dailySteps / 1000).toFixed(1)}k`
+                                    : String(health.dailySteps)}步
                         </Text>
                     </View>
                 )}
@@ -229,7 +233,7 @@ const StatusCapsule: React.FC<StatusCapsuleProps> = ({
                     <Text style={styles.lightIcon}>
                         {lightLevelIcon(health.lightLevel)}
                     </Text>
-                    <Text style={styles.lightText}>
+                    <Text style={styles.lightText} numberOfLines={1}>
                         {lightLevelLabel(health.lightLevel)}
                     </Text>
                 </View>
@@ -277,6 +281,7 @@ const styles = StyleSheet.create({
     section: {
         flexDirection: 'row',
         alignItems: 'center',
+        flexShrink: 1,
     },
     weatherSection: {
         flexDirection: 'row',
@@ -302,6 +307,7 @@ const styles = StyleSheet.create({
     activityText: {
         fontSize: fontSize.sm,
         color: colors.textSecondary,
+        flexShrink: 1,
     },
     activeText: {
         color: colors.primary,
@@ -335,13 +341,14 @@ const styles = StyleSheet.create({
         marginLeft: 2,
     },
     stepsIndicator: {
-        marginLeft: spacing.md,
+        marginLeft: spacing.sm,
         backgroundColor: colors.surfaceFrosted,
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.xs,
         borderRadius: borderRadius.sm,
         borderWidth: 1,
         borderColor: colors.cardBorder,
+        flexShrink: 1,
     },
     stepsText: {
         fontSize: fontSize.xs,
@@ -356,8 +363,10 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs,
         borderRadius: borderRadius.sm,
         marginLeft: spacing.xs,
+        marginRight: spacing.sm,
         borderWidth: 1,
         borderColor: colors.cardBorder,
+        flexShrink: 1,
     },
     lightIcon: {
         fontSize: 12,

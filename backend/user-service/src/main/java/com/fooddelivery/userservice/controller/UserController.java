@@ -6,10 +6,18 @@ import com.fooddelivery.userservice.entity.User;
 import com.fooddelivery.userservice.repository.UserRepository;
 import com.fooddelivery.userservice.service.CreditService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/users")
@@ -18,6 +26,12 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final CreditService creditService;
+
+    @Value("${app.upload.dir:uploads/avatars}")
+    private String uploadDir;
+
+    @Value("${app.base-url:http://127.0.0.1:8083}")
+    private String baseUrl;
 
     // 获取我的完整信息
     @GetMapping("/me")
@@ -50,6 +64,43 @@ public class UserController {
 
         // 使用DTO返回
         return ResponseEntity.ok(UserResponseDto.fromEntity(saved));
+    }
+
+    // 上传头像
+    @PostMapping("/me/avatar")
+    public ResponseEntity<?> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        String username = getCurrentUsername();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        try {
+            // 创建目录
+            Path dir = Paths.get(uploadDir);
+            if (!Files.exists(dir)) {
+                Files.createDirectories(dir);
+            }
+
+            // 生成文件名
+            String ext = "";
+            String originalName = file.getOriginalFilename();
+            if (originalName != null && originalName.contains(".")) {
+                ext = originalName.substring(originalName.lastIndexOf("."));
+            }
+            String fileName = UUID.randomUUID() + ext;
+
+            // 保存文件
+            Path filePath = dir.resolve(fileName);
+            Files.write(filePath, file.getBytes());
+
+            // 生成 URL 并保存到用户
+            String avatarUrl = baseUrl + "/users/avatars/" + fileName;
+            user.setAvatarUrl(avatarUrl);
+            userRepository.save(user);
+
+            return ResponseEntity.ok(java.util.Map.of("avatarUrl", avatarUrl));
+        } catch (IOException e) {
+            return ResponseEntity.status(500).body(java.util.Map.of("error", "上传失败: " + e.getMessage()));
+        }
     }
 
     private String getCurrentUsername() {

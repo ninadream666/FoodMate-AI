@@ -22,6 +22,7 @@ import MenuManagement from './pages/merchant/MenuManagement';
 import ServiceMarketplace from './pages/merchant/ServiceMarketplace';
 import SettlementDashboard from './pages/merchant/SettlementDashboard';
 import RefundAudit from './pages/merchant/RefundAudit';
+import MerchantOrders from './pages/merchant/MerchantOrders';
 import MerchantShopInfo from './pages/merchant/MerchantShopInfo';
 import MerchantOnboarding from './pages/merchant/MerchantOnboarding';
 import SmartPricing from './pages/merchant/SmartPricing'; // 引入 AI 定价页面
@@ -162,7 +163,10 @@ function App() {
           >
             {/* 默认子路由：重定向到菜单管理 */}
             <Route index element={<Navigate to="menu" replace />} />
-            
+
+            {/* 订单管理 */}
+            <Route path="order-manage" element={<MerchantOrders />} />
+
             {/* 菜单管理 */}
             <Route path="menu" element={<MenuManagement />} />
             

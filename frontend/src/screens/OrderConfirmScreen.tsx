@@ -14,6 +14,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { orderService } from '../services/orderService';
 import { addressService } from '../services/addressService';
+import { authService } from '../services/authService';
+import api from '../services/apiClient';
 import { useIsFocused } from '@react-navigation/native';
 
 const OrderConfirmScreen = ({ route, navigation }: any) => {
@@ -23,22 +25,44 @@ const OrderConfirmScreen = ({ route, navigation }: any) => {
     // 2. 状态管理
     const [address, setAddress] = useState<any>(null);
     const [remark, setRemark] = useState('');
+    const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
+    const [selectedCoupon, setSelectedCoupon] = useState<any>(null);
+    const couponDiscount = selectedCoupon
+        ? (selectedCoupon.couponTemplate?.discountType === 'PERCENTAGE'
+            ? subtotal * (1 - selectedCoupon.couponTemplate.discountValue / 100)
+            : selectedCoupon.couponTemplate?.discountValue || 0)
+        : discount;
     const [loading, setLoading] = useState(false);
     const [pageLoading, setPageLoading] = useState(true);
 
-    // 3. 计算最终费用 (参考 Web 端逻辑)
-    const deliveryFee = 5.00;
-    const tax = subtotal * 0.0175; // 1.75% 税费
-    const total = subtotal + deliveryFee + tax - discount;
+    // 3. 计算最终费用
+    // 配送费：基础3元 + 每公里1元，最低3元，最高15元
+    const distanceKm = (route.params?.distance || 2000) / 1000;
+    const deliveryFee = Math.min(15, Math.max(3, 3 + Math.round(distanceKm)));
+    const packagingFee = Math.ceil((route.params?.items?.length || 1) * 0.5); // 包装费：每件0.5元
+    const total = Math.max(0, subtotal + deliveryFee + packagingFee - couponDiscount);
 
     const isFocused = useIsFocused();
 
-    // 4. 加载默认地址
+    // 4. 加载默认地址和可用优惠券
     useEffect(() => {
         if (isFocused) {
             loadDefaultAddress();
+            loadCoupons();
         }
     }, [isFocused]);
+
+    const loadCoupons = async () => {
+        try {
+            const user = await authService.getCurrentUser();
+            if (user?.id) {
+                const coupons = await api.get('coupons', `/user/${user.id}/available?orderAmount=${subtotal}`);
+                setAvailableCoupons(Array.isArray(coupons) ? coupons : (coupons?.data || []));
+            }
+        } catch (e) {
+            console.warn('加载优惠券失败', e);
+        }
+    };
 
     // 如果从地址列表选了地址回来，更新地址
     useEffect(() => {
@@ -170,8 +194,9 @@ const OrderConfirmScreen = ({ route, navigation }: any) => {
             try {
                 console.log('测试API连接...');
                 console.log('即将调用 orderService.getMyOrders()');
-                const orders = await orderService.getMyOrders();
-                console.log('API连接测试成功，获取到订单:', orders?.length || 0, '条');
+                const ordersData = await orderService.getMyOrders();
+                const orders = ordersData?.content || (Array.isArray(ordersData) ? ordersData : []);
+                console.log('API连接测试成功，获取到订单:', orders.length, '条');
             } catch (testError: any) {
                 console.error('API连接测试失败:', testError);
                 console.error('测试错误详情:', {
@@ -244,7 +269,14 @@ const OrderConfirmScreen = ({ route, navigation }: any) => {
             // 1. 创建订单
             const createdOrder = await orderService.createOrder(orderData);
 
-            // 2. 支付订单
+            // 2. 核销优惠券
+            if (selectedCoupon?.id) {
+                await api.post('coupons', `/${selectedCoupon.id}/use`).catch((e: any) => {
+                    console.warn('核销优惠券失败:', e);
+                });
+            }
+
+            // 3. 支付订单
             await orderService.payOrder(createdOrder.id);
 
             // 3. 跳转成功页
@@ -322,6 +354,39 @@ const OrderConfirmScreen = ({ route, navigation }: any) => {
 
                     <View style={styles.divider} />
 
+                    {/* 优惠券选择 */}
+                    <TouchableOpacity
+                        style={styles.feeRow}
+                        onPress={() => {
+                            if (availableCoupons.length === 0) {
+                                Alert.alert('暂无可用优惠券');
+                                return;
+                            }
+                            Alert.alert(
+                                '选择优惠券',
+                                '',
+                                [
+                                    ...availableCoupons.map((c: any) => ({
+                                        text: `${c.couponTemplate?.name || '优惠券'} (满${c.couponTemplate?.minOrderAmount || 0}减${c.couponTemplate?.discountValue || 0})`,
+                                        onPress: () => setSelectedCoupon(c),
+                                    })),
+                                    { text: '不使用优惠券', onPress: () => setSelectedCoupon(null), style: 'cancel' },
+                                ]
+                            );
+                        }}
+                    >
+                        <Text style={styles.feeLabel}>优惠券</Text>
+                        <Text style={{ color: selectedCoupon ? '#F2784B' : '#999', fontSize: 14 }}>
+                            {selectedCoupon
+                                ? `${selectedCoupon.couponTemplate?.name || '优惠券'} -¥${couponDiscount.toFixed(2)}`
+                                : availableCoupons.length > 0
+                                    ? `${availableCoupons.length}张可用 >`
+                                    : '暂无可用'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    <View style={styles.divider} />
+
                     {/* 费用明细 */}
                     <View style={styles.feeRow}>
                         <Text style={styles.feeLabel}>小计</Text>
@@ -332,13 +397,13 @@ const OrderConfirmScreen = ({ route, navigation }: any) => {
                         <Text style={styles.feeValue}>¥{deliveryFee.toFixed(2)}</Text>
                     </View>
                     <View style={styles.feeRow}>
-                        <Text style={styles.feeLabel}>税费 (1.75%)</Text>
-                        <Text style={styles.feeValue}>¥{tax.toFixed(2)}</Text>
+                        <Text style={styles.feeLabel}>包装费</Text>
+                        <Text style={styles.feeValue}>¥{packagingFee.toFixed(2)}</Text>
                     </View>
-                    {discount > 0 && (
+                    {couponDiscount > 0 && (
                         <View style={styles.feeRow}>
-                            <Text style={[styles.feeLabel, { color: 'green' }]}>优惠</Text>
-                            <Text style={[styles.feeValue, { color: 'green' }]}>-¥{discount.toFixed(2)}</Text>
+                            <Text style={[styles.feeLabel, { color: 'green' }]}>优惠券</Text>
+                            <Text style={[styles.feeValue, { color: 'green' }]}>-¥{couponDiscount.toFixed(2)}</Text>
                         </View>
                     )}
 

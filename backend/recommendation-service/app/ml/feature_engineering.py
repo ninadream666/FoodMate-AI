@@ -183,7 +183,7 @@ def extract_features(
                          (pure_query in cuisine_raw.lower() or pure_query in name_str)) else 0
 
     # ---------- 归一化分 ----------
-    max_distance = _safe_float(context.get("max_distance"), 5000)
+    max_distance = _safe_float(context.get("max_distance"), 20000)
     distance_score = max(0.0, min(1.0, 1 - distance / max_distance)) if max_distance > 0 else 0.5
     rating_score = max(0.0, min(1.0, (rating - 2.5) / 2.5))
     

@@ -11,7 +11,11 @@ import {
     ActivityIndicator
 } from 'react-native';
 import { profileService } from '../services/profileService';
+import { userService } from '../services/userService';
+import { orderService } from '../services/orderService';
+import { walletService } from '../services/walletService';
 import { authService } from '../services/authService';
+import { launchImageLibrary } from 'react-native-image-picker';
 import Feather from 'react-native-vector-icons/Feather';
 import LinearGradient from 'react-native-linear-gradient';
 
@@ -26,6 +30,12 @@ const ProfileScreen = ({ navigation }: any) => {
     const [nickname, setNickname] = useState('');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
+    const [avatarUrl, setAvatarUrl] = useState('');
+
+    // 统计数据
+    const [monthlySpending, setMonthlySpending] = useState(0);
+    const [totalOrders, setTotalOrders] = useState(0);
+    const [couponCount, setCouponCount] = useState(0);
 
     useEffect(() => {
         loadProfile();
@@ -33,12 +43,14 @@ const ProfileScreen = ({ navigation }: any) => {
 
     const loadProfile = async () => {
         try {
-            const data = await profileService.getMyProfile();
+            const data = await userService.getUserProfile();
             setUser(data);
-            // 初始化表单
             setNickname(data.nickname || '');
             setPhone(data.phone || '');
             setEmail(data.email || '');
+            setAvatarUrl(data.avatarUrl || '');
+            // 用户信息加载完后加载统计
+            loadStats(data.id);
         } catch (e) {
             console.error(e);
         } finally {
@@ -46,18 +58,90 @@ const ProfileScreen = ({ navigation }: any) => {
         }
     };
 
+    const loadStats = async (userId?: string | number) => {
+        // 并行请求订单和优惠券数据
+        try {
+            const uid = userId || user?.id || '';
+            const [orders, coupons] = await Promise.all([
+                orderService.getMyOrders().catch((e: any) => {
+                    console.warn('获取订单失败:', e.message);
+                    return null;
+                }),
+                walletService.getAllCoupons(uid).catch((e: any) => {
+                    console.warn('获取优惠券失败:', e.message);
+                    return [];
+                }),
+            ]);
+
+            // 累计订单数 — 兼容多种返回格式
+            let orderList: any[] = [];
+            if (orders) {
+                if (orders.content && Array.isArray(orders.content)) {
+                    orderList = orders.content;  // Spring Page 对象
+                } else if (Array.isArray(orders)) {
+                    orderList = orders;  // 普通数组
+                } else if (orders.data && Array.isArray(orders.data)) {
+                    orderList = orders.data;  // {data: [...]} 包装
+                }
+            }
+            setTotalOrders(orderList.length);
+
+            // 本月消费：筛选本月已完成/已支付的订单
+            const now = new Date();
+            const thisMonth = now.getMonth();
+            const thisYear = now.getFullYear();
+            let spending = 0;
+            for (const order of orderList) {
+                // 兼容 status 为对象 {code:'PAID'} 或字符串 'PAID'
+                const rawStatus = order.status;
+                const status = (typeof rawStatus === 'object' && rawStatus !== null ? rawStatus.code : rawStatus || '').toUpperCase();
+                if (['PAID', 'CONFIRMED', 'COMPLETED', 'DELIVERED', 'ACCEPTED', 'PREPARING', 'READY', 'DELIVERING'].includes(status)) {
+                    const orderDate = new Date(order.createdAt || order.createTime || 0);
+                    if (orderDate.getMonth() === thisMonth && orderDate.getFullYear() === thisYear) {
+                        spending += parseFloat(order.totalAmount || order.total || 0);
+                    }
+                }
+            }
+            setMonthlySpending(spending);
+
+            // 可用优惠券数量
+            const couponList = Array.isArray(coupons) ? coupons : [];
+            const available = couponList.filter((c: any) => {
+                const status = (c.status || '').toUpperCase();
+                return status === 'AVAILABLE' || status === 'ACTIVE' || !c.usedAt;
+            });
+            setCouponCount(available.length);
+        } catch (e) {
+            console.error('加载统计数据失败:', e);
+        }
+    };
+
+    const handlePickAvatar = () => {
+        launchImageLibrary({ mediaType: 'photo', quality: 0.8 }, async (response) => {
+            if (response.didCancel || response.errorCode) return;
+            const uri = response.assets?.[0]?.uri;
+            if (!uri) return;
+
+            try {
+                setAvatarUrl(uri); // 先预览
+                const result = await userService.uploadAvatar(uri);
+                setAvatarUrl(result.avatarUrl); // 替换为服务器 URL
+                setUser((prev: any) => ({ ...prev, avatarUrl: result.avatarUrl }));
+                Alert.alert('成功', '头像已更新');
+            } catch (e) {
+                Alert.alert('失败', '头像上传失败，请重试');
+                setAvatarUrl(user.avatarUrl || ''); // 恢复
+            }
+        });
+    };
+
     const handleSave = async () => {
         try {
-            const updateData = {
-                ...user,
-                nickname,
-                phone,
-                email
-            };
-            await profileService.updateProfile(updateData);
-            setUser(updateData);
+            const updateData = { phone };
+            const saved = await userService.updateUserProfile(updateData);
+            setUser({ ...user, ...saved });
             setEditing(false);
-            Alert.alert('成功', '个人资料已更新');
+            Alert.alert('成功', '手机号已更新');
         } catch (e) {
             Alert.alert('失败', '更新失败，请重试');
         }
@@ -93,10 +177,17 @@ const ProfileScreen = ({ navigation }: any) => {
         <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
             {/* 头部信息 */}
             <View style={styles.header}>
-                <Image
-                    source={{ uri: user.avatarUrl || defaultAvatar }}
-                    style={styles.avatar}
-                />
+                <TouchableOpacity onPress={editing ? handlePickAvatar : undefined} activeOpacity={editing ? 0.7 : 1}>
+                    <Image
+                        source={{ uri: avatarUrl || user.avatarUrl || defaultAvatar }}
+                        style={styles.avatar}
+                    />
+                    {editing && (
+                        <View style={styles.avatarOverlay}>
+                            <Feather name="camera" size={18} color="#fff" />
+                        </View>
+                    )}
+                </TouchableOpacity>
                 <View style={{ flex: 1, marginLeft: spacing.lg }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                         <Text style={styles.username}>{user.username || '用户'}</Text>
@@ -116,16 +207,8 @@ const ProfileScreen = ({ navigation }: any) => {
                 <View style={styles.formCard}>
                     <Text style={styles.sectionTitle}>修改资料</Text>
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>昵称</Text>
-                        <TextInput style={styles.input} value={nickname} onChangeText={setNickname} placeholder="未设置" />
-                    </View>
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>手机</Text>
-                        <TextInput style={styles.input} value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="未绑定" />
-                    </View>
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>邮箱</Text>
-                        <TextInput style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="未绑定" />
+                        <Text style={styles.label}>手机号</Text>
+                        <TextInput style={styles.input} value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="请输入手机号" placeholderTextColor="#999" />
                     </View>
                     <TouchableOpacity onPress={handleSave} activeOpacity={0.7}>
                         <LinearGradient
@@ -142,17 +225,19 @@ const ProfileScreen = ({ navigation }: any) => {
 
             {/* 统计数据 */}
             <View style={styles.statsRow}>
-                <StatItem label="本月消费" value="¥0.00" />
-                <StatItem label="累计订单" value="0" />
-                <StatItem label="优惠券" value="0" />
+                <StatItem label="本月消费" value={`¥${monthlySpending.toFixed(2)}`} />
+                <StatItem label="累计订单" value={String(totalOrders)} />
+                <StatItem label="优惠券" value={String(couponCount)} />
             </View>
 
             {/* 顾客菜单列表 */}
             <View style={styles.menuList}>
                 <MenuItem label="我的订单" onPress={() => navigation.navigate('OrderList')} />
+                <MenuItem label="我的收藏" onPress={() => navigation.navigate('Favorites')} />
+                <MenuItem label="浏览历史" onPress={() => navigation.navigate('BrowseHistory')} />
                 <MenuItem label="地址管理" onPress={() => navigation.navigate('AddressList')} />
                 <MenuItem label="我的钱包 & 优惠券" onPress={() => navigation.navigate('Wallet')} />
-                <MenuItem label="隐私政策" onPress={() => { }} isLast />
+                <MenuItem label="隐私政策" onPress={() => navigation.navigate('PrivacyPolicy')} isLast />
             </View>
 
             {/* --- 新增：商家入口 --- */}
@@ -210,6 +295,19 @@ const styles = StyleSheet.create({
         height: 70,
         borderRadius: 35,
         backgroundColor: colors.backgroundGradientEnd,
+    },
+    avatarOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#fff',
     },
     userInfo: { flex: 1, marginLeft: spacing.lg },
     username: {

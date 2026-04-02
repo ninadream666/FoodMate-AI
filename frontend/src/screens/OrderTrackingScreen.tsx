@@ -10,28 +10,47 @@ import {
     ActivityIndicator
 } from 'react-native';
 import { orderService } from '../services/orderService';
+import { merchantService } from '../services/merchantService';
 
 // 模拟骑手头像
 const RIDER_AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBrawV460GKuSwxG2erT5rdBh9ksqmQjzOTvnwYNU94TAR8--4IoSIyOfS2xC0-s3GbtIMMvUkusGoRljcvgdBFUwmD-nkloIV6LQSXdQUcr27tzgJpxyuKyVik-B_9eTdirHZhMVgfkEVfDKo6yDeJv7tOMeUbHB-BW6vGuWrj0-245nme0zrYfM0SN5ZaxIK5AyaCUa1vvb2fIri1634y5Hjop3rpflHAC9zZXdPSEWLiQh7mhvSgy4_gKUuFYXuuBjkJrNms9v23';
 
+// 上海时区格式化
+const formatShanghaiTime = (dateStr: string, options?: Intl.DateTimeFormatOptions) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleString('zh-CN', {
+        timeZone: 'Asia/Shanghai',
+        ...options,
+    });
+};
+
 const OrderTrackingScreen = ({ route, navigation }: any) => {
     const { order: initialOrder } = route.params || {};
     const [order, setOrder] = useState<any>(initialOrder);
-    const [loading, setLoading] = useState(!initialOrder);
+    const [merchantName, setMerchantName] = useState('');
+    const [loading, setLoading] = useState(true);
 
-    // 如果传进来的是完整对象直接用，如果是ID则请求详情
+    // 始终调用详情 API 获取完整数据（含菜品名），同时获取商家名
     useEffect(() => {
-        if (!initialOrder || !initialOrder.items) {
-            loadDetail();
-        }
+        loadDetail();
     }, []);
 
     const loadDetail = async () => {
         try {
             const id = initialOrder?.id || route.params?.id;
             if (id) {
+                // 获取订单详情（含菜品名称）
                 const data = await orderService.getOrderDetail(id);
                 setOrder(data);
+
+                // 获取商家名称
+                const mid = data?.merchantId || initialOrder?.merchantId;
+                if (mid) {
+                    try {
+                        const merchant = await merchantService.getMerchantById(mid);
+                        if (merchant?.name) setMerchantName(merchant.name);
+                    } catch { /* 查不到用兜底 */ }
+                }
             }
         } catch (e) {
             console.error(e);
@@ -63,59 +82,123 @@ const OrderTrackingScreen = ({ route, navigation }: any) => {
     if (loading) return <ActivityIndicator style={{ marginTop: 50 }} size="large" />;
     if (!order) return <Text>订单不存在</Text>;
 
+    // 兼容后端返回的对象 { code: 'PAID' } 或字符串 'PAID'
+    const statusCode = typeof order.status === 'object' && order.status !== null ? order.status.code : order.status;
+
+    const isCancelled = ['CANCELLED', 'CANCEL_PENDING', 'REFUNDED'].includes(statusCode);
+    const statusLabel = orderService.getStatusLabel(order.status);
+
     return (
         <ScrollView style={styles.container}>
-            {/* 1. 地图区域 (图片占位) */}
-            <View style={styles.mapContainer}>
-                <View style={styles.mapPlaceholder}>
-                    <Text style={styles.mapText}>🗺️ 配送地图</Text>
-                    <Text style={styles.mapSubText}>骑手正在火速赶往 {order.merchantName || '餐厅'}</Text>
+            {/* 1. 顶部状态区域 */}
+            {isCancelled ? (
+                <View style={[styles.mapContainer, { backgroundColor: '#F5F0EB' }]}>
+                    <View style={styles.mapPlaceholder}>
+                        <Text style={[styles.mapText, { fontSize: 40 }]}>
+                            {statusCode === 'CANCEL_PENDING' ? '⏳' : '❌'}
+                        </Text>
+                        <Text style={[styles.mapSubText, { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.textPrimary, marginTop: spacing.sm }]}>
+                            {statusLabel}
+                        </Text>
+                        {statusCode === 'CANCELLED' && order.refundAmount && (
+                            <Text style={[styles.mapSubText, { marginTop: spacing.xs }]}>
+                                退款金额: ¥{order.refundAmount}
+                            </Text>
+                        )}
+                        {order.cancelReason && (
+                            <Text style={[styles.mapSubText, { marginTop: spacing.xs }]}>
+                                取消原因: {order.cancelReason}
+                            </Text>
+                        )}
+                    </View>
                 </View>
-                <View style={styles.etaContainer}>
-                    <Text style={styles.etaTitle}>预计送达</Text>
-                    <Text style={styles.etaTime}>12:30</Text>
+            ) : (
+                <View style={styles.mapContainer}>
+                    <View style={styles.mapPlaceholder}>
+                        <Text style={styles.mapText}>🗺️ 配送地图</Text>
+                        <Text style={styles.mapSubText}>骑手正在火速赶往 {merchantName || '餐厅'}</Text>
+                    </View>
+                    <View style={styles.etaContainer}>
+                        <Text style={styles.etaTitle}>预计送达</Text>
+                        <Text style={styles.etaTime}>
+                            {order.createdAt
+                                ? formatShanghaiTime(
+                                    new Date(new Date(order.createdAt).getTime() + 30 * 60000).toISOString(),
+                                    { hour: '2-digit', minute: '2-digit' }
+                                  )
+                                : '--:--'}
+                        </Text>
+                    </View>
                 </View>
-            </View>
+            )}
 
-            {/* 2. 进度条区域 */}
+            {/* 2. 进度条区域 - 基于真实订单状态 */}
             <View style={styles.card}>
                 <Text style={styles.sectionTitle}>订单状态</Text>
-                <View style={styles.timeline}>
-                    {renderStep('已接单', '12:00', true, false)}
-                    {renderStep('制作中', '12:05', true, false)}
-                    {renderStep('配送中', '12:15', true, false)}
-                    {renderStep('已送达', null, false, true)}
-                </View>
-            </View>
-
-            {/* 3. 骑手信息 */}
-            <View style={styles.card}>
-                <View style={styles.riderRow}>
-                    <Image source={{ uri: RIDER_AVATAR }} style={styles.avatar} />
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.riderName}>骑手小王</Text>
-                        <Text style={styles.riderTag}>金牌骑手</Text>
+                {isCancelled ? (
+                    <View style={styles.timeline}>
+                        {renderStep('已下单', order.createdAt ? formatShanghaiTime(order.createdAt, { hour: '2-digit', minute: '2-digit' }) : '', true, false)}
+                        {renderStep(statusLabel, '', true, true)}
                     </View>
-                    <TouchableOpacity style={styles.callBtn} onPress={handleContactRider}>
-                        <Text style={styles.callText}>联系</Text>
-                    </TouchableOpacity>
-                </View>
+                ) : (
+                    <View style={styles.timeline}>
+                        {renderStep('已下单', order.createdAt ? formatShanghaiTime(order.createdAt, { hour: '2-digit', minute: '2-digit' }) : '', true, false)}
+                        {renderStep('已接单', ['CONFIRMED','ACCEPTED','PREPARING','READY','DELIVERING','DELIVERED','COMPLETED'].includes(statusCode) ? '' : null,
+                            ['CONFIRMED','ACCEPTED','PREPARING','READY','DELIVERING','DELIVERED','COMPLETED'].includes(statusCode), false)}
+                        {renderStep('制作中', ['PREPARING','READY','DELIVERING','DELIVERED','COMPLETED'].includes(statusCode) ? '' : null,
+                            ['PREPARING','READY','DELIVERING','DELIVERED','COMPLETED'].includes(statusCode), false)}
+                        {renderStep('配送中', ['DELIVERING','DELIVERED','COMPLETED'].includes(statusCode) ? '' : null,
+                            ['DELIVERING','DELIVERED','COMPLETED'].includes(statusCode), false)}
+                        {renderStep('已送达', ['DELIVERED','COMPLETED'].includes(statusCode) ? '' : null,
+                            ['DELIVERED','COMPLETED'].includes(statusCode), true)}
+                    </View>
+                )}
             </View>
 
-            {/* 4. 订单详情简略 */}
+            {/* 3. 骑手信息 - 已取消的订单不显示 */}
+            {!isCancelled && (
+                <View style={styles.card}>
+                    <View style={styles.riderRow}>
+                        <Image source={{ uri: RIDER_AVATAR }} style={styles.avatar} />
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.riderName}>{order.riderName || '等待分配骑手'}</Text>
+                            <Text style={styles.riderTag}>{['DELIVERING','DELIVERED','COMPLETED'].includes(statusCode) ? '配送中' : '等待接单'}</Text>
+                        </View>
+                        <TouchableOpacity style={styles.callBtn} onPress={handleContactRider}>
+                            <Text style={styles.callText}>联系</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
+
+            {/* 4. 订单详情 */}
             <View style={[styles.card, { marginBottom: 40 }]}>
                 <Text style={styles.sectionTitle}>订单详情</Text>
-                {order.items?.map((item: any, index: number) => (
+                {merchantName ? (
+                    <Text style={{ color: colors.textSecondary, fontSize: fontSize.sm, marginBottom: spacing.md }}>
+                        {merchantName}
+                    </Text>
+                ) : null}
+                {/* 优先用 orderItems（详情API返回，含菜品名），fallback 到 items */}
+                {(order.orderItems || order.items)?.map((item: any, index: number) => (
                     <View key={index} style={styles.orderItem}>
-                        <Text style={styles.itemName}>{item.menuItemName || item.name || '商品'}</Text>
+                        <Text style={styles.itemName}>
+                            {item.menuItemName || item.name || `菜品 #${item.menuItemId}`}
+                        </Text>
                         <Text style={styles.itemQty}>x{item.quantity}</Text>
-                        <Text style={styles.itemPrice}>¥{item.price}</Text>
+                        <Text style={styles.itemPrice}>¥{item.unitPrice || item.price}</Text>
                     </View>
                 ))}
                 <View style={styles.totalRow}>
                     <Text style={styles.totalLabel}>实付金额</Text>
                     <Text style={styles.totalValue}>¥{order.totalAmount}</Text>
                 </View>
+                {isCancelled && order.refundAmount != null && (
+                    <View style={[styles.totalRow, { borderTopWidth: 0, paddingTop: spacing.xs }]}>
+                        <Text style={styles.totalLabel}>退回金额</Text>
+                        <Text style={[styles.totalValue, { color: '#67c23a' }]}>¥{order.refundAmount}</Text>
+                    </View>
+                )}
             </View>
         </ScrollView>
     );

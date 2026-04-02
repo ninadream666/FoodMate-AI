@@ -17,11 +17,20 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByUserIdOrderByCreatedAtDesc(Long userId);
 
+    // 分页查询用户订单，防止数据量过大时一次性加载全部
+    Page<Order> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+
     List<Order> findByUserIdAndStatusOrderByCreatedAtDesc(Long userId, OrderStatus status);
 
     List<Order> findByMerchantIdAndCancelStatusOrderByCreatedAtDesc(String merchantId, String cancelStatus);
 
     List<Order> findByMerchantIdAndStatus(String merchantId, OrderStatus status);
+
+    List<Order> findByMerchantIdAndStatusInOrderByCreatedAtDesc(String merchantId, List<OrderStatus> statuses);
+
+    List<Order> findByMerchantIdInAndStatusInOrderByCreatedAtDesc(List<String> merchantIds, List<OrderStatus> statuses);
+
+    List<Order> findByMerchantIdInAndStatus(List<String> merchantIds, OrderStatus status);
 
     List<Order> findByUserIdAndCreatedAtAfter(Long userId, LocalDateTime startTime);
 

@@ -23,19 +23,135 @@ jwt:
   secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
   expiration: 86400000 # 1 day
 
-# 通用数据库配置
+# ============ 数据库连接池 ============
+# 高并发下 20 个连接远远不够，调整到 50
 spring.datasource:
   hikari:
-    maximum-pool-size: 20
-    minimum-idle: 5
+    maximum-pool-size: 50
+    minimum-idle: 10
     idle-timeout: 300000
     connection-timeout: 20000
+    # 泄露检测：连接借出超过 60s 未归还则打印警告
+    leak-detection-threshold: 60000
 
-# 日志配置
+# ============ Redis 分布式缓存 ============
+# 激活 Redis 作为缓存后端 (之前只配置了连接但未启用)
+spring.cache:
+  type: redis
+
+# ============ HTTP 性能 ============
+server:
+  # 响应压缩
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript,text/css
+    min-response-size: 1024
+
+  # 请求体大小限制
+  tomcat:
+    max-http-form-post-size: 10MB
+    max-swallow-size: 10MB
+    # Tomcat 线程池：高并发下限制最大线程，防止线程爆炸
+    threads:
+      max: 200
+      min-spare: 20
+    # 连接队列：等待处理的最大连接数
+    accept-count: 100
+
+  # 优雅停机：收到 SIGTERM 后等待当前请求处理完再关闭
+  shutdown: graceful
+
+# 优雅停机超时：最多等 30s，超时强制关闭
+spring.lifecycle:
+  timeout-per-shutdown-phase: 30s
+
+spring.servlet.multipart:
+  max-file-size: 10MB
+  max-request-size: 10MB
+
+# ============ 全局限流过滤器 ============
+# 在无 API Gateway 的架构下，每个服务实例自行限流
+rate-limit:
+  enabled: true
+
+# ============ Resilience4j 弹性保护 ============
+# 激活 ResilienceConfig 中定义的断路器、限流、隔板等
+resilience:
+  enabled: true
+
+# Resilience4j YAML 级别配置（覆盖 Java Config Bean 的默认值，按实例名区分）
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        register-health-indicator: true
+        sliding-window-size: 20
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 5
+        minimum-number-of-calls: 10
+        automatic-transition-from-open-to-half-open-enabled: true
+    instances:
+      # 订单服务：更保守（涉及支付）
+      orderService:
+        base-config: default
+        failure-rate-threshold: 30
+        wait-duration-in-open-state: 60s
+      # 商家查询：容忍度高一些
+      merchantService:
+        base-config: default
+        failure-rate-threshold: 60
+
+  ratelimiter:
+    configs:
+      default:
+        limit-for-period: 100
+        limit-refresh-period: 1s
+        timeout-duration: 500ms
+    instances:
+      # 下单接口：单实例每秒最多 50 次（防止刷单）
+      createOrder:
+        limit-for-period: 50
+        limit-refresh-period: 1s
+        timeout-duration: 200ms
+      # 图片分析类接口（如果走 gateway 代理）
+      visionAnalyze:
+        limit-for-period: 20
+        limit-refresh-period: 1s
+        timeout-duration: 1s
+
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+
+  bulkhead:
+    configs:
+      default:
+        max-concurrent-calls: 30
+        max-wait-duration: 500ms
+    instances:
+      # 订单写操作：限制并发防止数据库压力
+      orderWrite:
+        max-concurrent-calls: 20
+        max-wait-duration: 1s
+
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s
+        cancel-running-future: true
+
+# ============ 日志配置 ============
 logging:
   level:
     root: INFO
     com.fooddelivery: DEBUG
     org.springframework.security: DEBUG
+    # Resilience4j 事件日志（熔断、限流触发时可见）
+    io.github.resilience4j: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

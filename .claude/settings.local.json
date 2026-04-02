@@ -19,7 +19,23 @@
       "Bash(grep -r \"screenOptions\\\\|theme\\\\|cardStyle\\\\|DarkTheme\\\\|DefaultTheme\" /d/FoodMate-AI/frontend --include=*.tsx --include=*.ts --include=*.js)",
       "Bash(grep -r \"import.*HomeScreen\\\\|<HomeScreen\\\\|Screen.*HomeScreen\" /d/FoodMate-AI/frontend --include=*.tsx --include=*.ts)",
       "Bash(xargs grep:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(wc -l /d/FoodMate-AI/frontend/src/screens/*.tsx /d/FoodMate-AI/frontend/src/components/*.tsx)",
+      "Bash(docker compose:*)",
+      "Bash(docker exec:*)",
+      "Bash(curl -s --max-time 5 http://127.0.0.1:8087/health)",
+      "Bash(curl:*)",
+      "Bash(find /d/FoodMate-AI/frontend* -type f -name \"*.js\" -o -name \"*.ts\" -o -name \"*.tsx\")",
+      "Bash(find /d/FoodMate-AI -type f \\\\\\( -name \"*.js\" -o -name \"*.ts\" \\\\\\) -path \"*frontend*\" -exec grep -l \"image\\\\|base64\\\\|compress\\\\|File\\\\|Blob\" {} \\\\;)",
+      "Bash(wait b0ux1iygn:*)",
+      "Read(//tmp/claude/D--FoodMate-AI/f385c6b9-1c67-4d24-b8b2-d9931e30432c/tasks/**)",
+      "Bash(xargs wc:*)",
+      "Bash(find /d/FoodMate-AI/backend -type f -name \"pom.xml\" -exec grep -l \"micrometer\\\\|prometheus\\\\|actuator\" {} \\\\;)",
+      "Bash(find:*)",
+      "Bash(docker-compose -f docker-compose.dev.yml ps recommendation-service)",
+      "Read(//d D:/**)",
+      "Bash(xargs head:*)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('app/agents/decision_agent.py', encoding='utf-8'\\).read\\(\\)\\); print\\('Syntax OK'\\)\")"
     ]
   }
 }

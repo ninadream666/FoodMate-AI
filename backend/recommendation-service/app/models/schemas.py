@@ -39,8 +39,8 @@ class HealthContext(BaseModel):
 class WeatherContext(BaseModel):
     """天气上下文模型 - 用于接收实时天气数据"""
     condition: str = Field("晴", description="天气状况：晴、多云、小雨、大雨等")
-    temperature: int = Field(25, description="温度（摄氏度）")
-    humidity: int = Field(50, description="湿度（%）")
+    temperature: float = Field(25, description="温度（摄氏度）")
+    humidity: float = Field(50, description="湿度（%）")
     wind_speed: float = Field(10.0, description="风速（km/h）")
     is_raining: bool = Field(False, description="是否下雨")
     is_heavy_rain: bool = Field(False, description="是否大雨")
@@ -57,11 +57,12 @@ class RecommendationRequest(BaseModel):
     budget_range: Optional[tuple] = Field(None, description="预算范围")
     max_delivery_time: int = Field(60, description="最大配送时间（分钟）")
     max_results: int = Field(10, description="最大返回结果数")
-    search_radius: int = Field(5000, description="搜索半径（米）")
+    search_radius: int = Field(20000, description="搜索半径（米）")
     user_id: Optional[str] = Field(None, description="用户ID")
     query: Optional[str] = Field(None, description="用户查询")
     health_context: Optional[HealthContext] = Field(None, description="健康上下文")
     weather_context: Optional[WeatherContext] = Field(None, description="天气上下文")
+    allergies: Optional[List[str]] = Field(None, description="用户忌口/过敏原列表，如：花生过敏、海鲜过敏、不吃辣")
 
     class Config:
         populate_by_name = True
@@ -86,7 +87,7 @@ class EdgeSynergyRequest(BaseModel):
     query: str = Field(..., description="用户通过语音输入的点餐意图")
     constraints: EdgeSynergyConstraints = Field(..., description="边缘端计算出的脱敏约束条件")
     max_results: int = Field(10, description="最大返回结果数")
-    search_radius: int = Field(5000, description="搜索半径（米）")
+    search_radius: int = Field(20000, description="搜索半径（米）")
     weather_context: Optional[WeatherContext] = Field(None, description="天气上下文")
 
     class Config:

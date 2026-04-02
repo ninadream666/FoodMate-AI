@@ -41,25 +41,20 @@ public class MerchantRefundController {
         Boolean approved = (Boolean) request.get("approved");
         String rejectReason = (String) request.get("rejectReason");
 
-        // 验证权限 - 当前用户是否是商家
-        if (!hasRole(authentication, "MERCHANT")) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "需要商家权限"));
-        }
-        
-        // [修复点] 安全提取当前登录用户的userId
+        // 安全提取当前登录用户的userId
         Long currentUserId = getCurrentUserIdSafe(authentication);
-        
-        // 验证该userId是否拥有该merchantId的店铺
+
+        // 验证该userId是否拥有该merchantId的店铺（拥有店铺即为商家）
         Optional<Merchant> merchantOpt = merchantRepository.findByIdAndOwnerUserId(merchantId, currentUserId);
         if (merchantOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "您无权操作该商家的订单"));
         }
         
-        log.info("商家用户 {} 处理店铺 {} 的订单 {} 退款申请，决策={}", currentUserId, merchantId, orderId, approved);
+        Merchant merchant = merchantOpt.get();
+        log.info("商家用户 {} 处理店铺 {} (externalId={}) 的订单 {} 退款申请，决策={}", currentUserId, merchantId, merchant.getExternalId(), orderId, approved);
 
-        return refundService.approveCancellation(merchantId, orderId, approved, rejectReason);
+        return refundService.approveCancellation(merchantId, orderId, approved, rejectReason, merchant.getExternalId());
     }
 
     /**
@@ -70,27 +65,22 @@ public class MerchantRefundController {
             @PathVariable Long merchantId,
             Authentication authentication) {
         
-        // 验证权限 - 当前用户是否是商家
-        if (!hasRole(authentication, "MERCHANT")) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "需要商家权限"));
-        }
-        
-        // [修复点] 安全提取当前登录用户的userId
+        // 安全提取当前登录用户的userId
         Long currentUserId = getCurrentUserIdSafe(authentication);
-        
-        // 验证该userId是否拥有该merchantId的店铺
+
+        // 验证该userId是否拥有该merchantId的店铺（拥有店铺即为商家）
         Optional<Merchant> merchantOpt = merchantRepository.findByIdAndOwnerUserId(merchantId, currentUserId);
         if (merchantOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "您无权查看该商家的订单"));
         }
         
-        log.info("商家用户 {} 查询店铺 {} 的待审批退款列表", currentUserId, merchantId);
-        
-        // 调用订单服务获取待审批订单列表
+        Merchant merchant = merchantOpt.get();
+        log.info("商家用户 {} 查询店铺 {} (externalId={}) 的待审批退款列表", currentUserId, merchantId, merchant.getExternalId());
+
+        // 调用订单服务获取待审批订单列表（同时传入externalId，兼容订单中存的不同ID格式）
         try {
-            return orderServiceClient.getPendingRefundsByMerchant(merchantId);
+            return orderServiceClient.getPendingRefundsByMerchant(merchantId, merchant.getExternalId());
         } catch (Exception e) {
             log.error("获取待审批订单列表失败：merchantId={}, error={}", merchantId, e.getMessage());
             return ResponseEntity.status(500)

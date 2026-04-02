@@ -43,5 +43,41 @@ public interface OrderServiceClient {
      * GET /orders/internal/merchant/{merchantId}/pending-refunds
      */
     @GetMapping("/merchant/{merchantId}/pending-refunds")
-    ResponseEntity<?> getPendingRefundsByMerchant(@PathVariable("merchantId") Long merchantId);
+    ResponseEntity<?> getPendingRefundsByMerchant(
+            @PathVariable("merchantId") Long merchantId,
+            @RequestParam(value = "externalId", required = false) String externalId);
+
+    /**
+     * 商家接单
+     */
+    @PostMapping("/{orderId}/accept")
+    ResponseEntity<?> acceptOrder(
+            @PathVariable("orderId") Long orderId,
+            @RequestParam("merchantId") String merchantId);
+
+    /**
+     * 商家拒单
+     */
+    @PostMapping("/{orderId}/reject")
+    ResponseEntity<?> rejectOrder(
+            @PathVariable("orderId") Long orderId,
+            @RequestParam("merchantId") String merchantId,
+            @RequestParam(value = "reason", required = false) String reason);
+
+    /**
+     * 商家更新订单进度
+     */
+    @PostMapping("/{orderId}/progress")
+    ResponseEntity<?> updateOrderProgress(
+            @PathVariable("orderId") Long orderId,
+            @RequestParam("merchantId") String merchantId,
+            @RequestParam("status") String status);
+
+    /**
+     * 获取商家的待处理订单列表
+     */
+    @GetMapping("/merchant/{merchantId}/pending-orders")
+    ResponseEntity<?> getPendingOrdersByMerchant(
+            @PathVariable("merchantId") Long merchantId,
+            @RequestParam(value = "externalId", required = false) String externalId);
 }

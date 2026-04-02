@@ -65,7 +65,7 @@ class NutriVisionClient:
 
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.post(self.base_url, headers=headers, json=payload, timeout=60.0)
+                response = await client.post(self.base_url, headers=headers, json=payload, timeout=120.0)
                 
                 if response.status_code != 200:
                     logger.error(f"AI API Error Status: {response.status_code}, Body: {response.text}")
@@ -147,7 +147,7 @@ class NutriVisionClient:
 
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.post(self.base_url, headers=headers, json=payload, timeout=60.0)
+                response = await client.post(self.base_url, headers=headers, json=payload, timeout=120.0)
                 
                 if response.status_code != 200:
                     logger.error(f"AI API Error Status: {response.status_code}, Body: {response.text}")
@@ -169,7 +169,7 @@ class NutriVisionClient:
             logger.error(f"JSON Decode Error: {str(e)}, Raw: {raw_content}")
             return self._error_msg("AI 返回格式非标准 JSON")
         except Exception as e:
-            logger.error(f"Vision Fallback Analysis Exception: {str(e)}")
+            logger.error(f"Vision Fallback Analysis Exception: {type(e).__name__}: {str(e)}")
             return self._error_msg(str(e))
 
     async def analyze_single_food(self, food_name: str, health_tags: list) -> dict:

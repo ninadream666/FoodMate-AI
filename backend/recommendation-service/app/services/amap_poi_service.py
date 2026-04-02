@@ -155,7 +155,7 @@ class AmapPOIService:
     async def search_restaurants_around(
         self,
         location: str,  # 经纬度 "116.473168,39.993015"
-        radius: int = 5000,  # 半径，米
+        radius: int = 20000,  # 半径，米
         keywords: str = None,
         types: str = None,
         page_size: int = 20,
@@ -449,7 +449,7 @@ class AmapPOIService:
         latitude: float = None,
         longitude: float = None,
         keywords: str = "餐厅",
-        radius: int = 5000,
+        radius: int = 20000,
         limit: int = 30
     ) -> List[Dict[str, Any]]:
         """
@@ -458,18 +458,32 @@ class AmapPOIService:
         restaurants = []
         seen_ids = set()
 
-        # 内部辅助函数：执行一次获取
+        # 内部辅助函数：执行多页获取以拉取更多结果
         async def _fetch_pois(search_kw: str, max_count: int):
-            if latitude and longitude:
-                location_str = f"{longitude},{latitude}"
-                return await self.search_restaurants_around(
-                    location=location_str, radius=radius, keywords=search_kw, page_size=min(max_count, 25))
-            elif location:
-                return await self.search_restaurants_by_keywords(
-                    keywords=search_kw, region=location, page_size=min(max_count, 25))
-            else:
-                return await self.search_restaurants_by_keywords(
-                    keywords=search_kw, region="上海市", page_size=min(max_count, 25))
+            all_results = []
+            pages = min(3, (max_count + 24) // 25)  # 最多拉3页，每页25条
+
+            for page in range(1, pages + 1):
+                try:
+                    if latitude and longitude:
+                        location_str = f"{longitude},{latitude}"
+                        page_results = await self.search_restaurants_around(
+                            location=location_str, radius=radius, keywords=search_kw, page_size=25)
+                    elif location:
+                        page_results = await self.search_restaurants_by_keywords(
+                            keywords=search_kw, region=location, page_size=25)
+                    else:
+                        page_results = await self.search_restaurants_by_keywords(
+                            keywords=search_kw, region="上海市", page_size=25)
+
+                    all_results.extend(page_results)
+                    if len(page_results) < 25:
+                        break  # 没有更多数据了
+                except Exception as e:
+                    logger.warning(f"第{page}页搜索失败: {e}")
+                    break
+
+            return all_results[:max_count]
 
         try:
             # 1. 第一重召回：精准意图召回

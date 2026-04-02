@@ -180,14 +180,15 @@ export const payOrder = async (orderId) => {
 export const ORDER_STATUS = {
   PENDING: { label: '待支付', color: 'text-yellow-600' },
   PAID: { label: '已支付', color: 'text-blue-600' },
+  CONFIRMED: { label: '已接单', color: 'text-blue-600' },
   ACCEPTED: { label: '已接单', color: 'text-blue-600' },
-  PREPARING: { label: '准备中', color: 'text-orange-600' },
+  PREPARING: { label: '制作中', color: 'text-orange-600' },
   READY: { label: '待配送', color: 'text-orange-600' },
   DELIVERING: { label: '配送中', color: 'text-purple-600' },
   DELIVERED: { label: '已送达', color: 'text-green-600' },
   COMPLETED: { label: '已完成', color: 'text-green-600' },
   CANCELLED: { label: '已取消', color: 'text-gray-400' },
-  CANCEL_PENDING: { label: '取消审批中', color: 'text-yellow-600' },
+  CANCEL_PENDING: { label: '取消中', color: 'text-yellow-600' },
   REFUNDED: { label: '已退款', color: 'text-gray-400' },
 };
 
