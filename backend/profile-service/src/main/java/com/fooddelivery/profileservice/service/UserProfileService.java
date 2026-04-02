@@ -56,6 +56,11 @@ public class UserProfileService {
             existing.setStats(updatedProfile.getStats());
         }
 
+        // 更新健康饮食记录
+        if (updatedProfile.getHealthRecords() != null) {
+            existing.setHealthRecords(updatedProfile.getHealthRecords());
+        }
+
         return repository.save(existing);
     }
 

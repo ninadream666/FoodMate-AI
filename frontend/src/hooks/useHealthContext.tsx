@@ -470,9 +470,9 @@ export const HealthProvider: React.FC<HealthProviderProps> = ({ children }) => {
         // 放松数据
         todayRelaxDuration: useOppoData ? oppoData.todayRelaxDuration : 0,
 
-        // 环境光线
-        lightLux: isDevMode ? simulatedData.lightLux : ambientLight.luxValue,
-        lightLevel: isDevMode ? luxToLevel(simulatedData.lightLux) : ambientLight.lightLevel,
+        // 环境光线：传感器可用时优先用真实数据，否则用模拟值
+        lightLux: ambientLight.isAvailable && !isDevMode ? ambientLight.luxValue : simulatedData.lightLux,
+        lightLevel: ambientLight.isAvailable && !isDevMode ? ambientLight.lightLevel : luxToLevel(simulatedData.lightLux),
 
         // 综合评估
         overallHealthStatus: (useOppoData ? oppoData.overallHealthStatus : '无数据') as OverallHealthStatus,

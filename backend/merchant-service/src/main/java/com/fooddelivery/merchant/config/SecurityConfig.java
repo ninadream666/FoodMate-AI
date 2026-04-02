@@ -42,6 +42,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // ========== [关键修复] 必须认证的接口 (放在通配符之前) ==========
                         // "我的店铺"信息必须登录才能看，防止被误判为公开接口
+                        .requestMatchers("/api/merchants/my/**", "/merchants/my/**").authenticated()
                         .requestMatchers("/api/merchants/my", "/merchants/my").authenticated()
 
                         // 商家入驻/创建店铺 (POST) 必须登录

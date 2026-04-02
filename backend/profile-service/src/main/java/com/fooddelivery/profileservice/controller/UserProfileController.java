@@ -52,7 +52,7 @@ public class UserProfileController {
     // --- 收藏功能 ---
     // 添加收藏
     @PostMapping("/favorites/{merchantId}")
-    public ResponseEntity<UserProfile> addFavorite(@PathVariable Long merchantId) {
+    public ResponseEntity<UserProfile> addFavorite(@PathVariable String merchantId) {
         String username = getCurrentUsername();
         UserProfile profile = service.getOrCreateProfile(username);
         
@@ -65,7 +65,7 @@ public class UserProfileController {
 
     // 获取收藏列表
     @GetMapping("/favorites")
-    public ResponseEntity<List<Long>> getFavorites() {
+    public ResponseEntity<List<String>> getFavorites() {
         String username = getCurrentUsername();
         UserProfile profile = service.getOrCreateProfile(username);
         return ResponseEntity.ok(profile.getFavoriteMerchantIds());
@@ -73,7 +73,7 @@ public class UserProfileController {
 
     // 取消收藏
     @DeleteMapping("/favorites/{merchantId}")
-    public ResponseEntity<UserProfile> removeFavorite(@PathVariable Long merchantId) {
+    public ResponseEntity<UserProfile> removeFavorite(@PathVariable String merchantId) {
         String username = getCurrentUsername();
         UserProfile profile = service.getOrCreateProfile(username);
         profile.getFavoriteMerchantIds().remove(merchantId);
@@ -134,6 +134,45 @@ public class UserProfileController {
         profile.getBrowseHistory().clear();
         service.updateProfile(username, profile);
         return ResponseEntity.ok(profile);
+    }
+
+    // --- 健康饮食记录 ---
+    // 保存健康记录
+    @PostMapping("/health-records")
+    public ResponseEntity<?> addHealthRecord(@RequestBody java.util.Map<String, Object> record) {
+        String username = getCurrentUsername();
+        UserProfile profile = service.getOrCreateProfile(username);
+
+        record.put("id", java.util.UUID.randomUUID().toString());
+        record.put("createdAt", java.time.LocalDateTime.now().toString());
+
+        profile.getHealthRecords().add(record);
+
+        // 限制最多200条
+        if (profile.getHealthRecords().size() > 200) {
+            profile.getHealthRecords().remove(0);
+        }
+
+        service.updateProfile(username, profile);
+        return ResponseEntity.ok(java.util.Map.of("success", true, "id", record.get("id")));
+    }
+
+    // 获取健康记录列表
+    @GetMapping("/health-records")
+    public ResponseEntity<?> getHealthRecords() {
+        String username = getCurrentUsername();
+        UserProfile profile = service.getOrCreateProfile(username);
+        return ResponseEntity.ok(profile.getHealthRecords());
+    }
+
+    // 删除单条健康记录
+    @DeleteMapping("/health-records/{recordId}")
+    public ResponseEntity<?> deleteHealthRecord(@PathVariable String recordId) {
+        String username = getCurrentUsername();
+        UserProfile profile = service.getOrCreateProfile(username);
+        profile.getHealthRecords().removeIf(r -> recordId.equals(r.get("id")));
+        service.updateProfile(username, profile);
+        return ResponseEntity.ok(java.util.Map.of("success", true));
     }
 
     private String getCurrentUsername() {

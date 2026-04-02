@@ -14,6 +14,7 @@ import {
 import Feather from 'react-native-vector-icons/Feather';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { merchantService } from '../services/merchantService';
+import { profileService } from '../services/profileService';
 import MenuListItem from '../components/MenuListItem';
 import CartBar from '../components/CartBar';
 
@@ -46,9 +47,17 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
     const [loading, setLoading] = useState(true);
     const [cartItems, setCartItems] = useState<any[]>([]);
     const [scrollY] = useState(new Animated.Value(0));
+    const [isFavorite, setIsFavorite] = useState(false);
 
     useEffect(() => {
         loadMenu();
+        // 记录浏览历史
+        profileService.recordHistory(id).catch(() => {});
+        // 检查收藏状态
+        profileService.getFavorites().then((favs: any[]) => {
+            if (Array.isArray(favs) && favs.includes(String(id))) setIsFavorite(true);
+        }).catch(() => {});
+
         navigation.setOptions({
             title: restaurant?.name || '餐厅详情',
             headerTransparent: false,
@@ -62,25 +71,37 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
             headerLeft: () => (
                 <TouchableOpacity
                     onPress={() => navigation.goBack()}
-                    style={{
-                        paddingHorizontal: 4,
-                        paddingVertical: 4,
-                    }}
+                    style={{ paddingHorizontal: 4, paddingVertical: 4 }}
                 >
-                    <Feather
-                        name="chevron-left"
-                        size={24}
-                        color={colors.textPrimary}
-                        style={{
-                            textShadowColor: 'rgba(0,0,0,0.2)',
-                            textShadowOffset: { width: 0, height: 1 },
-                            textShadowRadius: 3,
-                        }}
-                    />
+                    <Feather name="chevron-left" size={24} color={colors.textPrimary} />
                 </TouchableOpacity>
             ),
         });
     }, []);
+
+    // 更新 headerRight 响应收藏状态变化
+    useEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <TouchableOpacity
+                    onPress={async () => {
+                        try {
+                            if (isFavorite) {
+                                await profileService.removeFavorite(id);
+                                setIsFavorite(false);
+                            } else {
+                                await profileService.addFavorite(id);
+                                setIsFavorite(true);
+                            }
+                        } catch (e) { console.warn('收藏操作失败', e); }
+                    }}
+                    style={{ paddingHorizontal: 8, paddingVertical: 4 }}
+                >
+                    <Feather name="heart" size={22} color={isFavorite ? '#C4422E' : colors.textTertiary} />
+                </TouchableOpacity>
+            ),
+        });
+    }, [isFavorite]);
 
     const loadMenu = async () => {
         try {

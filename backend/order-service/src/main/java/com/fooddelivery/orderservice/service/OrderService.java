@@ -409,6 +409,189 @@ public class OrderService {
     }
 
     /**
+     * 商家接单
+     */
+    @Transactional
+    public ResponseEntity<?> acceptOrder(Long orderId, String merchantId) {
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (!orderOpt.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "订单不存在"));
+        }
+
+        Order order = orderOpt.get();
+
+        // 验证订单属于该商家
+        if (!String.valueOf(order.getMerchantId()).equals(String.valueOf(merchantId))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "无权操作该订单"));
+        }
+
+        // 只有 PAID 状态的订单才可以接单
+        if (order.getStatus() != OrderStatus.PAID) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "订单状态不正确，无法接单", "currentStatus", order.getStatus().getCode()));
+        }
+
+        recordStatusChange(order, OrderStatus.PAID, OrderStatus.CONFIRMED);
+        order.setStatus(OrderStatus.CONFIRMED);
+        orderRepository.save(order);
+
+        log.info("商家接单成功: orderId={}, merchantId={}", orderId, merchantId);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "接单成功",
+                "orderId", orderId,
+                "status", OrderStatus.CONFIRMED.getCode()));
+    }
+
+    /**
+     * 商家拒单
+     */
+    @Transactional
+    public ResponseEntity<?> rejectOrder(Long orderId, String merchantId, String rejectReason) {
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (!orderOpt.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "订单不存在"));
+        }
+
+        Order order = orderOpt.get();
+
+        if (!String.valueOf(order.getMerchantId()).equals(String.valueOf(merchantId))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "无权操作该订单"));
+        }
+
+        if (order.getStatus() != OrderStatus.PAID) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "订单状态不正确，无法拒单", "currentStatus", order.getStatus().getCode()));
+        }
+
+        order.setCancelReason(rejectReason != null ? rejectReason : "商家拒绝接单");
+        order.setCancelStatus("APPROVED");
+        order.setRefundAmount(order.getTotalAmount());
+        order.setRefundApprovedAt(LocalDateTime.now());
+        recordStatusChange(order, OrderStatus.PAID, OrderStatus.CANCELLED);
+        order.setStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order);
+
+        log.info("商家拒单: orderId={}, merchantId={}, reason={}", orderId, merchantId, rejectReason);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "已拒单，订单将全额退款",
+                "orderId", orderId,
+                "refundAmount", order.getRefundAmount()));
+    }
+
+    /**
+     * 商家更新订单状态（备餐完成等）
+     */
+    @Transactional
+    public ResponseEntity<?> updateOrderProgress(Long orderId, String merchantId, OrderStatus newStatus) {
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (!orderOpt.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "订单不存在"));
+        }
+
+        Order order = orderOpt.get();
+
+        if (!String.valueOf(order.getMerchantId()).equals(String.valueOf(merchantId))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "无权操作该订单"));
+        }
+
+        // 验证状态流转合法性
+        OrderStatus currentStatus = order.getStatus();
+        if (!isValidTransition(currentStatus, newStatus)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "状态流转不合法",
+                            "currentStatus", currentStatus.getCode(),
+                            "targetStatus", newStatus.getCode()));
+        }
+
+        recordStatusChange(order, currentStatus, newStatus);
+        order.setStatus(newStatus);
+        orderRepository.save(order);
+
+        log.info("订单状态更新: orderId={}, {} -> {}", orderId, currentStatus.getCode(), newStatus.getCode());
+
+        // 订单完成时，通知平台服务结算佣金（将佣金状态从 PENDING 变为 SETTLED）
+        if (newStatus == OrderStatus.COMPLETED) {
+            try {
+                Map<String, Object> settlementData = new HashMap<>();
+                settlementData.put("orderId", orderId);
+                settlementData.put("merchantId", order.getMerchantId());
+                settlementData.put("orderAmount", order.getTotalAmount());
+                settlementData.put("action", "SETTLE");
+
+                platformServiceClient.calculateCommission(settlementData);
+                log.info("已触发订单完成结算: orderId={}, merchantId={}", orderId, order.getMerchantId());
+            } catch (Exception e) {
+                log.warn("触发结算失败，将由定时任务处理: orderId={}, error={}", orderId, e.getMessage());
+            }
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "状态已更新",
+                "orderId", orderId,
+                "status", newStatus.getCode()));
+    }
+
+    /**
+     * 验证订单是否属于该商家
+     * merchantId 可能是数据库主键或外部ID，只要订单中存的值匹配其中一个即可
+     */
+    private boolean isOrderOwnedByMerchant(Order order, String merchantId) {
+        String orderMerchantId = String.valueOf(order.getMerchantId());
+        return orderMerchantId.equals(String.valueOf(merchantId));
+    }
+
+    /**
+     * 验证订单状态流转是否合法（商家侧）
+     */
+    private boolean isValidTransition(OrderStatus from, OrderStatus to) {
+        if (from == OrderStatus.CONFIRMED && to == OrderStatus.PREPARING) return true;
+        if (from == OrderStatus.PREPARING && to == OrderStatus.READY) return true;
+        if (from == OrderStatus.READY && to == OrderStatus.DELIVERED) return true;
+        if (from == OrderStatus.DELIVERED && to == OrderStatus.COMPLETED) return true;
+        return false;
+    }
+
+    /**
+     * 获取商家指定状态的订单列表
+     * 支持同时用数据库主键和外部ID查询（订单表的merchant_id可能存的是任一种）
+     */
+    public List<OrderDetailDto> getMerchantOrdersByStatuses(String merchantId, List<OrderStatus> statuses) {
+        List<Order> orders = orderRepository.findByMerchantIdAndStatusInOrderByCreatedAtDesc(merchantId, statuses);
+        return orders.stream()
+                .map(this::buildOrderDetailDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取商家指定状态的订单列表（支持多个ID同时查询）
+     * 用于兼容订单中存的merchantId可能是数据库主键或外部ID的情况
+     */
+    public List<OrderDetailDto> getMerchantOrdersByMultipleIds(List<String> merchantIds, List<OrderStatus> statuses) {
+        List<Order> orders = orderRepository.findByMerchantIdInAndStatusInOrderByCreatedAtDesc(merchantIds, statuses);
+        return orders.stream()
+                .map(this::buildOrderDetailDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取待审批的退款订单列表（支持多个ID）
+     */
+    public List<OrderDetailDto> getPendingRefundOrdersByMultipleIds(List<String> merchantIds) {
+        List<Order> pendingOrders = orderRepository.findByMerchantIdInAndStatus(merchantIds, OrderStatus.CANCEL_PENDING);
+        return pendingOrders.stream()
+                .map(this::buildOrderDetailDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 根据订单ID获取订单（内部方法）
      */
     public Optional<Order> getOrderById(Long orderId) {

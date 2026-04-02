@@ -2,40 +2,44 @@
  * useAmbientLight.ts - 环境光传感器 Hook
  *
  * 功能：
- * 1. 读取手机环境光传感器 (lux)
- * 2. 根据 lux 值自动分级
- * 3. 300ms 节流 + 移动平均平滑
- * 4. 设备不支持时优雅降级
+ * 1. 通过 react-native-ambient-light-sensor 读取手机光线传感器 (lux)
+ * 2. 根据 lux 值自动分级 (dark/dim/normal/bright/sunlight)
+ * 3. 移动平均平滑，避免频繁跳动
+ * 4. 仅 Android 支持，iOS 和不支持设备优雅降级
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Platform } from 'react-native';
+import { Platform, DeviceEventEmitter } from 'react-native';
 
 // 光线等级类型
 export type LightLevel = 'dark' | 'dim' | 'normal' | 'bright' | 'sunlight';
 
 // lux 分级阈值
 const LIGHT_THRESHOLDS: { max: number; level: LightLevel }[] = [
-    { max: 50, level: 'dark' },       // 暗光 / 夜间
-    { max: 200, level: 'dim' },       // 昏暗室内
-    { max: 1000, level: 'normal' },   // 正常室内照明
-    { max: 10000, level: 'bright' },  // 户外阴天 / 明亮室内
+    { max: 50, level: 'dark' },          // 暗光 / 夜间
+    { max: 200, level: 'dim' },          // 昏暗室内
+    { max: 1000, level: 'normal' },      // 正常室内照明
+    { max: 10000, level: 'bright' },     // 户外阴天 / 明亮室内
     { max: Infinity, level: 'sunlight' }, // 户外强烈日照
 ];
 
-// 尝试导入 react-native-sensors
-let lightSensor: any = null;
+// 尝试导入 react-native-ambient-light-sensor
+let AmbientLightSensor: {
+    hasLightSensor: () => Promise<boolean>;
+    startLightSensor: () => void;
+    stopLightSensor: () => void;
+} | null = null;
+
 try {
-    const sensors = require('react-native-sensors');
-    lightSensor = sensors.lightSensor;
+    AmbientLightSensor = require('react-native-ambient-light-sensor');
 } catch (e) {
-    console.warn('react-native-sensors 未安装或不可用，环境光将使用默认值');
+    console.warn('react-native-ambient-light-sensor 未安装，环境光将使用默认值');
 }
 
 export interface AmbientLightState {
-    luxValue: number;           // 原始 lux 值
-    lightLevel: LightLevel;     // 分级
-    isAvailable: boolean;       // 传感器是否可用
+    luxValue: number;
+    lightLevel: LightLevel;
+    isAvailable: boolean;
     error: string | null;
 }
 
@@ -72,21 +76,17 @@ export function lightLevelLabel(level: LightLevel): string {
 }
 
 const SMOOTHING_WINDOW = 5; // 移动平均窗口
-const THROTTLE_MS = 300;    // 采样节流
 
 export const useAmbientLight = () => {
     const [state, setState] = useState<AmbientLightState>({
-        luxValue: 300,       // 默认室内照明
+        luxValue: 300,
         lightLevel: 'normal',
         isAvailable: false,
         error: null,
     });
 
     const historyRef = useRef<number[]>([]);
-    const lastUpdateRef = useRef(0);
-    const subscriptionRef = useRef<any>(null);
 
-    // 计算移动平均
     const getSmoothedLux = useCallback((newLux: number): number => {
         historyRef.current.push(newLux);
         if (historyRef.current.length > SMOOTHING_WINDOW) {
@@ -97,36 +97,48 @@ export const useAmbientLight = () => {
     }, []);
 
     useEffect(() => {
-        if (!lightSensor) {
-            setState(prev => ({
-                ...prev,
-                isAvailable: false,
-                error: '环境光传感器不可用',
-            }));
-            return;
-        }
-
-        // iOS 不直接暴露 light sensor API
+        // iOS 不支持光线传感器
         if (Platform.OS === 'ios') {
             setState(prev => ({
                 ...prev,
                 isAvailable: false,
-                error: 'iOS 不支持直接访问光传感器',
+                error: 'iOS 不支持光线传感器',
             }));
             return;
         }
 
-        try {
-            subscriptionRef.current = lightSensor({
-                updateInterval: THROTTLE_MS,
-            }).subscribe(
-                (data: { light: number }) => {
-                    const now = Date.now();
-                    if (now - lastUpdateRef.current < THROTTLE_MS) return;
-                    lastUpdateRef.current = now;
+        if (!AmbientLightSensor) {
+            setState(prev => ({
+                ...prev,
+                isAvailable: false,
+                error: '光线传感器模块不可用',
+            }));
+            return;
+        }
 
-                    // 钳位到合理范围
-                    const rawLux = Math.max(0, Math.min(100000, data.light));
+        let isActive = true;
+
+        const setup = async () => {
+            try {
+                const hasSensor = await AmbientLightSensor!.hasLightSensor();
+                if (!hasSensor || !isActive) {
+                    setState(prev => ({
+                        ...prev,
+                        isAvailable: false,
+                        error: '设备没有光线传感器',
+                    }));
+                    return;
+                }
+
+                // 启动传感器
+                AmbientLightSensor!.startLightSensor();
+
+                setState(prev => ({ ...prev, isAvailable: true, error: null }));
+
+                // 监听光线数据事件
+                DeviceEventEmitter.addListener('LightSensor', (data: { lightValue: number }) => {
+                    if (!isActive) return;
+                    const rawLux = Math.max(0, Math.min(100000, data.lightValue));
                     const smoothed = getSmoothedLux(rawLux);
 
                     setState({
@@ -135,28 +147,26 @@ export const useAmbientLight = () => {
                         isAvailable: true,
                         error: null,
                     });
-                },
-                (error: any) => {
-                    console.warn('环境光传感器错误:', error);
-                    setState(prev => ({
-                        ...prev,
-                        isAvailable: false,
-                        error: '传感器读取失败',
-                    }));
-                }
-            );
-        } catch (e) {
-            setState(prev => ({
-                ...prev,
-                isAvailable: false,
-                error: '传感器初始化失败',
-            }));
-        }
+                });
+            } catch (e: any) {
+                console.warn('光线传感器初始化失败:', e);
+                setState(prev => ({
+                    ...prev,
+                    isAvailable: false,
+                    error: '传感器初始化失败',
+                }));
+            }
+        };
+
+        setup();
 
         return () => {
-            if (subscriptionRef.current) {
-                subscriptionRef.current.unsubscribe();
-                subscriptionRef.current = null;
+            isActive = false;
+            DeviceEventEmitter.removeAllListeners('LightSensor');
+            try {
+                AmbientLightSensor?.stopLightSensor();
+            } catch (e) {
+                // ignore cleanup errors
             }
         };
     }, [getSmoothedLux]);

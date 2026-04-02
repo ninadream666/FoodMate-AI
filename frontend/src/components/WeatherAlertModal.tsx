@@ -16,6 +16,7 @@ import {
     TouchableOpacity,
     Animated,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { WeatherData } from '../services/weatherService';
 
 interface WeatherAlertModalProps {
@@ -64,8 +65,8 @@ const WeatherAlertModal: React.FC<WeatherAlertModalProps> = ({
                 icon: '⛈️',
                 title: '检测到外面正在下大雨',
                 description: '配送可能会受到影响，预计延迟10-20分钟',
-                recommendation: '已为您优先筛选：\n• 配送运力充足的商家\n• 包装防水/保温好的商家\n• 距离较近的商家',
-                tags: ['🏠 附近优先', '📦 防水包装', '🚀 运力充足'],
+                recommendation: '已为您调整推荐排序：\n• 距离较近的商家排名靠前\n• 配送时间较短的商家优先展示',
+                tags: ['就近排序', '配送优先'],
                 buttonText: '查看推荐',
                 severity: 'severe',
             };
@@ -77,7 +78,7 @@ const WeatherAlertModal: React.FC<WeatherAlertModalProps> = ({
                 title: '外面正在下雨',
                 description: '配送可能略有延迟',
                 recommendation: '已调整推荐策略：\n• 优先显示配送快的商家\n• 推荐热乎乎的美食',
-                tags: ['🍜 热食推荐', '⏱️ 快速配送'],
+                tags: ['热食推荐', '快速配送'],
                 buttonText: '好的',
                 severity: 'moderate',
             };
@@ -89,7 +90,7 @@ const WeatherAlertModal: React.FC<WeatherAlertModalProps> = ({
                 title: '今天很热',
                 description: `当前温度 ${weather.temperature}°C`,
                 recommendation: '为您推荐清凉解暑的美食：\n• 冰饮、冷面、沙拉\n• 清淡易消化的餐食',
-                tags: ['🧊 冰饮', '🥗 沙拉', '🍜 冷面'],
+                tags: ['冰饮', '沙拉', '冷面'],
                 buttonText: '看看有什么',
                 severity: 'minor',
             };
@@ -101,7 +102,7 @@ const WeatherAlertModal: React.FC<WeatherAlertModalProps> = ({
                 title: '今天很冷',
                 description: `当前温度 ${weather.temperature}°C`,
                 recommendation: '为您推荐暖身美食：\n• 火锅、麻辣烫、热汤\n• 热乎乎的主食',
-                tags: ['🍲 火锅', '🍜 热汤', '🔥 麻辣'],
+                tags: ['火锅', '热汤', '麻辣'],
                 buttonText: '看看有什么',
                 severity: 'minor',
             };
@@ -158,7 +159,7 @@ const WeatherAlertModal: React.FC<WeatherAlertModalProps> = ({
 
                     {/* 推荐 */}
                     <View style={styles.recommendationBox}>
-                        <Text style={styles.recommendationTitle}>🤖 AI 已自动调整</Text>
+                        <Text style={styles.recommendationTitle}>AI 已自动调整</Text>
                         <Text style={styles.recommendationText}>
                             {content.recommendation}
                         </Text>
@@ -182,13 +183,21 @@ const WeatherAlertModal: React.FC<WeatherAlertModalProps> = ({
                             <Text style={styles.secondaryButtonText}>忽略</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.primaryButton, { backgroundColor: getSeverityColor() }]}
+                            activeOpacity={0.7}
+                            style={{ flex: 2 }}
                             onPress={() => {
                                 onAcceptRecommendation?.();
                                 onClose();
                             }}
                         >
-                            <Text style={styles.primaryButtonText}>{content.buttonText}</Text>
+                            <LinearGradient
+                                colors={['#FFA07A', '#C4422E']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.primaryButton}
+                            >
+                                <Text style={styles.primaryButtonText}>{content.buttonText}</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
                     </View>
                 </Animated.View>
@@ -286,11 +295,14 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     primaryButton: {
-        flex: 2,
         paddingVertical: spacing.lg,
-        borderRadius: borderRadius.lg,
+        borderRadius: borderRadius.xxl,
         alignItems: 'center',
-        ...shadows.sm,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 8,
     },
     primaryButtonText: {
         color: colors.textOnPrimary,
@@ -299,12 +311,10 @@ const styles = StyleSheet.create({
     },
     secondaryButton: {
         flex: 1,
-        paddingVertical: spacing.lg,
-        borderRadius: borderRadius.lg,
+        paddingVertical: spacing.md,
+        borderRadius: borderRadius.xxl,
         alignItems: 'center',
-        backgroundColor: colors.surface,
-        borderWidth: 1,
-        borderColor: colors.border,
+        backgroundColor: colors.backgroundSection,
     },
     secondaryButtonText: {
         color: colors.textSecondary,

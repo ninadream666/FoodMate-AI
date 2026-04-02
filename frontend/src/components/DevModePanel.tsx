@@ -25,15 +25,17 @@ import {
     TextInput,
     ScrollView,
 } from 'react-native';
+import Feather from 'react-native-vector-icons/Feather';
 import { useHealthContext, ActivityStatus } from '../hooks/useHealthContext';
 import { lightLevelIcon, lightLevelLabel } from '../hooks/useAmbientLight';
 
 interface DevModePanelProps {
     visible: boolean;
     onClose: () => void;
+    onRefreshRecommendations?: () => void;
 }
 
-const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
+const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose, onRefreshRecommendations }) => {
     const health = useHealthContext();
     const [stepsInput, setStepsInput] = useState(String(health.dailySteps));
     const [luxInput, setLuxInput] = useState(String(health.lightLux));
@@ -142,7 +144,7 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
                 <View style={styles.container}>
                     {/* 标题栏 */}
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>🛠️ 开发者模式</Text>
+                        <Text style={styles.headerTitle}>开发者模式</Text>
                         <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
                             <Text style={styles.closeBtnText}>✕</Text>
                         </TouchableOpacity>
@@ -152,7 +154,6 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
                         {/* 开发者模式开关 */}
                         <View style={styles.row}>
                             <View style={styles.rowLeft}>
-                                <Text style={styles.rowIcon}>🔧</Text>
                                 <Text style={styles.rowLabel}>启用模拟数据</Text>
                             </View>
                             <Switch
@@ -167,15 +168,18 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
                         <View style={styles.sdkStatusBox}>
                             <Text style={styles.sdkStatusTitle}>OPPO健康SDK状态</Text>
                             <View style={styles.sdkStatusRow}>
-                                <Text style={styles.sdkStatusItem}>
-                                    可用: {health.isOppoHealthAvailable ? '✅' : '❌'}
-                                </Text>
-                                <Text style={styles.sdkStatusItem}>
-                                    已授权: {health.isOppoHealthAuthorized ? '✅' : '❌'}
-                                </Text>
-                                <Text style={styles.sdkStatusItem}>
-                                    穿戴设备: {health.hasWearableDevice ? '✅' : '❌'}
-                                </Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+                                    <Feather name={health.isOppoHealthAvailable ? 'check-circle' : 'x-circle'} size={14} color={health.isOppoHealthAvailable ? colors.success : colors.error} />
+                                    <Text style={[styles.sdkStatusItem, { marginLeft: 4 }]}>可用</Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+                                    <Feather name={health.isOppoHealthAuthorized ? 'check-circle' : 'x-circle'} size={14} color={health.isOppoHealthAuthorized ? colors.success : colors.error} />
+                                    <Text style={[styles.sdkStatusItem, { marginLeft: 4 }]}>已授权</Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Feather name={health.hasWearableDevice ? 'watch' : 'x-circle'} size={14} color={health.hasWearableDevice ? colors.success : colors.error} />
+                                    <Text style={[styles.sdkStatusItem, { marginLeft: 4 }]}>穿戴设备</Text>
+                                </View>
                             </View>
                             {health.oppoHealthError && (
                                 <Text style={styles.errorText}>{health.oppoHealthError}</Text>
@@ -198,46 +202,46 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
                             <Text style={styles.statusTitle}>当前健康状态</Text>
                             <View style={styles.statusGrid}>
                                 <View style={styles.statusGridItem}>
-                                    <Text style={styles.statusIcon}>❤️</Text>
+                                    <Text style={styles.statusLabel}>心率</Text>
                                     <Text style={styles.statusValue}>{health.heartRate}</Text>
                                     <Text style={styles.statusUnit}>bpm</Text>
                                 </View>
                                 <View style={styles.statusGridItem}>
-                                    <Text style={styles.statusIcon}>👟</Text>
+                                    <Text style={styles.statusLabel}>步数</Text>
                                     <Text style={styles.statusValue}>{health.dailySteps}</Text>
                                     <Text style={styles.statusUnit}>步</Text>
                                 </View>
                                 <View style={styles.statusGridItem}>
-                                    <Text style={styles.statusIcon}>😰</Text>
+                                    <Text style={styles.statusLabel}>压力</Text>
                                     <Text style={styles.statusValue}>{health.pressureValue}</Text>
                                     <Text style={styles.statusUnit}>{health.pressureLevel}</Text>
                                 </View>
                                 <View style={styles.statusGridItem}>
-                                    <Text style={styles.statusIcon}>💉</Text>
+                                    <Text style={styles.statusLabel}>血氧</Text>
                                     <Text style={styles.statusValue}>{health.bloodOxygen}%</Text>
                                     <Text style={styles.statusUnit}>{health.bloodOxygenStatus}</Text>
                                 </View>
                                 <View style={styles.statusGridItem}>
-                                    <Text style={styles.statusIcon}>😴</Text>
+                                    <Text style={styles.statusLabel}>睡眠</Text>
                                     <Text style={styles.statusValue}>{health.lastSleepDurationHours.toFixed(1)}h</Text>
                                     <Text style={styles.statusUnit}>{health.sleepQuality}</Text>
                                 </View>
                                 <View style={styles.statusGridItem}>
-                                    <Text style={styles.statusIcon}>{lightLevelIcon(health.lightLevel)}</Text>
+                                    <Text style={styles.statusLabel}>光线</Text>
                                     <Text style={styles.statusValue}>{health.lightLux}</Text>
                                     <Text style={styles.statusUnit}>lux</Text>
                                 </View>
                             </View>
                             {health.isPostWorkout && (
                                 <Text style={styles.countdownText}>
-                                    🏃 运动后状态 ⏱️ {health.getRemainingTimeFormatted()}
+                                    运动后状态 {health.getRemainingTimeFormatted()}
                                 </Text>
                             )}
                         </View>
 
                         {/* 心率控制 */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>❤️ 心率 (bpm)</Text>
+                            <Text style={styles.sectionTitle}>心率 (bpm)</Text>
                             <View style={styles.presetRow}>
                                 {heartRatePresets.map((preset) => (
                                     <TouchableOpacity
@@ -263,7 +267,7 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
 
                         {/* 步数控制 */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>👟 今日步数</Text>
+                            <Text style={styles.sectionTitle}>今日步数</Text>
                             <View style={styles.inputRow}>
                                 <TextInput
                                     style={styles.input}
@@ -286,7 +290,7 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
 
                         {/* 活动状态 */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>🎯 活动状态</Text>
+                            <Text style={styles.sectionTitle}>活动状态</Text>
                             <View style={styles.activityRow}>
                                 {activityOptions.map((option) => (
                                     <TouchableOpacity
@@ -311,7 +315,7 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
 
                         {/* 压力值控制 */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>😰 压力值 (1-100)</Text>
+                            <Text style={styles.sectionTitle}>压力值 (1-100)</Text>
                             <View style={styles.presetRow}>
                                 {pressurePresets.map((preset) => (
                                     <TouchableOpacity
@@ -349,7 +353,7 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
 
                         {/* 血氧控制 */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>💉 血氧 (%)</Text>
+                            <Text style={styles.sectionTitle}>血氧 (%)</Text>
                             <View style={styles.presetRow}>
                                 {bloodOxygenPresets.map((preset) => (
                                     <TouchableOpacity
@@ -378,7 +382,7 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
 
                         {/* 睡眠数据控制 */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>😴 睡眠数据（昨晚）</Text>
+                            <Text style={styles.sectionTitle}>睡眠数据（昨晚）</Text>
                             <View style={styles.inputRow}>
                                 <View style={styles.inputGroup}>
                                     <Text style={styles.inputLabel}>评分</Text>
@@ -429,7 +433,7 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
 
                         {/* 环境光线控制 */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>💡 环境光线 (lux)</Text>
+                            <Text style={styles.sectionTitle}>环境光线 (lux)</Text>
                             <View style={styles.presetRow}>
                                 {lightPresets.map((preset) => (
                                     <TouchableOpacity
@@ -470,34 +474,30 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
 
                         {/* 一键模拟场景 */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>🎭 一键模拟场景</Text>
+                            <Text style={styles.sectionTitle}>一键模拟场景</Text>
                             <View style={styles.scenarioGrid}>
                                 <TouchableOpacity
-                                    style={[styles.scenarioBtn, { backgroundColor: '#e3f2fd' }]}
+                                    style={[styles.scenarioBtn, { backgroundColor: colors.backgroundSection }]}
                                     onPress={health.simulateJustFinishedWorkout}
                                 >
-                                    <Text style={styles.scenarioIcon}>🏃</Text>
                                     <Text style={styles.scenarioText}>刚跑完步</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    style={[styles.scenarioBtn, { backgroundColor: '#e8f5e9' }]}
+                                    style={[styles.scenarioBtn, { backgroundColor: colors.backgroundSection }]}
                                     onPress={health.simulateGoodSleep}
                                 >
-                                    <Text style={styles.scenarioIcon}>😴</Text>
                                     <Text style={styles.scenarioText}>睡眠充足</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    style={[styles.scenarioBtn, { backgroundColor: '#fff3e0' }]}
+                                    style={[styles.scenarioBtn, { backgroundColor: colors.backgroundSection }]}
                                     onPress={health.simulateHighStress}
                                 >
-                                    <Text style={styles.scenarioIcon}>😰</Text>
                                     <Text style={styles.scenarioText}>高压力</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    style={[styles.scenarioBtn, { backgroundColor: '#ffebee' }]}
+                                    style={[styles.scenarioBtn, { backgroundColor: colors.backgroundSection }]}
                                     onPress={health.simulateLowBloodOxygen}
                                 >
-                                    <Text style={styles.scenarioIcon}>💉</Text>
                                     <Text style={styles.scenarioText}>低血氧</Text>
                                 </TouchableOpacity>
                             </View>
@@ -513,7 +513,7 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
                                 onPress={health.resetAllStates}
                             >
                                 <Text style={[styles.actionBtnText, styles.secondaryBtnText]}>
-                                    🔄 重置状态
+                                    重置状态
                                 </Text>
                             </TouchableOpacity>
 
@@ -529,18 +529,24 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose }) => {
 
                         {/* 传感器状态 */}
                         <View style={styles.sensorStatus}>
-                            <Text style={styles.sensorText}>
-                                📱 传感器: 光线{health.isLightSensorAvailable ? '✅' : '❌'}
-                            </Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Feather name={health.isLightSensorAvailable ? 'sun' : 'sun'} size={14} color={health.isLightSensorAvailable ? colors.success : colors.textTertiary} />
+                                <Text style={[styles.sensorText, { marginLeft: 4 }]}>
+                                    光线传感器{health.isLightSensorAvailable ? ' 已连接' : ' 未连接'}
+                                </Text>
+                            </View>
                             {health.lightSensorError && (
                                 <Text style={styles.errorText}>{health.lightSensorError}</Text>
                             )}
                         </View>
                     </ScrollView>
 
-                    {/* 底部关闭按钮 */}
-                    <TouchableOpacity style={styles.bottomCloseBtn} onPress={onClose}>
-                        <Text style={styles.bottomCloseBtnText}>关闭</Text>
+                    {/* 底部按钮 */}
+                    <TouchableOpacity style={styles.bottomCloseBtn} onPress={() => {
+                        onRefreshRecommendations?.();
+                        onClose();
+                    }}>
+                        <Text style={styles.bottomCloseBtnText}>应用并刷新推荐</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -700,6 +706,11 @@ const styles = StyleSheet.create({
     },
     statusIcon: {
         fontSize: fontSize.xl,
+    },
+    statusLabel: {
+        fontSize: fontSize.md,
+        color: colors.textPrimary,
+        fontWeight: fontWeight.bold,
     },
     statusValue: {
         fontSize: fontSize.lg,

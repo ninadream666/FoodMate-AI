@@ -318,13 +318,13 @@ class ContextAgent(BaseAgent):
     def _recommend_delivery_radius(self, congestion_index: float) -> int:
         """根据拥堵程度推荐配送半径"""
         if congestion_index < 1.5:
-            return 5000  # 5公里
+            return 20000  # 20公里
         elif congestion_index < 2.0:
-            return 3000  # 3公里
+            return 15000  # 15公里
         elif congestion_index < 2.5:
-            return 2000  # 2公里
+            return 10000  # 10公里
         else:
-            return 1000  # 1公里
+            return 5000   # 5公里
     
     def _get_traffic_tips(self, congestion_level: str) -> str:
         """获取交通提示"""
@@ -514,7 +514,7 @@ class ContextAgent(BaseAgent):
             "light_impact": light_impact,
             "light_level": light_level,
             "suggestions": suggestions,
-            "recommended_max_distance": traffic.get("recommended_delivery_radius", 5000)
+            "recommended_max_distance": traffic.get("recommended_delivery_radius", 20000)
         }
     
     def _get_default_weather(self) -> Dict[str, Any]:
@@ -534,7 +534,7 @@ class ContextAgent(BaseAgent):
         return {
             "congestion_level": "畅通",
             "congestion_index": 1.0,
-            "recommended_delivery_radius": 5000,
+            "recommended_delivery_radius": 20000,
             "estimated_delay_factor": 1.0,
             "tips": "道路畅通，可选择任意距离餐厅"
         }

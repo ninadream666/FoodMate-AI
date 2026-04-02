@@ -1,9 +1,6 @@
 // src/services/walletService.js
 import api from './apiClient';
 
-// 模拟数据 (当后端未准备好时兜底)
-const MOCK_WALLET = { balance: 128.00, currency: '¥' };
-
 // 辅助函数：判断是否过期
 export const isCouponExpired = (coupon) => {
     if (!coupon.expiresAt) return false;
@@ -11,11 +8,9 @@ export const isCouponExpired = (coupon) => {
 };
 
 export const walletService = {
-    // 1. 获取余额 (模拟)
+    // 1. 获取余额（当前无后端钱包服务，显示为 0）
     getBalance: async () => {
-        // 模拟网络延迟
-        await new Promise(resolve => setTimeout(resolve, 300));
-        return MOCK_WALLET;
+        return { balance: 0.00, currency: '¥' };
     },
 
     // 2. 获取用户所有优惠券

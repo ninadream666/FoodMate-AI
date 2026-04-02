@@ -307,7 +307,7 @@ class MCPIntegratedRecommendationService:
             latitude=latitude,
             longitude=longitude,
             keywords="餐厅",
-            max_distance=5000,
+            max_distance=20000,
             limit=30
         )
         
@@ -489,7 +489,7 @@ class MCPIntegratedRecommendationService:
                 latitude=request.location.latitude,
                 longitude=request.location.longitude,
                 keywords="餐厅",
-                radius=5000,
+                radius=20000,
                 limit=request.max_results
             )
             
@@ -604,7 +604,7 @@ class MCPIntegratedRecommendationService:
         latitude: float = None,
         longitude: float = None,
         keywords: str = "餐厅",
-        radius: int = 5000
+        radius: int = 20000
     ) -> List[Dict[str, Any]]:
         """
         搜索附近餐厅

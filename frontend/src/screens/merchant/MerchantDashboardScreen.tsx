@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { merchantService } from '../../services/merchantService';
+import { settlementService } from '../../services/settlementService';
 import { colors, spacing, borderRadius, fontSize, fontWeight } from '../../theme/NordicTheme';
 
 interface MerchantInfo {
@@ -12,20 +13,36 @@ interface MerchantInfo {
 
 const MerchantDashboardScreen = ({ navigation }: any) => {
     const [merchant, setMerchant] = useState<MerchantInfo | null>(null);
+    const [allMerchants, setAllMerchants] = useState<MerchantInfo[]>([]);
+    const [showSelector, setShowSelector] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [todayEarnings, setTodayEarnings] = useState<any>(null);
 
     useEffect(() => {
-        fetchMerchant();
+        fetchMerchants();
     }, []);
 
-    const fetchMerchant = async () => {
+    const fetchMerchants = async () => {
         try {
-            const data = await merchantService.getMyMerchant();
-            setMerchant(data);
-        } catch (error) {
+            const list = await merchantService.getAllMyMerchants();
+            const merchants = Array.isArray(list) ? list : [];
+            setAllMerchants(merchants);
+            if (merchants.length === 0) {
+                navigation.replace('MerchantOnboarding');
+            } else if (merchants.length === 1) {
+                setMerchant(merchants[0]);
+                settlementService.getTodaySummary().then(setTodayEarnings).catch(() => {});
+            } else {
+                // 多个店铺，显示选择界面
+                setShowSelector(true);
+            }
+        } catch (error: any) {
             console.error('获取商家信息失败:', error);
-            // 如果获取失败，可能用户还没有商家，跳转到入驻页
-            // navigation.navigate('MerchantOnboarding');
+            if (error.message === 'UNAUTHORIZED') {
+                navigation.replace('Login');
+            } else {
+                navigation.replace('MerchantOnboarding');
+            }
         } finally {
             setLoading(false);
         }
@@ -42,26 +59,86 @@ const MerchantDashboardScreen = ({ navigation }: any) => {
         );
     }
 
+    // 多店铺选择界面
+    if (showSelector && !merchant) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <ScrollView contentContainerStyle={[styles.contentContainer, { paddingTop: spacing.xl }]}>
+                    <Text style={styles.selectorTitle}>选择要管理的店铺</Text>
+                    <Text style={styles.selectorSubtitle}>您有 {allMerchants.length} 家店铺</Text>
+                    {allMerchants.map((m) => (
+                        <TouchableOpacity
+                            key={m.id}
+                            style={styles.selectorCard}
+                            onPress={() => {
+                                setMerchant(m);
+                                setShowSelector(false);
+                            }}
+                        >
+                            <View style={styles.profileAvatar}>
+                                <Text style={styles.avatarText}>{(m.name || '店')[0]}</Text>
+                            </View>
+                            <View style={styles.selectorInfo}>
+                                <Text style={styles.shopName}>{m.name}</Text>
+                                {m.address ? <Text style={styles.profileSubtitle}>{m.address}</Text> : null}
+                            </View>
+                            <Feather name="chevron-right" size={18} color={colors.textTertiary} />
+                        </TouchableOpacity>
+                    ))}
+                    <TouchableOpacity
+                        style={styles.newShopBtn}
+                        onPress={() => navigation.navigate('MerchantOnboarding')}
+                    >
+                        <Feather name="plus" size={18} color={colors.primary} />
+                        <Text style={styles.newShopText}>创建或认领新店铺</Text>
+                    </TouchableOpacity>
+                </ScrollView>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
-                {/* 顶部个人中心入口 */}
+                {/* 顶部店铺信息 - 点击可切换店铺 */}
                 <TouchableOpacity
                     style={styles.profileSection}
-                    onPress={() => navigation.navigate('Profile')}
+                    onPress={() => {
+                        if (allMerchants.length > 1) {
+                            setMerchant(null);
+                            setShowSelector(true);
+                        } else {
+                            navigation.navigate('Profile');
+                        }
+                    }}
                 >
                     <View style={styles.profileAvatar}>
                         <Text style={styles.avatarText}>{(merchant?.name || '店')[0]}</Text>
                     </View>
                     <View style={styles.profileInfo}>
                         <Text style={styles.shopName}>{merchant?.name || '我的店铺'}</Text>
-                        <Text style={styles.profileSubtitle}>个人中心 · 账户设置</Text>
+                        <Text style={styles.profileSubtitle}>
+                            {allMerchants.length > 1 ? `${allMerchants.length} 家店铺 · 点击切换` : '个人中心 · 账户设置'}
+                        </Text>
                     </View>
-                    <Feather name="chevron-right" size={18} color={colors.textTertiary} />
+                    <Feather name={allMerchants.length > 1 ? 'repeat' : 'chevron-right'} size={18} color={colors.textTertiary} />
                 </TouchableOpacity>
+
+                {/* 今日收益卡片 */}
+                {todayEarnings && (
+                    <View style={styles.earningsCard}>
+                        <Text style={styles.earningsLabel}>今日收益</Text>
+                        <Text style={styles.earningsValue}>¥{(todayEarnings.totalCommission || todayEarnings.netIncome || 0).toFixed(2)}</Text>
+                        <Text style={styles.earningsSub}>订单数 {todayEarnings.orderCount || 0}</Text>
+                    </View>
+                )}
 
                 {/* 第一组功能列表 */}
                 <View style={styles.menuGroup}>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('MerchantOrders')}>
+                        <Text style={styles.menuTitle}>订单管理</Text>
+                        <Feather name="chevron-right" size={18} color={colors.textTertiary} />
+                    </TouchableOpacity>
                     <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('SmartPricing')}>
                         <Text style={styles.menuTitle}>AI 智能定价</Text>
                         <Feather name="chevron-right" size={18} color={colors.textTertiary} />
@@ -94,7 +171,9 @@ const MerchantDashboardScreen = ({ navigation }: any) => {
 
                 {/* 第三组 - 经营报表 */}
                 <View style={styles.menuGroup}>
-                    <TouchableOpacity style={[styles.menuItem, styles.menuItemLast]} onPress={() => { }}>
+                    <TouchableOpacity style={[styles.menuItem, styles.menuItemLast]} onPress={() => {
+                        Alert.alert('经营报表', '完整经营数据分析请前往 PC 端管理后台查看');
+                    }}>
                         <Text style={styles.menuTitle}>经营报表</Text>
                         <Text style={styles.menuSubLabel}>请至PC端</Text>
                         <Feather name="chevron-right" size={18} color={colors.textTertiary} />
@@ -204,6 +283,87 @@ const styles = StyleSheet.create({
         fontSize: fontSize.xs,
         color: colors.textTertiary,
         marginRight: spacing.sm,
+    },
+
+    // 今日收益
+    earningsCard: {
+        backgroundColor: colors.primary,
+        marginHorizontal: spacing.lg,
+        marginBottom: spacing.md,
+        borderRadius: borderRadius.xl,
+        padding: spacing.xl,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    earningsLabel: {
+        fontSize: fontSize.sm,
+        color: 'rgba(255,255,255,0.7)',
+    },
+    earningsValue: {
+        fontSize: 32,
+        fontWeight: fontWeight.bold,
+        color: colors.textOnPrimary,
+        marginVertical: spacing.xs,
+    },
+    earningsSub: {
+        fontSize: fontSize.sm,
+        color: 'rgba(255,255,255,0.7)',
+    },
+
+    // 店铺选择界面
+    selectorTitle: {
+        fontSize: fontSize.xl,
+        fontWeight: fontWeight.bold,
+        color: colors.textPrimary,
+        textAlign: 'center',
+        marginBottom: spacing.xs,
+    },
+    selectorSubtitle: {
+        fontSize: fontSize.sm,
+        color: colors.textTertiary,
+        textAlign: 'center',
+        marginBottom: spacing.xl,
+    },
+    selectorCard: {
+        backgroundColor: '#FFFFFF',
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.xl,
+        marginHorizontal: spacing.lg,
+        marginBottom: spacing.md,
+        borderRadius: borderRadius.xl,
+        borderWidth: 1,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    selectorInfo: {
+        flex: 1,
+        marginLeft: spacing.lg,
+    },
+    newShopBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: spacing.lg,
+        marginTop: spacing.md,
+        paddingVertical: spacing.lg,
+        borderRadius: borderRadius.xl,
+        borderWidth: 1,
+        borderColor: colors.primary,
+        borderStyle: 'dashed',
+    },
+    newShopText: {
+        fontSize: fontSize.md,
+        color: colors.primary,
+        fontWeight: fontWeight.medium,
+        marginLeft: spacing.sm,
     },
 });
 

@@ -439,12 +439,10 @@ class ProfilerAgent(BaseAgent):
         # 根据天气调整
         weather = context.get("weather", {})
         if weather.get("is_bad_weather"):
-            # 恶劣天气，缩短距离偏好
-            adjusted["max_distance"] = min(adjusted["max_distance"], 2000)
-            # 添加热食偏好
+            # 恶劣天气，添加热食偏好（不限制距离，由评分权重调节）
             if "火锅" not in adjusted["cuisines"]:
                 adjusted["cuisines"].append("热汤类")
-        
+
         temp = weather.get("temperature", 25)
         if temp < 15:
             # 寒冷天气，偏向热食
@@ -456,16 +454,8 @@ class ProfilerAgent(BaseAgent):
             for cuisine in ["沙拉", "冷饮"]:
                 if cuisine not in adjusted["cuisines"]:
                     adjusted["cuisines"].append(cuisine)
-        
-        # 根据交通调整
-        traffic = context.get("traffic", {})
-        congestion_index = traffic.get("congestion_index", 1.0)
-        if congestion_index > 1.5:
-            # 拥堵时缩短距离
-            adjusted["max_distance"] = min(
-                adjusted["max_distance"],
-                traffic.get("recommended_delivery_radius", 3000)
-            )
+
+        # 交通拥堵时不再硬性限制距离，由评分权重自然调节
         
         # 根据时间调整
         temporal = context.get("temporal", {})

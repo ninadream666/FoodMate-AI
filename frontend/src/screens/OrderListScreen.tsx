@@ -12,8 +12,12 @@ import {
 } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { orderService } from '../services/orderService';
+import { merchantService } from '../services/merchantService';
 import { cacheService } from '../utils/cacheUtils';
 import LinearGradient from 'react-native-linear-gradient';
+
+// 商家名称缓存：merchantId -> name
+const merchantNameCache = new Map<string, string>();
 
 const OrderListScreen = ({ navigation }: any) => {
     const [orders, setOrders] = useState<any[]>([]);
@@ -27,14 +31,8 @@ const OrderListScreen = ({ navigation }: any) => {
 
     useEffect(() => {
         if (isFocused) {
-            // 如果距离上次加载不足 30 秒且已有数据，跳过加载
-            const now = Date.now();
-            const timeSinceLastLoad = now - lastLoadTimeRef.current;
-            if (timeSinceLastLoad < 30000 && orders.length > 0) {
-                setLoading(false);
-                return;
-            }
-            loadOrders(false);
+            // 每次页面聚焦都重新拉取最新状态（确保商家审批后用户能及时看到变化）
+            loadOrders(true);
         }
     }, [isFocused]);
 
@@ -57,9 +55,24 @@ const OrderListScreen = ({ navigation }: any) => {
             }
 
             const data = await orderService.getMyOrders();
-            const sorted = Array.isArray(data) ? data.sort((a: any, b: any) =>
+            // 兼容分页响应（Page 对象有 content 字段）和普通数组
+            const list = data?.content || (Array.isArray(data) ? data : []);
+            const sorted = list.sort((a: any, b: any) =>
                 new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-            ) : [];
+            );
+
+            // 批量解析商家名称（去重后并行查询）
+            const uniqueMerchantIds = [...new Set(sorted.map((o: any) => o.merchantId).filter(Boolean))];
+            await Promise.all(
+                uniqueMerchantIds.map(async (mid: string) => {
+                    if (merchantNameCache.has(mid)) return;
+                    try {
+                        const merchant = await merchantService.getMerchantById(mid);
+                        if (merchant?.name) merchantNameCache.set(mid, merchant.name);
+                    } catch { /* 查不到就用 fallback */ }
+                })
+            );
+
             setOrders(sorted);
 
             // 缓存订单数据
@@ -118,8 +131,20 @@ const OrderListScreen = ({ navigation }: any) => {
         const statusColor = orderService.getStatusColor(item.status);
         const canCancel = orderService.canCancel(item.status);
 
-        // 商家名称兜底 (Web端逻辑: item.merchantName || 1->'张记'...)
-        const merchantName = item.merchantName || (item.items && item.items[0]?.name) || `商家 #${item.merchantId}`;
+        // 商家名称：优先缓存 → 后端字段 → 兜底
+        const merchantName = merchantNameCache.get(item.merchantId)
+            || item.merchantName
+            || '商家';
+
+        // 时间格式化：使用上海时区
+        const formatTime = (dateStr: string) => {
+            if (!dateStr) return '';
+            return new Date(dateStr).toLocaleString('zh-CN', {
+                timeZone: 'Asia/Shanghai',
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit',
+            });
+        };
 
         return (
             <TouchableOpacity
@@ -129,19 +154,18 @@ const OrderListScreen = ({ navigation }: any) => {
             >
                 {/* 头部：商家名 + 状态 */}
                 <View style={styles.cardHeader}>
-                    <View style={styles.merchantRow}>
-                        <Text style={styles.merchantIcon}>🏪</Text>
-                        <Text style={styles.merchantName}>{merchantName}</Text>
+                    <View style={[styles.merchantRow, { flex: 1, marginRight: 8 }]}>
+                        <Text style={styles.merchantName} numberOfLines={1}>{merchantName}</Text>
                         <Text style={styles.arrow}> &gt;</Text>
                     </View>
-                    <Text style={[styles.statusText, { color: statusColor }]}>
+                    <Text style={[styles.statusText, { color: statusColor, flexShrink: 0 }]}>
                         {statusLabel}
                     </Text>
                 </View>
 
                 {/* 中间：简略信息 */}
                 <View style={styles.cardBody}>
-                    <Text style={styles.timeText}>下单时间: {new Date(item.createdAt).toLocaleString()}</Text>
+                    <Text style={styles.timeText}>下单时间: {formatTime(item.createdAt)}</Text>
                     <View style={styles.infoRow}>
                         <Text style={styles.itemSummary}>
                             {item.items ? `${item.items.length} 件商品` : '共消费'}
@@ -247,11 +271,11 @@ const styles = StyleSheet.create({
         marginBottom: spacing.md,
     },
     merchantRow: { flexDirection: 'row', alignItems: 'center' },
-    merchantIcon: { fontSize: 18, marginRight: spacing.sm },
     merchantName: {
         fontSize: fontSize.lg,
         fontWeight: fontWeight.bold,
         color: colors.textPrimary,
+        flexShrink: 1,
     },
     arrow: {
         fontSize: fontSize.sm,

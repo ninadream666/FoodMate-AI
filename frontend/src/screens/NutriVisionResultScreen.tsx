@@ -15,6 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Feather from 'react-native-vector-icons/Feather';
 import { nutriVisionService } from '../services/nutriVisionService';
+import { profileService } from '../services/profileService';
+import { getNetworkStatus } from '../services/networkUtils';
 import NutriVisionLoading from '../components/NutriVisionLoading';
 
 // 简单图标组件 (替代 Material Icons)
@@ -55,10 +57,23 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
 
         // 调用 API
         analyzeImage();
+
+        // 组件卸载时取消未完成的请求，避免浪费带宽
+        return () => {
+            nutriVisionService.cancelPending();
+        };
     }, []);
 
     const analyzeImage = async () => {
         try {
+            // 发起大请求前检查网络状态
+            const { isConnected } = getNetworkStatus();
+            if (!isConnected) {
+                setErrorMsg('当前无网络连接，请检查网络后重试');
+                setLoading(false);
+                return;
+            }
+
             console.log(`🚀 开始调用模型分析, 模式: ${mode}`);
             let data;
             
@@ -80,8 +95,20 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
         }
     };
 
-    const handleSaveRecord = () => {
-        Alert.alert('提示', '健康记录功能开发中，敬请期待！');
+    const handleSaveRecord = async () => {
+        try {
+            // 只保存分析结果，不传 imageUri（本地路径对服务端无意义，且增大数据量）
+            // 也不传 imageBase64（避免将整张图片存入数据库，节省大量存储空间）
+            await profileService.saveHealthRecord({
+                type: mode === 'food' ? 'single_food' : 'menu_scan',
+                result: result,
+                tags: healthTags,
+                timestamp: new Date().toISOString(),
+            });
+            Alert.alert('保存成功', '已保存到健康记录，可在健康数据页面查看');
+        } catch (e) {
+            Alert.alert('保存失败', '请稍后重试');
+        }
     };
 
     // 1. 渲染加载页

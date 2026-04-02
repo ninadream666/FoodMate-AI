@@ -28,11 +28,14 @@ public class UserProfile {
     // 忌口
     private List<String> allergies;
 
-    // 收藏的商家ID列表
-    private List<Long> favoriteMerchantIds = new ArrayList<>();
+    // 收藏的商家ID列表（支持数字ID和字符串外部ID）
+    private List<String> favoriteMerchantIds = new ArrayList<>();
 
     // 浏览历史（内嵌对象列表）
     private List<BrowseRecord> browseHistory = new ArrayList<>();
+
+    // 健康饮食记录
+    private List<Map<String, Object>> healthRecords = new ArrayList<>();
 
     // 用户统计/画像数据
     private UserStats stats;

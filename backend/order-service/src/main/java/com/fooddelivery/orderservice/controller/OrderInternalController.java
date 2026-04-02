@@ -1,5 +1,6 @@
 package com.fooddelivery.orderservice.controller;
 
+import com.fooddelivery.common.enums.OrderStatus;
 import com.fooddelivery.orderservice.dto.ItemSalesStatsDto;
 import com.fooddelivery.orderservice.dto.OrderDetailDto;
 import com.fooddelivery.orderservice.dto.PaymentConfirmDto;
@@ -72,11 +73,22 @@ public class OrderInternalController {
     /**
      * 获取商家的待审批退款订单列表（内部接口）
      * GET /orders/internal/merchant/{merchantId}/pending-refunds
-     * 支持数字 ID 或外部 ID
+     * 支持同时传入 externalId，兼容订单中 merchant_id 存的是数据库主键或外部 ID
      */
     @GetMapping("/merchant/{merchantId}/pending-refunds")
-    public ResponseEntity<?> getPendingRefundsByMerchant(@PathVariable String merchantId) {
-        List<OrderDetailDto> pendingOrders = orderService.getPendingRefundOrders(merchantId);
+    public ResponseEntity<?> getPendingRefundsByMerchant(
+            @PathVariable String merchantId,
+            @RequestParam(required = false) String externalId) {
+
+        List<String> merchantIds = new java.util.ArrayList<>();
+        merchantIds.add(merchantId);
+        if (externalId != null && !externalId.isBlank() && !externalId.equals(merchantId)) {
+            merchantIds.add(externalId);
+        }
+
+        List<OrderDetailDto> pendingOrders = merchantIds.size() > 1
+                ? orderService.getPendingRefundOrdersByMultipleIds(merchantIds)
+                : orderService.getPendingRefundOrders(merchantId);
         return ResponseEntity.ok(Map.of(
                 "merchantId", merchantId,
                 "count", pendingOrders.size(),
@@ -110,5 +122,69 @@ public class OrderInternalController {
         mockPayment.setPaymentChannel("APP");
 
         return orderService.confirmPayment(orderId, mockPayment);
+    }
+
+    /**
+     * 商家接单（内部接口）
+     * POST /orders/internal/{orderId}/accept
+     */
+    @PostMapping("/{orderId}/accept")
+    public ResponseEntity<?> acceptOrder(
+            @PathVariable Long orderId,
+            @RequestParam String merchantId) {
+        return orderService.acceptOrder(orderId, merchantId);
+    }
+
+    /**
+     * 商家拒单（内部接口）
+     * POST /orders/internal/{orderId}/reject
+     */
+    @PostMapping("/{orderId}/reject")
+    public ResponseEntity<?> rejectOrder(
+            @PathVariable Long orderId,
+            @RequestParam String merchantId,
+            @RequestParam(required = false) String reason) {
+        return orderService.rejectOrder(orderId, merchantId, reason);
+    }
+
+    /**
+     * 商家更新订单进度（内部接口）
+     * POST /orders/internal/{orderId}/progress
+     */
+    @PostMapping("/{orderId}/progress")
+    public ResponseEntity<?> updateOrderProgress(
+            @PathVariable Long orderId,
+            @RequestParam String merchantId,
+            @RequestParam String status) {
+        OrderStatus newStatus = OrderStatus.fromCode(status);
+        if (newStatus == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "无效的订单状态: " + status));
+        }
+        return orderService.updateOrderProgress(orderId, merchantId, newStatus);
+    }
+
+    /**
+     * 获取商家的待处理订单列表（内部接口）
+     * GET /orders/internal/merchant/{merchantId}/pending-orders
+     * 支持同时传入 externalId，兼容订单中 merchant_id 存的是数据库主键或外部 ID
+     */
+    @GetMapping("/merchant/{merchantId}/pending-orders")
+    public ResponseEntity<?> getPendingOrdersByMerchant(
+            @PathVariable String merchantId,
+            @RequestParam(required = false) String externalId) {
+
+        // 构建所有可能的 merchantId（数据库主键 + 外部ID）
+        List<String> merchantIds = new java.util.ArrayList<>();
+        merchantIds.add(merchantId);
+        if (externalId != null && !externalId.isBlank() && !externalId.equals(merchantId)) {
+            merchantIds.add(externalId);
+        }
+
+        List<OrderDetailDto> pendingOrders = orderService.getMerchantOrdersByMultipleIds(merchantIds,
+                List.of(OrderStatus.PAID, OrderStatus.CONFIRMED, OrderStatus.PREPARING, OrderStatus.READY));
+        return ResponseEntity.ok(Map.of(
+                "merchantId", merchantId,
+                "count", pendingOrders.size(),
+                "orders", pendingOrders));
     }
 }

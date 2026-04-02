@@ -10,6 +10,7 @@ import {
     ScrollView,
     Alert,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { PermissionsAndroid, Platform } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
 import locationService from '../services/locationService';
@@ -428,7 +429,7 @@ export default function LocationDebugScreen() {
     return (
         <ScrollView style={styles.container}>
             <View style={styles.section}>
-                <Text style={styles.title}>📱 定位功能调试</Text>
+                <Text style={styles.title}>定位功能调试</Text>
 
                 <View style={styles.infoRow}>
                     <Text style={styles.label}>权限状态:</Text>
@@ -439,62 +440,47 @@ export default function LocationDebugScreen() {
                     </Text>
                 </View>
 
-                <TouchableOpacity style={styles.button} onPress={requestPermission}>
-                    <Text style={styles.buttonText}>🔐 请求位置权限</Text>
+                <TouchableOpacity activeOpacity={0.8} onPress={requestPermission}>
+                    <LinearGradient colors={['#FFA07A', '#C4422E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.button}>
+                        <Text style={styles.buttonText}>请求位置权限</Text>
+                    </LinearGradient>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.button} onPress={testLocationOnce}>
-                    <Text style={styles.buttonText}>📍 GPS高精度定位</Text>
+                <TouchableOpacity activeOpacity={0.8} onPress={testLocationOnce}>
+                    <LinearGradient colors={['#FFA07A', '#C4422E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.button}>
+                        <Text style={styles.buttonText}>GPS高精度定位</Text>
+                    </LinearGradient>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.button} onPress={testNetworkLocation}>
-                    <Text style={styles.buttonText}>🌐 网络定位测试</Text>
+                <TouchableOpacity activeOpacity={0.8} onPress={testNetworkLocation}>
+                    <LinearGradient colors={['#FFA07A', '#C4422E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.button}>
+                        <Text style={styles.buttonText}>网络定位测试</Text>
+                    </LinearGradient>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.button} onPress={testLocationContinuous}>
-                    <Text style={styles.buttonText}>🔄 连续定位测试</Text>
+                <TouchableOpacity activeOpacity={0.8} onPress={testLocationContinuous}>
+                    <LinearGradient colors={['#FFA07A', '#C4422E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.button}>
+                        <Text style={styles.buttonText}>连续定位测试</Text>
+                    </LinearGradient>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.button} onPress={checkSystemSettings}>
-                    <Text style={styles.buttonText}>⚙️ 检查系统设置</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.button, styles.emergencyButton]}
-                    onPress={testEmergencyLocation}
-                >
-                    <Text style={styles.buttonText}>🚨 紧急定位测试</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.button, styles.successButton]}
-                    onPress={testBasicLocation}
-                >
-                    <Text style={styles.buttonText}>🔧 最基础定位</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.button, styles.dangerButton]}
-                    onPress={forceStopLocation}
-                >
-                    <Text style={styles.buttonText}>🛑 强制停止定位</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.button} onPress={clearHistory}>
-                    <Text style={styles.buttonText}>🗑️ 清除记录</Text>
+                <TouchableOpacity activeOpacity={0.8} onPress={clearHistory}>
+                    <LinearGradient colors={['#FFA07A', '#C4422E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.button}>
+                        <Text style={styles.buttonText}>清除记录</Text>
+                    </LinearGradient>
                 </TouchableOpacity>
             </View>
 
             {error && (
                 <View style={styles.errorSection}>
-                    <Text style={styles.errorTitle}>❌ 错误信息</Text>
+                    <Text style={styles.errorTitle}>错误信息</Text>
                     <Text style={styles.errorText}>{error}</Text>
                 </View>
             )}
 
             {currentLocation && (
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>📍 当前位置</Text>
+                    <Text style={styles.sectionTitle}>当前位置</Text>
                     <Text style={styles.location}>
                         纬度: {currentLocation.latitude.toFixed(6)}{'\n'}
                         经度: {currentLocation.longitude.toFixed(6)}{'\n'}
@@ -508,7 +494,7 @@ export default function LocationDebugScreen() {
 
             {locationHistory.length > 0 && (
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>📋 定位历史</Text>
+                    <Text style={styles.sectionTitle}>定位历史</Text>
                     {locationHistory.map((loc, index) => (
                         <View key={index} style={styles.historyItem}>
                             <Text style={styles.historyText}>
@@ -520,7 +506,7 @@ export default function LocationDebugScreen() {
             )}
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>💡 故障排除</Text>
+                <Text style={styles.sectionTitle}>故障排除</Text>
                 <Text style={styles.helpText}>
                     1. 确保已授权位置权限{'\n'}
                     2. 检查GPS是否已开启{'\n'}
@@ -546,9 +532,14 @@ const styles = StyleSheet.create({
         backgroundColor: colors.cardBg,
         margin: spacing.md,
         padding: spacing.lg,
-        borderRadius: borderRadius.lg,
+        borderRadius: borderRadius.xl,
         borderWidth: 1,
         borderColor: colors.cardBorder,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 4,
     },
     title: {
         fontSize: fontSize.xl,
@@ -584,17 +575,20 @@ const styles = StyleSheet.create({
         color: colors.error,
     },
     button: {
-        backgroundColor: colors.primary,
         padding: spacing.md,
-        borderRadius: borderRadius.lg,
+        borderRadius: borderRadius.xxl,
         alignItems: 'center',
         marginBottom: spacing.md,
-        ...shadows.sm,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 8,
     },
     buttonText: {
         color: colors.textOnPrimary,
         fontSize: fontSize.lg,
-        fontWeight: fontWeight.medium,
+        fontWeight: fontWeight.bold,
     },
     location: {
         fontSize: fontSize.md,
@@ -642,14 +636,5 @@ const styles = StyleSheet.create({
         fontSize: fontSize.md,
         lineHeight: 20,
         color: colors.textSecondary,
-    },
-    emergencyButton: {
-        backgroundColor: colors.warning,
-    },
-    successButton: {
-        backgroundColor: colors.success,
-    },
-    dangerButton: {
-        backgroundColor: colors.error,
     },
 });

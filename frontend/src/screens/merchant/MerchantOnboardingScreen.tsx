@@ -82,7 +82,14 @@ const MerchantOnboardingScreen = ({ navigation }: any) => {
             setMerchantId(data.id);
             setStep(2);
         } catch (error: any) {
-            Alert.alert('失败', error.message || '创建店铺失败');
+            const msg = error.message || '';
+            if (msg.includes('UNAUTHORIZED') || msg.includes('过期')) {
+                Alert.alert('登录已过期', '请重新登录后再创建店铺', [
+                    { text: '去登录', onPress: () => navigation.replace('Login') }
+                ]);
+            } else {
+                Alert.alert('创建失败', msg || '创建店铺失败');
+            }
         } finally {
             setLoading(false);
         }
@@ -137,6 +144,7 @@ const MerchantOnboardingScreen = ({ navigation }: any) => {
                 <TextInput
                     style={styles.searchInput}
                     placeholder="输入店铺名称搜索..."
+                    placeholderTextColor="#999"
                     value={searchKeyword}
                     onChangeText={setSearchKeyword}
                     onSubmitEditing={searchUnclaimedMerchants}
@@ -189,8 +197,8 @@ const MerchantOnboardingScreen = ({ navigation }: any) => {
                 <Text style={styles.backText}>← 返回选择</Text>
             </TouchableOpacity>
             <Text style={styles.title}>步骤 1/2: 创建店铺</Text>
-            <TextInput style={styles.input} placeholder="店铺名称" value={shopForm.name} onChangeText={t => setShopForm({ ...shopForm, name: t })} />
-            <TextInput style={styles.input} placeholder="店铺地址" value={shopForm.address} onChangeText={t => setShopForm({ ...shopForm, address: t })} />
+            <TextInput style={styles.input} placeholder="商家名称" placeholderTextColor="#999" value={shopForm.name} onChangeText={t => setShopForm({ ...shopForm, name: t })} />
+            <TextInput style={styles.input} placeholder="店铺地址" placeholderTextColor="#999" value={shopForm.address} onChangeText={t => setShopForm({ ...shopForm, address: t })} />
             <TouchableOpacity onPress={handleCreateShop} disabled={loading} activeOpacity={0.7}>
                 <LinearGradient colors={['#FFA07A', '#C4422E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.btn}>
                     {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>下一步</Text>}
@@ -202,9 +210,9 @@ const MerchantOnboardingScreen = ({ navigation }: any) => {
     const renderStep2 = () => (
         <View style={styles.card}>
             <Text style={styles.title}>步骤 2/2: 添加招牌菜</Text>
-            <TextInput style={styles.input} placeholder="菜品名称" value={dishForm.name} onChangeText={t => setDishForm({ ...dishForm, name: t })} />
-            <TextInput style={styles.input} placeholder="价格" keyboardType="numeric" value={dishForm.price} onChangeText={t => setDishForm({ ...dishForm, price: t })} />
-            <TextInput style={styles.input} placeholder="分类 (如: 主食)" value={dishForm.category} onChangeText={t => setDishForm({ ...dishForm, category: t })} />
+            <TextInput style={styles.input} placeholder="菜品名称" placeholderTextColor="#999" value={dishForm.name} onChangeText={t => setDishForm({ ...dishForm, name: t })} />
+            <TextInput style={styles.input} placeholder="价格" placeholderTextColor="#999" keyboardType="numeric" value={dishForm.price} onChangeText={t => setDishForm({ ...dishForm, price: t })} />
+            <TextInput style={styles.input} placeholder="分类" placeholderTextColor="#999" value={dishForm.category} onChangeText={t => setDishForm({ ...dishForm, category: t })} />
             <TouchableOpacity onPress={handleAddDish} disabled={loading} activeOpacity={0.7}>
                 <LinearGradient colors={['#FFA07A', '#C4422E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.btn}>
                     {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>完成入驻</Text>}

@@ -35,7 +35,7 @@ export const SERVICE_URLS = {
     users: `${CONFIG.API_HOST}:8083/users`,        // user-service
     merchants: `${CONFIG.API_HOST}:8081/merchants`, // merchant-service
     orders: `${CONFIG.API_HOST}:8084/orders`,       // order-service
-    coupons: `${CONFIG.API_HOST}:8082/coupons`,     // marketing-service
+    coupons: `${CONFIG.API_HOST}:8082/api/coupons`,     // marketing-service
     marketing: `${CONFIG.API_HOST}:8082/marketing`, // marketing-service
     profile: `${CONFIG.API_HOST}:8086/profile`,     // profile-service
     recommendation: `${CONFIG.API_HOST}:8087/api/v2`, // recommendation-service

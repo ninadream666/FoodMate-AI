@@ -39,7 +39,7 @@ const RestaurantCard = memo(({ restaurant, onPress }: Props) => {
     const rating = restaurant.rating || (restaurant.features?.rating) || 4.5;
     const deliveryTime = restaurant.deliveryTime || restaurant.estimated_delivery_time || (restaurant.features?.delivery_time) || '30分钟';
     const distance = restaurant.distance || (restaurant.features?.distance);
-    const distanceDisplay = distance ? `${(distance / 1000).toFixed(1)}km` : '1.2km';
+    const distanceDisplay = distance ? `${(distance / 1000).toFixed(2)}km` : '1.20km';
 
     // AI推荐理由：后端返回的是 reason 字段（在 recommendations 数组每个item里）
     // 优先级: reason > recommendation_reason > match_reasons[0] > description

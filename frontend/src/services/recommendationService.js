@@ -15,12 +15,11 @@ export const recommendationService = {
     // 1. 获取智能推荐 (V2)
     getV2Recommendations: async (params = {}) => {
         try {
-            // 构造请求体 - 保持完整精度
             const body = {
                 user_id: String(params.userId || '1'),
                 location: {
                     address: params.address || '当前位置',
-                    latitude: params.latitude || 0, // 保持原始精度，不强制转换
+                    latitude: params.latitude || 0,
                     longitude: params.longitude || 0,
                 },
                 query: params.query || '为我推荐附近的美食',
@@ -29,14 +28,14 @@ export const recommendationService = {
 
             // 添加健康上下文（如果提供）
             if (params.healthContext) {
+                const hc = params.healthContext;
                 body.health_context = {
-                    daily_steps: params.healthContext.dailySteps || 0,
-                    recent_steps_30min: params.healthContext.recentSteps30min || 0,
-                    heart_rate: params.healthContext.heartRate || 75,
-                    activity_status: params.healthContext.activityStatus || 'still',
-                    is_post_workout: params.healthContext.isPostWorkout || false,
+                    daily_steps: hc.dailySteps ?? hc.daily_steps ?? 0,
+                    recent_steps_30min: hc.recentSteps30min ?? hc.recent_steps_30min ?? 0,
+                    heart_rate: hc.heartRate ?? hc.heart_rate ?? 75,
+                    activity_status: hc.activityStatus ?? hc.activity_status ?? 'still',
+                    is_post_workout: hc.isPostWorkout ?? hc.is_post_workout ?? false,
                 };
-                console.log('🏃 携带健康上下文:', body.health_context);
             }
 
             // 添加天气上下文（如果提供）
@@ -50,39 +49,28 @@ export const recommendationService = {
                     is_heavy_rain: params.weatherContext.isHeavyRain || false,
                     delivery_impact: params.weatherContext.deliveryImpact || 'none',
                 };
-                console.log('🌦️ 携带天气上下文:', body.weather_context);
             }
 
-            console.log('🔍 调用智能推荐 - 详细参数:', JSON.stringify(body, null, 2));
-            console.log('🌐 即将发送API请求到 recommendation/agents/recommend');
-
-            // 检查位置是否为默认北京位置
-            if (Math.abs(body.location.latitude - 39.9042) < 0.001 && Math.abs(body.location.longitude - 116.4074) < 0.001) {
-                console.warn('⚠️ 推荐服务警告：检测到北京默认位置，这可能不是用户真实位置');
+            // 添加忌口/过敏原（如果提供）
+            if (params.allergies && params.allergies.length > 0) {
+                body.allergies = params.allergies;
             }
 
-            // 注意：这里手动指定 /v2 前缀，因为 apiClient 默认可能是 /api
-            // 如果 apiClient 配置的是 baseURL/api，这里需要根据实际情况调整
-            // 假设 apiClient.post 会拼接在 baseURL 后
-            // 我们这里尝试直接请求 'agents', '/recommend' (假设 backend 路由结构)
-            // 如果后端是 microservices，可能需要调整 path
-            console.log('⏰ 开始API调用...');
+            if (__DEV__) console.log('🚀 调用智能推荐 API');
+
             const data = await api.post('recommendation', '/agents/recommend', body);
-            console.log('✅ API调用成功，收到响应:', data);
 
-            // 自动导入逻辑 (如果 merchantService 支持)
+            if (__DEV__) console.log('✅ 推荐响应:', (data.recommendations || data.restaurants || []).length, '条');
+
+            // 自动导入逻辑（异步，不阻塞返回）
             const list = data.recommendations || data.restaurants || [];
             if (list.length > 0 && merchantService.importRealRestaurant) {
-                // 异步导入，不阻塞 UI
                 importAgentRestaurants(list);
             }
 
             return data;
         } catch (error) {
-            console.error('❌ 智能推荐服务调用失败:', error);
-            console.error('❌ 错误详情:', error.message);
-            console.error('❌ 错误栈:', error.stack);
-            console.warn('🔄 智能推荐服务不可用，使用模拟数据');
+            console.warn('推荐服务不可用，使用兜底数据:', error.message);
             return MOCK_RECOMMENDATIONS;
         }
     },
@@ -138,20 +126,22 @@ export const recommendationService = {
     }
 };
 
-// 辅助：导入餐厅数据
+// 辅助：导入餐厅数据（并行执行，不逐个等待）
 const importAgentRestaurants = async (restaurants) => {
     try {
         const validItems = restaurants.filter(r => r.id && typeof r.id === 'string' && r.id.length > 5);
-        for (const r of validItems) {
-            await merchantService.importRealRestaurant({
-                externalId: r.id,
-                name: r.name,
-                address: r.address,
-                imageUrl: r.image,
-                // ...其他字段映射
-            }).catch(() => { });
-        }
+        // 并行导入所有餐厅，每个独立 catch 防止单个失败影响其他
+        await Promise.all(
+            validItems.map(r =>
+                merchantService.importRealRestaurant({
+                    externalId: r.id,
+                    name: r.name,
+                    address: r.address,
+                    imageUrl: r.image,
+                }).catch(() => {})
+            )
+        );
     } catch (e) {
-        console.warn('导入餐厅辅助任务失败', e);
+        // 静默失败，不影响主流程
     }
 };

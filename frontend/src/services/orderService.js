@@ -3,16 +3,17 @@ import api from './apiClient';
 
 // 订单状态常量 (从 Web 端复用)
 export const ORDER_STATUS = {
-    PENDING: { label: '待支付', color: '#e6a23c' },        // Orange
-    PAID: { label: '已支付', color: '#409eff' },           // Blue
-    ACCEPTED: { label: '已接单', color: '#409eff' },       // Blue
-    PREPARING: { label: '准备中', color: '#e6a23c' },      // Orange
-    READY: { label: '待配送', color: '#e6a23c' },          // Orange
-    DELIVERING: { label: '配送中', color: '#909399' },     // Purple (Web用Purple, App暂用Grey或自定义)
-    DELIVERED: { label: '已送达', color: '#67c23a' },      // Green
-    COMPLETED: { label: '已完成', color: '#67c23a' },      // Green
-    CANCELLED: { label: '已取消', color: '#909399' },      // Grey
-    CANCEL_PENDING: { label: '取消审批中', color: '#e6a23c' },
+    PENDING: { label: '待支付', color: '#e6a23c' },
+    PAID: { label: '已支付', color: '#409eff' },
+    CONFIRMED: { label: '已接单', color: '#409eff' },
+    ACCEPTED: { label: '已接单', color: '#409eff' },
+    PREPARING: { label: '制作中', color: '#e6a23c' },
+    READY: { label: '待配送', color: '#e6a23c' },
+    DELIVERING: { label: '配送中', color: '#909399' },
+    DELIVERED: { label: '已送达', color: '#67c23a' },
+    COMPLETED: { label: '已完成', color: '#67c23a' },
+    CANCELLED: { label: '已取消', color: '#909399' },
+    CANCEL_PENDING: { label: '取消中', color: '#e6a23c' },
     REFUNDED: { label: '已退款', color: '#909399' },
 };
 
@@ -56,8 +57,9 @@ export const orderService = {
     },
 
     // 辅助方法：判断是否可取消
+    // PENDING/PAID: 直接取消退款；CONFIRMED/PREPARING: 需商家审批
     canCancel: (status) => {
         const code = typeof status === 'object' && status !== null ? status.code : status;
-        return ['PENDING', 'PAID'].includes(code);
+        return ['PENDING', 'PAID', 'CONFIRMED', 'PREPARING'].includes(code);
     }
 };

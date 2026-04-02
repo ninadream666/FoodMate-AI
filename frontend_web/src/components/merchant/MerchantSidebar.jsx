@@ -7,6 +7,7 @@ export default function MerchantSidebar({ user }) {
 
   // 导航配置 - 添加 AI 定价项
   const navItems = [
+    { path: '/merchant/order-manage', icon: 'receipt_long', label: '订单管理' },
     { path: '/merchant/menu', icon: 'restaurant_menu', label: '菜单管理' },
     { path: '/merchant/ai-pricing', icon: 'psychology', label: 'AI 定价' }, // 新增入口
     { path: '/merchant/orders', icon: 'currency_exchange', label: '退款审批' },

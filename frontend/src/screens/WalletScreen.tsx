@@ -3,16 +3,17 @@ import {
     View,
     Text,
     FlatList,
+    ScrollView,
     StyleSheet,
     TouchableOpacity,
     ActivityIndicator,
-    Alert // <--- 1. 必须引入这个
+    Alert,
 } from 'react-native';
 import { walletService, isCouponExpired } from '../services/walletService';
 import { authService } from '../services/authService';
+import api from '../services/apiClient';
 
 const WalletScreen = ({ navigation }: any) => {
-    const [balance, setBalance] = useState(0);
     const [coupons, setCoupons] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('AVAILABLE'); // 'AVAILABLE' | 'EXPIRED'
@@ -21,22 +22,35 @@ const WalletScreen = ({ navigation }: any) => {
         loadData();
     }, []);
 
+    const [templates, setTemplates] = useState<any[]>([]);
+    const [userId, setUserId] = useState<string>('');
+
     const loadData = async () => {
         try {
-            // 1. 获取余额
-            const balanceData = await walletService.getBalance();
-            setBalance(balanceData.balance);
-
-            // 2. 获取优惠券
             const user = await authService.getCurrentUser();
             if (user && user.id) {
-                const list = await walletService.getAllCoupons(user.id);
-                setCoupons(list);
+                setUserId(user.id);
+                const [list, tpls] = await Promise.all([
+                    walletService.getAllCoupons(user.id),
+                    api.get('coupons', '/templates').catch(() => []),
+                ]);
+                setCoupons(Array.isArray(list) ? list : []);
+                setTemplates(Array.isArray(tpls) ? tpls : []);
             }
         } catch (e) {
             console.error(e);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleClaimCoupon = async (templateId: number) => {
+        try {
+            await walletService.claimCoupon(templateId, userId);
+            Alert.alert('领取成功', '优惠券已放入您的卡包');
+            loadData();
+        } catch (e: any) {
+            Alert.alert('领取失败', e.message || '请稍后重试');
         }
     };
 
@@ -87,17 +101,27 @@ const WalletScreen = ({ navigation }: any) => {
 
     return (
         <View style={styles.container}>
-            {/* 余额卡片 */}
-            <View style={styles.balanceCard}>
-                <View style={styles.balanceRow}>
-                    <Text style={styles.balanceLabel}>当前余额</Text>
-                    {/* 修改点：使用 Alert.alert */}
-                    <TouchableOpacity style={styles.chargeBtn} onPress={() => Alert.alert('提示', '充值功能开发中')}>
-                        <Text style={styles.chargeText}>充值</Text>
-                    </TouchableOpacity>
+            {/* 领券中心 */}
+            {templates.length > 0 && (
+                <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
+                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 8 }}>领券中心</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        {templates.filter((t: any) => t.enabled !== false).map((tpl: any) => (
+                            <TouchableOpacity
+                                key={tpl.id}
+                                style={{ backgroundColor: '#FFF6F2', borderRadius: 12, padding: 14, marginRight: 10, width: 140, borderWidth: 1, borderColor: '#FDEEE8' }}
+                                onPress={() => handleClaimCoupon(tpl.id)}
+                            >
+                                <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#F2784B' }}>
+                                    {tpl.discountType === 'PERCENTAGE' ? `${tpl.discountValue}折` : `¥${tpl.discountValue}`}
+                                </Text>
+                                <Text style={{ fontSize: 12, color: '#999', marginTop: 4 }} numberOfLines={1}>{tpl.name || '优惠券'}</Text>
+                                <Text style={{ fontSize: 11, color: '#ccc', marginTop: 2 }}>满{tpl.minOrderAmount || 0}可用</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
                 </View>
-                <Text style={styles.balanceValue}>¥ {balance.toFixed(2)}</Text>
-            </View>
+            )}
 
             {/* 选项卡 */}
             <View style={styles.tabs}>

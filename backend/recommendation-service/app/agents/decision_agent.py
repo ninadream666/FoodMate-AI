@@ -191,59 +191,93 @@ class ContextualBanditStrategy(MABStrategy):
         """计算上下文感知得分（0-1.0范围，乘以100后为60-100分）"""
         features = arm.features
         context = context or {}
-        weights = context.get("weights", self.weights)
-        
-        # 基础分 0.5（降低以给上下文更大影响空间）
-        base_score = 0.50
+
+        # 基础分 0.35（降低基础分，给可变分更多空间拉开差距）
+        base_score = 0.35
         variable_score = 0.0
-        
-        # 距离得分（距离越近越好）- 占可变分的25%
+
+        # ========== 动态权重：根据天气/健康状态调整各因素权重 ==========
+        # 默认权重（距离权重最低，优先按评分和菜系匹配推荐）
+        w_distance = 0.05
+        w_rating = 0.30
+        w_price = 0.20
+        w_cuisine = 0.30
+        w_delivery = 0.15
+
+        # 检测是否存在强上下文信号（极端天气或特殊健康状态）
+        env = context.get("environment", {})
+        weather_ctx = env.get("weather", {})
+        frontend_weather = context.get("frontend_weather", {})
+        health_ctx_pre = context.get("health_context", {})
+
+        temperature_pre = frontend_weather.get("temperature") or weather_ctx.get("temperature", 20)
+        is_bad_weather_pre = context.get("is_bad_weather", False) or frontend_weather.get("is_bad_weather", False) or weather_ctx.get("is_bad_weather", False)
+        is_post_workout_pre = health_ctx_pre.get("is_post_workout", False)
+        overall_health_pre = health_ctx_pre.get("overall_health_status", "无数据")
+        pressure_pre = health_ctx_pre.get("pressure_value", 50)
+        sleep_pre = health_ctx_pre.get("last_sleep_duration_hours", 0)
+
+        has_strong_context = (
+            (temperature_pre is not None and (temperature_pre >= 30 or temperature_pre <= 10))
+            or is_bad_weather_pre
+            or is_post_workout_pre
+            or overall_health_pre == "需关注"
+            or pressure_pre >= 70
+            or (0 < sleep_pre < 6)
+        )
+
+        if has_strong_context:
+            # 强上下文信号：距离权重降到最低，菜系匹配成为主导因素
+            w_distance = 0.02
+            w_rating = 0.18
+            w_price = 0.10
+            w_cuisine = 0.55
+            w_delivery = 0.15
+
+        # 距离得分（距离越近越好）
         distance = features.get("distance", 1500)
-        # 处理distance为0或None的情况（高德POI有时返回0）
         if distance <= 0:
-            distance = 1000  # 默认1公里
-        max_distance = context.get("max_distance", 5000)
-        distance_score = max(0.3, 1 - distance / max_distance)  # 最低0.3分
-        variable_score += weights.get("distance", 0.25) * distance_score
-        
-        # 评分得分 - 占可变分的30%（提高权重）
+            distance = 1000
+        max_distance = context.get("max_distance", 20000)
+        distance_score = max(0.0, 1 - distance / max_distance)
+        variable_score += w_distance * distance_score
+
+        # 评分得分
         rating = features.get("rating", 4.0)
         if rating <= 0:
-            rating = 4.0  # 默认4分
-        # 归一化：3分=0.2, 4分=0.6, 4.5分=0.8, 5分=1.0
-        rating_score = max(0.2, min(1.0, (rating - 2.5) / 2.5))
-        variable_score += weights.get("rating", 0.25) * rating_score
-        
-        # 价格匹配得分 - 占可变分的20%
+            rating = 4.0
+        rating_score = max(0.0, min(1.0, (rating - 3.0) / 2.0))
+        variable_score += w_rating * rating_score
+
+        # 价格匹配得分
         price = features.get("price", 35)
         if price <= 0:
-            price = 35  # 默认35元
+            price = 35
         user_max_price = context.get("max_price", 100)
         user_min_price = context.get("min_price", 0)
         if user_min_price <= price <= user_max_price:
             price_score = 1.0
         elif price < user_min_price:
-            price_score = 0.7  # 比预算低也不错
+            price_score = 0.5
         else:
-            price_score = max(0.3, 1 - (price - user_max_price) / 50)  # 超预算扣分
-        variable_score += weights.get("price", 0.20) * price_score
-        
-        # 菜系匹配得分 - 占可变分的15%
+            price_score = max(0.0, 1 - (price - user_max_price) / 50)
+        variable_score += w_price * price_score
+
+        # 菜系匹配得分
         cuisine = features.get("cuisine", "")
         preferred_cuisines = context.get("preferred_cuisines", [])
         if preferred_cuisines and any(c in cuisine for c in preferred_cuisines):
             cuisine_score = 1.0
         else:
-            cuisine_score = 0.6  # 非偏好菜系也给基础分
-        variable_score += weights.get("cuisine_match", 0.20) * cuisine_score
-        
-        # 配送时间得分 - 占可变分的10%
+            cuisine_score = 0.3
+        variable_score += w_cuisine * cuisine_score
+
+        # 配送时间得分
         delivery_time = features.get("delivery_time", 25)
         if delivery_time <= 0:
-            delivery_time = 25  # 默认25分钟
-        # 15分钟内满分，60分钟为最低分
-        time_score = max(0.3, min(1.0, 1 - (delivery_time - 15) / 45))
-        variable_score += weights.get("delivery_time", 0.10) * time_score
+            delivery_time = 25
+        time_score = max(0.0, min(1.0, 1 - (delivery_time - 15) / 45))
+        variable_score += w_delivery * time_score
         
         # ========== 上下文感知加成（天气/交通/运动/时段） ==========
         context_bonus = 0.0
@@ -275,34 +309,34 @@ class ContextualBanditStrategy(MABStrategy):
             elif delivery_time > 35:
                 context_bonus -= 0.10
         
-        # 2. 温度影响排序（降低阈值：30°C和10°C）
+        # 2. 温度影响排序（强上下文时大幅放大）
         is_hot_food = features.get("is_hot_food", True)
         cuisine_str = str(cuisine).lower()
         if temperature is not None:
             if temperature >= 30:
-                # 高温天：冷食类加分，火锅等热食类扣分
-                cold_keywords = ["冰", "凉", "沙拉", "冷", "饮", "果汁", "甜品", "日料", "寿司", "西食", "快餐"]
-                hot_keywords = ["火锅", "烤", "麻辣", "串", "煲", "砂锅", "炒"]
+                # 高温天：清凉类大幅加分，燥热类强力压制
+                cold_keywords = ["冰", "凉", "沙拉", "冷", "饮", "果汁", "甜品", "日料", "寿司", "西食", "快餐", "轻食", "酸奶", "水果"]
+                hot_keywords = ["火锅", "烤", "烧烤", "烤肉", "麻辣", "串", "煲", "砂锅", "炒", "小龙虾", "铁板"]
+                # 温度越高影响越大：30°C=0.45, 35°C=0.55, 40°C=0.65
+                heat_factor = min(0.65, 0.45 + (temperature - 30) * 0.02)
                 if any(k in cuisine_str for k in cold_keywords):
-                    context_bonus += 0.18
+                    context_bonus += heat_factor
                 elif any(k in cuisine_str for k in hot_keywords):
-                    context_bonus -= 0.12
+                    context_bonus -= heat_factor
                 else:
-                    # 普通菜系在高温下也稍微偏向快速配送
-                    if delivery_time <= 20:
-                        context_bonus += 0.06
+                    context_bonus -= 0.05  # 非清凉类轻微扣分，拉开差距
             elif temperature <= 10:
-                # 低温天：热食加分，冷食扣分
+                # 低温天：暖身热食大幅加分，生冷类强力压制
                 hot_keywords = ["火锅", "汤", "粥", "麻辣", "烤", "煲", "砂锅", "川菜", "湘菜", "锅", "炖", "蒸"]
-                cold_keywords = ["冰", "凉", "沙拉", "冷", "果汁", "甜品"]
+                cold_keywords = ["冰", "凉", "沙拉", "冷", "果汁", "甜品", "刺身"]
+                # 温度越低影响越大：10°C=0.45, 5°C=0.55, 0°C=0.65
+                cold_factor = min(0.65, 0.45 + (10 - temperature) * 0.02)
                 if any(k in cuisine_str for k in hot_keywords):
-                    context_bonus += 0.18
+                    context_bonus += cold_factor
                 elif any(k in cuisine_str for k in cold_keywords):
-                    context_bonus -= 0.12
+                    context_bonus -= cold_factor
                 else:
-                    # 普通菜系在低温下也稍微偏向热食
-                    if is_hot_food:
-                        context_bonus += 0.06
+                    context_bonus -= 0.05  # 非热食轻微扣分
         
         # 3. 交通拥堵影响排序
         congestion_index = context.get("congestion_index", 1.0)
@@ -326,110 +360,193 @@ class ContextualBanditStrategy(MABStrategy):
             elif delivery_time > 35:
                 context_bonus -= 0.06
         
-        # 5. 运动后影响（大幅加强！）
+        # ========================================================================
+        # 5. 健康数据驱动推荐（基于国际营养与运动科学标准）
+        #
+        # 参考依据：
+        # - ISSN (国际运动营养学会): 运动后 30min 内摄入 20-40g 蛋白质 + 碳水 4:1
+        # - AHA (美国心脏协会): 高心率时避免高钠高脂，推荐富钾食物
+        # - ACSM (美国运动医学会): 久坐人群每日热量摄入应低于活跃人群 300-500kcal
+        # - WHO 健康饮食指南: 每日钠<2000mg, 糖<25g, 蔬果≥400g
+        # - Harvard 营养学院: 皮质醇(压力激素)升高时 Omega-3 和镁有助调节
+        # - NSF (国家睡眠基金会): 睡眠不足时避免咖啡因过量，优选色氨酸食物
+        # ========================================================================
         health_ctx = context.get("health_context", {})
-        if health_ctx.get("is_post_workout", False):
-            healthy_keywords = ["轻食", "沙拉", "健康", "低脂", "蛋白", "鸡胸", "粗粮", "日料", "寿司", "西食", "粥", "汤", "面"]
-            heavy_keywords = ["火锅", "烤", "油炸", "炸鸡", "烧烤", "麻辣", "串", "小龙虾"]
-            if any(k in cuisine_str for k in healthy_keywords):
-                context_bonus += 0.22
-            elif any(k in cuisine_str for k in heavy_keywords):
-                context_bonus -= 0.12
-            else:
-                # 普通菜系稍微加分（运动后什么都能吃）
-                context_bonus += 0.03
-        elif health_ctx.get("heart_rate", 0) > 120:
-            # 高心率：偏向清淡
-            light_keywords = ["粥", "汤", "面", "轻食", "沙拉", "清淡", "日料", "健康"]
-            if any(k in cuisine_str for k in light_keywords):
-                context_bonus += 0.15
+        heart_rate = health_ctx.get("heart_rate", 75)
 
-        # ========== 🆕 5.1 压力数据影响（OPPO健康SDK） ==========
+        # ----- 5.1 心率分区推荐 (AHA 心率区间标准) -----
+        # Zone 1: <100 静息态, Zone 2: 100-120 轻度, Zone 3: 120-140 中等
+        # Zone 4: 140-160 高强度, Zone 5: >160 极限
+        if health_ctx.get("is_post_workout", False):
+            # ISSN: 运动后30min黄金窗口期，蛋白质+碳水4:1最佳恢复
+            protein_carb_keywords = ["鸡胸", "蛋白", "牛肉", "鸡肉", "鱼", "虾", "豆腐",
+                                     "日料", "寿司", "沙拉", "轻食", "健康", "粗粮",
+                                     "全麦", "燕麦", "粥", "面", "米饭", "香蕉"]
+            inflammatory_keywords = ["油炸", "炸鸡", "烧烤", "麻辣", "火锅", "串",
+                                    "小龙虾", "薯条", "汉堡", "酒"]
+            if any(k in cuisine_str for k in protein_carb_keywords):
+                context_bonus += 0.35
+            elif any(k in cuisine_str for k in inflammatory_keywords):
+                context_bonus -= 0.30  # 高脂高炎症食物延缓肌肉恢复
+            else:
+                context_bonus += 0.05
+        elif heart_rate > 140:
+            # Zone 4-5 高强度心率: AHA建议低钠、富钾、易消化
+            cardio_safe = ["粥", "汤", "蒸", "轻食", "沙拉", "面", "日料", "清淡", "蔬菜", "鱼"]
+            cardio_avoid = ["火锅", "烧烤", "麻辣", "油炸", "重口味", "咖啡"]
+            if any(k in cuisine_str for k in cardio_safe):
+                context_bonus += 0.25
+            elif any(k in cuisine_str for k in cardio_avoid):
+                context_bonus -= 0.20
+        elif heart_rate > 100:
+            # Zone 2-3 中度心率: 偏向均衡营养
+            balanced_keywords = ["粥", "汤", "面", "轻食", "沙拉", "日料", "健康"]
+            if any(k in cuisine_str for k in balanced_keywords):
+                context_bonus += 0.12
+
+        # ----- 5.2 压力/皮质醇管理 (Harvard 营养学院) -----
+        # 高皮质醇时 Omega-3 脂肪酸(鱼、坚果)和镁(深色蔬菜)有助调节
+        # 避免高糖高咖啡因加剧皮质醇分泌
         pressure_value = health_ctx.get("pressure_value", 50)
         pressure_level = health_ctx.get("pressure_level", "正常")
-        if pressure_value >= 70 or pressure_level in ["偏高", "中等"]:
-            # 高压力状态：推荐舒缓、治愈系食物
-            comfort_keywords = ["甜品", "奶茶", "咖啡", "下午茶", "蛋糕", "巧克力", "冰淇淋", "轻食", "沙拉", "粥"]
-            heavy_keywords = ["麻辣", "辣", "火锅", "烧烤", "油炸", "重口味"]
+        if pressure_value >= 80 or pressure_level == "偏高":
+            # 重度压力: 强推 Omega-3 + 镁 + 色氨酸食物
+            destress_keywords = ["鱼", "三文鱼", "日料", "寿司", "坚果", "牛油果",
+                                "蔬菜", "沙拉", "粥", "汤", "蒸", "清淡", "轻食"]
+            stress_amplify = ["咖啡", "麻辣", "辣", "火锅", "油炸", "酒", "甜品",
+                             "奶茶", "蛋糕", "冰淇淋"]  # 高糖高咖啡因加剧皮质醇
+            if any(k in cuisine_str for k in destress_keywords):
+                context_bonus += 0.25
+            elif any(k in cuisine_str for k in stress_amplify):
+                context_bonus -= 0.18
+        elif pressure_value >= 60 or pressure_level == "中等":
+            # 中度压力: 推荐舒缓食物，适度放松
+            comfort_keywords = ["茶", "粥", "汤", "日料", "轻食", "沙拉",
+                               "蔬菜", "面", "蒸"]
+            heavy_keywords = ["麻辣", "火锅", "烧烤", "油炸"]
             if any(k in cuisine_str for k in comfort_keywords):
-                context_bonus += 0.18
-                logger.info(f"😌 高压力状态({pressure_value})，推荐治愈系食物: {arm.name}")
+                context_bonus += 0.15
             elif any(k in cuisine_str for k in heavy_keywords):
                 context_bonus -= 0.08
         elif pressure_value <= 30 or pressure_level == "放松":
-            # 放松状态：可以尝试更多种类
-            adventure_keywords = ["新疆", "泰国", "印度", "韩国", "日料", "西餐", "创意"]
+            # 放松态: 探索性饮食，奖励丰富口味
+            adventure_keywords = ["新疆", "泰国", "印度", "韩国", "日料", "西餐",
+                                 "创意", "甜品", "下午茶"]
             if any(k in cuisine_str for k in adventure_keywords):
-                context_bonus += 0.08
+                context_bonus += 0.10
 
-        # ========== 🆕 5.2 睡眠数据影响（OPPO健康SDK） ==========
+        # ----- 5.3 睡眠质量影响 (NSF 国家睡眠基金会 + WHO) -----
+        # 睡眠不足: 色氨酸(火鸡/香蕉/牛奶)助眠, 维B6促褪黑素合成
+        # 严重缺觉: 避免过量咖啡因(>400mg/日), 避免高糖导致血糖波动
         sleep_duration_hours = health_ctx.get("last_sleep_duration_hours", 0)
         sleep_quality = health_ctx.get("sleep_quality", "无数据")
         sleep_score = health_ctx.get("last_sleep_score", 0)
         needs_rest = health_ctx.get("needs_rest", False)
 
-        if sleep_duration_hours < 6 or sleep_quality == "较差" or sleep_score < 60 or needs_rest:
-            # 睡眠不足：推荐提神、能量补充食物
-            energy_keywords = ["咖啡", "茶", "蛋白", "牛肉", "鸡肉", "能量", "早餐", "粥", "汤", "面"]
+        if sleep_duration_hours < 5 or sleep_score < 40:
+            # 严重睡眠不足(<5h): 稳定血糖 + 色氨酸 + 避免兴奋剂
+            recovery_keywords = ["粥", "汤", "面", "蛋白", "鸡肉", "鱼", "蒸",
+                                "牛奶", "香蕉", "全麦", "燕麦", "蔬菜"]
+            avoid_keywords = ["咖啡", "火锅", "烧烤", "油炸", "酒", "夜宵",
+                             "奶茶", "甜品", "冰淇淋"]  # 高糖高咖啡因
+            if any(k in cuisine_str for k in recovery_keywords):
+                context_bonus += 0.25
+            elif any(k in cuisine_str for k in avoid_keywords):
+                context_bonus -= 0.18
+        elif sleep_duration_hours < 6 or sleep_quality == "较差" or sleep_score < 60 or needs_rest:
+            # 轻度睡眠不足(5-6h): 温和能量补充
+            energy_keywords = ["粥", "汤", "面", "蛋白", "鸡肉", "牛肉",
+                              "早餐", "全麦", "蔬菜", "健康"]
             heavy_keywords = ["火锅", "烧烤", "油炸", "夜宵", "酒"]
             if any(k in cuisine_str for k in energy_keywords):
                 context_bonus += 0.15
-                logger.info(f"😴 睡眠不足({sleep_duration_hours:.1f}h)，推荐能量补充: {arm.name}")
             elif any(k in cuisine_str for k in heavy_keywords):
                 context_bonus -= 0.10
         elif sleep_duration_hours >= 7 and (sleep_quality in ["优秀", "良好"] or sleep_score >= 80):
-            # 睡眠充足：精神状态好，可以尝试更丰富的食物
-            is_well_rested = health_ctx.get("is_well_rested", True)
-            if is_well_rested and rating >= 4.3:
-                context_bonus += 0.06
+            # 睡眠充足(≥7h): 精力充沛，可享受丰富美食
+            if rating >= 4.3:
+                context_bonus += 0.08
 
-        # ========== 🆕 5.3 血氧数据影响（OPPO健康SDK） ==========
+        # ----- 5.4 血氧饱和度 (WHO 临床标准) -----
+        # SpO2 <90%: 严重低氧, 90-94%: 低氧, ≥95%: 正常
+        # 低氧时消化能力下降，需易消化+补铁+补维C食物
         blood_oxygen = health_ctx.get("blood_oxygen", 98)
         blood_oxygen_status = health_ctx.get("blood_oxygen_status", "正常")
-        if blood_oxygen < 95 or blood_oxygen_status in ["偏低", "低氧"]:
-            # 血氧偏低：推荐清淡、易消化、补铁食物
-            health_keywords = ["轻食", "沙拉", "粥", "汤", "蒸", "清淡", "蔬菜", "牛肉", "菠菜"]
+        if blood_oxygen < 90 or blood_oxygen_status == "低氧":
+            # 严重低氧: 强推补铁+维C+易消化
+            iron_rich = ["牛肉", "菠菜", "蛋", "鱼", "豆腐", "粥", "汤", "蒸",
+                        "蔬菜", "清淡", "轻食"]
+            hard_digest = ["油炸", "烧烤", "火锅", "麻辣", "重口味", "酒",
+                          "炸鸡", "披萨", "汉堡"]
+            if any(k in cuisine_str for k in iron_rich):
+                context_bonus += 0.30
+            elif any(k in cuisine_str for k in hard_digest):
+                context_bonus -= 0.25
+        elif blood_oxygen < 95 or blood_oxygen_status == "偏低":
+            # 轻度低氧: 推荐清淡易消化
+            health_keywords = ["轻食", "沙拉", "粥", "汤", "蒸", "清淡", "蔬菜",
+                              "牛肉", "菠菜", "鱼"]
             avoid_keywords = ["油炸", "烧烤", "火锅", "麻辣", "重口味", "酒"]
             if any(k in cuisine_str for k in health_keywords):
-                context_bonus += 0.15
-                logger.info(f"🫁 血氧偏低({blood_oxygen}%)，推荐清淡健康食物: {arm.name}")
+                context_bonus += 0.18
             elif any(k in cuisine_str for k in avoid_keywords):
-                context_bonus -= 0.12
+                context_bonus -= 0.15
 
-        # ========== 🆕 5.4 活动水平影响（OPPO健康SDK） ==========
+        # ----- 5.5 活动水平 (ACSM 运动医学会 + WHO 体力活动指南) -----
+        # WHO: 成人每周≥150min中等强度 或 ≥75min高强度
+        # ACSM: 久坐风险独立于运动量，每30min应起身活动
         daily_steps = health_ctx.get("daily_steps", 0)
         daily_calories = health_ctx.get("daily_calories", 0)
         activity_level = health_ctx.get("activity_level", "无数据")
 
-        if daily_steps >= 10000 or activity_level == "活跃" or daily_calories >= 400:
-            # 高活动量：需要补充能量
-            energy_keywords = ["蛋白", "肉", "牛肉", "鸡肉", "碳水", "米饭", "面", "能量", "健康"]
+        if daily_steps >= 15000 or daily_calories >= 600:
+            # 超高活动量(≥15000步): 需大量碳水+蛋白补充糖原
+            replenish_keywords = ["蛋白", "肉", "牛肉", "鸡肉", "鱼", "米饭", "面",
+                                 "碳水", "全麦", "香蕉", "能量", "健康"]
+            if any(k in cuisine_str for k in replenish_keywords):
+                context_bonus += 0.20
+        elif daily_steps >= 8000 or activity_level == "活跃" or daily_calories >= 300:
+            # 活跃(8000-15000步): 均衡营养补充
+            energy_keywords = ["蛋白", "肉", "牛肉", "鸡肉", "碳水", "米饭", "面",
+                              "能量", "健康", "沙拉"]
             if any(k in cuisine_str for k in energy_keywords):
                 context_bonus += 0.12
-                logger.info(f"🏃 高活动量({daily_steps}步)，推荐能量补充: {arm.name}")
         elif daily_steps < 2000 and activity_level in ["久坐", "轻度"]:
-            # 久坐状态：推荐清淡、低热量
-            light_keywords = ["轻食", "沙拉", "蔬菜", "清淡", "低脂", "健康"]
-            high_cal_keywords = ["火锅", "烤肉", "炸鸡", "汉堡", "披萨"]
+            # 久坐(<2000步): ACSM建议低卡低脂，增加纤维
+            fiber_light = ["轻食", "沙拉", "蔬菜", "清淡", "低脂", "健康", "蒸",
+                          "粥", "全麦", "粗粮"]
+            calorie_dense = ["火锅", "烤肉", "炸鸡", "汉堡", "披萨", "奶茶",
+                            "甜品", "油炸", "薯条"]
+            if any(k in cuisine_str for k in fiber_light):
+                context_bonus += 0.15
+            elif any(k in cuisine_str for k in calorie_dense):
+                context_bonus -= 0.12
+        elif daily_steps < 5000:
+            # 轻度活动(2000-5000步): 适度控制热量
+            light_keywords = ["轻食", "沙拉", "蔬菜", "健康", "清淡"]
             if any(k in cuisine_str for k in light_keywords):
-                context_bonus += 0.10
-            elif any(k in cuisine_str for k in high_cal_keywords):
-                context_bonus -= 0.06
+                context_bonus += 0.06
 
-        # ========== 🆕 5.5 综合健康状态评估（OPPO健康SDK） ==========
+        # ----- 5.6 综合健康状态 (AHA + WHO 综合评估) -----
         overall_health = health_ctx.get("overall_health_status", "无数据")
         if overall_health == "需关注":
-            # 健康状态需关注：严格推荐健康食物
-            healthy_keywords = ["轻食", "沙拉", "蔬菜", "蒸", "清淡", "健康", "粥", "汤"]
-            unhealthy_keywords = ["油炸", "烧烤", "火锅", "麻辣", "重口味", "夜宵", "酒"]
-            if any(k in cuisine_str for k in healthy_keywords):
-                context_bonus += 0.20
-            elif any(k in cuisine_str for k in unhealthy_keywords):
-                context_bonus -= 0.15
-        elif overall_health == "优秀":
-            # 健康状态优秀：可以享受美食
-            if rating >= 4.5:
+            # AHA: 限钠<1500mg, 限添加糖<25g, 增蔬果≥400g
+            aha_healthy = ["轻食", "沙拉", "蔬菜", "蒸", "清淡", "健康", "粥",
+                          "汤", "鱼", "全麦", "豆腐", "日料"]
+            aha_avoid = ["油炸", "烧烤", "火锅", "麻辣", "重口味", "夜宵",
+                        "酒", "甜品", "奶茶", "炸鸡", "汉堡", "薯条"]
+            if any(k in cuisine_str for k in aha_healthy):
+                context_bonus += 0.25
+            elif any(k in cuisine_str for k in aha_avoid):
+                context_bonus -= 0.20
+        elif overall_health == "良好":
+            # 健康良好: 适度推荐均衡饮食
+            if rating >= 4.3:
                 context_bonus += 0.05
+        elif overall_health == "优秀":
+            # 健康优秀: 自由享受
+            if rating >= 4.5:
+                context_bonus += 0.08
         
         # ========== 🆕 6. 绝对意图匹配（最高优先级，实现"指名道姓"的推荐） ==========
         pure_query = context.get("pure_query", "").strip()
@@ -480,9 +597,10 @@ class ContextualBanditStrategy(MABStrategy):
             elif any(k in cuisine_str for k in heavy_keywords):
                 context_bonus -= 0.06
 
-        # 最终得分 = 基础分(0.5) + 可变分*0.3(最大~0.3) + 上下文加成(可达±0.40) + 历史 + 协同过滤
-        # 有上下文时，得分范围大约 0.38 ~ 1.0+；显示时映射为 60~100分
-        final_score = base_score + variable_score * 0.3 + context_bonus + historical_score + cf_bonus
+        # 最终得分 = 基础分 + 可变分 + 上下文加成 + 历史 + 协同过滤
+        # 强上下文时可变分乘数更高（因为菜系匹配权重从0.20提升到0.40，需要更大的分差）
+        var_multiplier = 0.65 if has_strong_context else 0.50
+        final_score = base_score + variable_score * var_multiplier + context_bonus + historical_score + cf_bonus
         
         # 调试日志：有上下文加成时打印（包含完整健康数据）
         if abs(context_bonus) > 0.01:
@@ -732,6 +850,52 @@ class DecisionAgent(BaseAgent):
                     logger.warning("🛡️ 端侧约束过于严格，当前区域所有餐厅均被拦截，触发容错降级流程")
                     # 没餐厅了不让后续代码报错，正常走完流程并返回空列表
             
+            # 用户忌口/过敏原硬过滤（来自前端用户设置）
+            user_allergies = health_context.get("allergies", []) if health_context else []
+            if user_allergies:
+                pre_filter_count = len(arms)
+                filtered_by_allergy = []
+                # 构建关键词映射：将忌口标签展开为具体关键词
+                allergy_keywords = []
+                for allergy in user_allergies:
+                    allergy_lower = allergy.lower()
+                    allergy_keywords.append(allergy_lower)
+                    # 展开常见忌口到具体食材关键词
+                    expansion = {
+                        "花生过敏": ["花生", "坚果"],
+                        "海鲜过敏": ["海鲜", "鱼", "虾", "蟹", "贝", "海"],
+                        "乳糖不耐受": ["奶", "乳", "芝士", "cheese"],
+                        "麸质过敏": ["面", "麦", "面包", "饺", "馒头"],
+                        "鸡蛋过敏": ["蛋", "鸡蛋"],
+                        "坚果过敏": ["坚果", "核桃", "杏仁", "腰果"],
+                        "不吃辣": ["辣", "麻辣", "川菜", "火锅", "湘菜"],
+                        "素食": ["肉", "鸡", "鸭", "猪", "牛", "羊", "鱼", "虾"],
+                        "不吃猪肉": ["猪", "猪肉", "排骨", "回锅肉"],
+                        "不吃牛肉": ["牛", "牛肉", "牛排"],
+                        "痛风忌高嘌呤": ["海鲜", "内脏", "啤酒", "火锅"],
+                        "高血压忌高钠": ["腌", "咸", "酱", "烧烤"],
+                        "糖尿病忌高糖": ["甜品", "蛋糕", "奶茶", "甜", "糖"],
+                    }
+                    if allergy in expansion:
+                        allergy_keywords.extend(expansion[allergy])
+
+                for arm in arms:
+                    cuisine_str = str(arm.features.get("cuisine", "")).lower()
+                    name_str = str(arm.name).lower()
+                    check_str = cuisine_str + " " + name_str
+
+                    is_blocked = False
+                    for keyword in allergy_keywords:
+                        if keyword in check_str:
+                            logger.info(f"忌口过滤: 餐厅 '{arm.name}' 匹配忌口关键词 '{keyword}'，已排除")
+                            is_blocked = True
+                            break
+                    if not is_blocked:
+                        filtered_by_allergy.append(arm)
+
+                arms = filtered_by_allergy
+                logger.info(f"忌口过滤完成: {pre_filter_count} -> {len(arms)} 家餐厅 (忌口: {user_allergies})")
+
             # 使用 MAB 策略排序 (对于已经过安全过滤的餐厅)
             ranked_arms = self.strategy.rank_all(arms, decision_context)
             
@@ -829,7 +993,7 @@ class DecisionAgent(BaseAgent):
             },
 
             # 距离限制
-            "max_distance": environment.get("recommended_max_distance", 5000),
+            "max_distance": environment.get("recommended_max_distance", 20000),
             
             # 价格限制
             "min_price": profile.get("price_range", {}).get("min", 0),
@@ -977,96 +1141,120 @@ class DecisionAgent(BaseAgent):
 
         # 1. 排名标识
         if rank == 1:
-            parts.append("🏆今日首推")
+            parts.append("今日首推")
         elif rank <= 3:
-            parts.append("⭐精选好店")
-        
+            parts.append("精选好店")
+
         # 2. 天气+温度相关（核心卖点）
         if temperature <= 10:
             if any(k in cuisine for k in ["火锅", "汤", "粥", "麻辣", "烤"]):
-                parts.append(f"❄️{temperature}°C天寒，热食暖身")
+                parts.append(f"{temperature}°C天寒，热食暖身")
             else:
-                parts.append(f"❄️{temperature}°C寒冷天气首选")
+                parts.append(f"{temperature}°C寒冷天气首选")
         elif temperature >= 30:
             if any(k in cuisine for k in ["冷", "凉", "沙拉", "饮", "冰"]):
-                parts.append(f"🌡️{temperature}°C炎热，清凉解暑")
+                parts.append(f"{temperature}°C炎热，清凉解暑")
             else:
-                parts.append(f"🌡️{temperature}°C高温天开胃之选")
-        
+                parts.append(f"{temperature}°C高温天开胃之选")
+
         # 天气状况特殊处理
         if is_bad_weather or weather_condition in ["暴雨", "大雨", "中雨"]:
             if distance <= 1500 and delivery_time <= 30:
-                parts.append("🌧️雨天配送快")
+                parts.append(f"{weather_condition}天气，配送快")
         elif weather_condition in ["小雨", "阴"]:
-            parts.append("🌤️阴天暖心推荐")
-        
+            parts.append(f"{weather_condition}天暖心推荐")
+
         # 3. 时间段相关
         if is_holiday or festival:
-            parts.append(f"🎉{festival or '假日'}精选")
+            parts.append(f"{festival or '假日'}精选")
         elif is_weekend:
-            parts.append("🎊周末犒劳自己")
-        
+            parts.append("周末犒劳自己")
+
         period_tips = {
-            "breakfast": "🌅早餐好选择",
-            "lunch": "🍱午餐快速送达" if delivery_time <= 25 else "",
-            "dinner": "🌙晚餐精选",
-            "afternoon_tea": "☕下午茶时光",
-            "night_snack": "🌃夜宵必点"
+            "breakfast": "早餐好选择",
+            "lunch": "午餐快速送达" if delivery_time <= 25 else "",
+            "dinner": "晚餐精选",
+            "afternoon_tea": "下午茶时光",
+            "night_snack": "夜宵必点"
         }
         period_tip = period_tips.get(meal_period, "")
         if period_tip:
             parts.append(period_tip)
-        
+
         # 4. 交通相关
         if congestion_index > 1.5 or congestion_level in ["拥堵", "严重拥堵"]:
             if distance <= 1000:
-                parts.append("🚗拥堵时段近距离优选")
-        
+                parts.append("拥堵时段近距离优选")
+
         # 5. 基础评分和距离
         if rating >= 4.5:
-            parts.append(f"👍{rating}分高评")
+            parts.append(f"{rating}分高评")
         elif rating >= 4.0:
             parts.append(f"好评{rating}分")
-        
+
         if distance <= 500:
-            parts.append("📍距离超近")
+            parts.append("距离超近")
         elif distance <= 1000:
-            parts.append("📍就在附近")
-        
+            parts.append("就在附近")
+
         # 6. 配送速度
         if delivery_time <= 20:
-            parts.append("⚡闪电配送")
+            parts.append("闪电配送")
 
         # ========== 7. 健康状态相关推荐理由（OPPO健康数据） ==========
+        cuisine_lower = cuisine.lower() if cuisine else ""
+
         # 运动后推荐
         if is_post_workout:
-            healthy_keywords = ["轻食", "沙拉", "健康", "蛋白", "鸡胸"]
-            if any(k in cuisine for k in healthy_keywords):
-                parts.append("🏃运动后补充")
+            healthy_keywords = ["轻食", "沙拉", "健康", "蛋白", "鸡胸", "鱼", "日料", "蒸", "粥"]
+            if any(k in cuisine_lower for k in healthy_keywords):
+                parts.append("运动后能量补充")
+            else:
+                parts.append("运动后适量进食")
 
         # 压力状态
         if pressure_value >= 70 or pressure_level in ["偏高", "中等"]:
-            comfort_keywords = ["甜品", "奶茶", "咖啡", "蛋糕"]
-            if any(k in cuisine for k in comfort_keywords):
-                parts.append("😌舒缓心情")
+            comfort_keywords = ["甜品", "奶茶", "咖啡", "蛋糕", "茶", "日料", "轻食"]
+            if any(k in cuisine_lower for k in comfort_keywords):
+                parts.append("舒缓心情之选")
+            else:
+                parts.append("放松身心好时光")
 
         # 睡眠不足
-        if sleep_duration < 6 or sleep_quality == "较差":
-            energy_keywords = ["咖啡", "茶", "蛋白", "能量"]
-            if any(k in cuisine for k in energy_keywords):
-                parts.append("☕提神醒脑")
+        if sleep_duration > 0 and sleep_duration < 6 or sleep_quality == "较差":
+            energy_keywords = ["咖啡", "茶", "蛋白", "能量", "粥", "面", "汤"]
+            if any(k in cuisine_lower for k in energy_keywords):
+                parts.append("提神醒脑好选择")
+            else:
+                parts.append("补充元气")
 
         # 高活动量
         if daily_steps >= 10000:
-            energy_keywords = ["蛋白", "肉", "牛肉", "碳水"]
-            if any(k in cuisine for k in energy_keywords):
-                parts.append("💪能量补充")
+            energy_keywords = ["蛋白", "肉", "牛肉", "碳水", "面", "米饭", "鸡"]
+            if any(k in cuisine_lower for k in energy_keywords):
+                parts.append("活动量大，补充能量")
+            else:
+                parts.append("高消耗后犒劳自己")
 
         # 健康状态需关注
         if overall_health == "需关注":
-            healthy_keywords = ["轻食", "沙拉", "蔬菜", "蒸", "清淡"]
-            if any(k in cuisine for k in healthy_keywords):
-                parts.append("💚健康之选")
+            healthy_keywords = ["轻食", "沙拉", "蔬菜", "蒸", "清淡", "粥", "汤", "鱼", "日料"]
+            if any(k in cuisine_lower for k in healthy_keywords):
+                parts.append("健康饮食之选")
+            else:
+                parts.append("注意饮食均衡")
+
+        # 高温天气
+        if temperature >= 30:
+            cold_keywords = ["冰", "凉", "沙拉", "冷", "饮", "果汁", "轻食"]
+            if any(k in cuisine_lower for k in cold_keywords):
+                parts.append(f"{temperature}度高温，清凉解暑")
+
+        # 雨天
+        if is_bad_weather or weather_condition in ["暴雨", "大雨", "中雨", "小雨"]:
+            hot_keywords = ["火锅", "汤", "粥", "麻辣", "烤", "煲"]
+            if any(k in cuisine_lower for k in hot_keywords):
+                parts.append(f"{weather_condition}天暖胃首选")
 
         # 组合理由（去重并限制数量）
         unique_parts = list(dict.fromkeys(parts))  # 保持顺序去重
@@ -1149,24 +1337,24 @@ class DecisionAgent(BaseAgent):
             # 更智能的天气影响描述
             weather_analysis = []
             if is_bad_weather or weather_condition in ["暴雨", "大雨", "中雨", "雪", "大雪", "暴雪"]:
-                weather_analysis.append(f"⛈️ {weather_condition}天气，配送可能延迟，优先近距离餐厅")
+                weather_analysis.append(f"{weather_condition}天气，配送可能延迟，优先近距离餐厅")
             elif weather_condition in ["小雨", "阵雨"]:
-                weather_analysis.append(f"🌧️ 有{weather_condition}，适合吃点暖心的")
+                weather_analysis.append(f"有{weather_condition}，适合吃点暖心的")
             elif temperature <= 10:
-                weather_analysis.append(f"❄️ 气温仅{temperature}°C，推荐热食暖身")
+                weather_analysis.append(f"气温仅{temperature}°C，推荐热食暖身")
             elif temperature >= 30:
-                weather_analysis.append(f"🌡️ 高温{temperature}°C，适合清爽解暑美食")
+                weather_analysis.append(f"高温{temperature}°C，适合清爽解暑美食")
             else:
-                weather_analysis.append(f"☀️ {weather_condition}，{temperature}°C，适合各种美食")
-            
+                weather_analysis.append(f"{weather_condition}，{temperature}°C，适合各种美食")
+
             # 交通影响描述
             traffic_analysis = ""
             if congestion_index > 1.8 or congestion_level in ["严重拥堵", "拥堵"]:
-                traffic_analysis = f"🚗 交通{congestion_level}，建议选择近距离餐厅"
+                traffic_analysis = f"交通{congestion_level}，建议选择近距离餐厅"
             elif congestion_index > 1.3:
-                traffic_analysis = f"🚙 交通略拥堵，注意配送时间"
+                traffic_analysis = f"交通略拥堵，注意配送时间"
             else:
-                traffic_analysis = f"🛣️ 道路畅通，配送时间可控"
+                traffic_analysis = f"道路畅通，配送时间可控"
             
             # 用户偏好描述
             user_context = ""
@@ -1183,40 +1371,46 @@ class DecisionAgent(BaseAgent):
 
             # 运动状态
             if health_ctx.get("is_post_workout", False):
-                health_analysis.append("🏃 刚运动完，需要补充能量和蛋白质")
+                health_analysis.append("刚运动完，需要补充能量和蛋白质")
 
             # 压力状态
             pressure_value = health_ctx.get("pressure_value", 50)
             pressure_level = health_ctx.get("pressure_level", "正常")
             if pressure_value >= 70 or pressure_level in ["偏高", "中等"]:
-                health_analysis.append(f"😰 压力偏高({pressure_value}分)，需要舒缓放松")
+                health_analysis.append(f"压力偏高({pressure_value}分)，需要舒缓放松")
             elif pressure_value <= 30 or pressure_level == "放松":
-                health_analysis.append("😌 心情放松，适合尝新")
+                health_analysis.append("心情放松，适合尝新")
 
             # 睡眠状态
             sleep_hours = health_ctx.get("last_sleep_duration_hours", 0)
             sleep_quality = health_ctx.get("sleep_quality", "无数据")
             if sleep_hours < 6 or sleep_quality == "较差":
-                health_analysis.append(f"😴 睡眠不足({sleep_hours:.1f}h)，需要提神补充能量")
+                health_analysis.append(f"睡眠不足({sleep_hours:.1f}h)，需要提神补充能量")
             elif sleep_hours >= 7 and sleep_quality in ["优秀", "良好"]:
-                health_analysis.append("😊 睡眠充足，精神状态好")
+                health_analysis.append("睡眠充足，精神状态好")
 
             # 活动量
             daily_steps = health_ctx.get("daily_steps", 0)
             if daily_steps >= 10000:
-                health_analysis.append(f"🚶 今日活动量大({daily_steps}步)，需要能量补充")
+                health_analysis.append(f"今日活动量大({daily_steps}步)，需要能量补充")
             elif daily_steps < 2000:
-                health_analysis.append("🪑 久坐状态，建议清淡饮食")
+                health_analysis.append("久坐状态，建议清淡饮食")
 
             # 综合健康状态
             overall_health = health_ctx.get("overall_health_status", "无数据")
             if overall_health == "需关注":
-                health_analysis.append("⚠️ 健康状态需关注，建议健康饮食")
+                health_analysis.append("健康状态需关注，建议健康饮食")
+
+            # 忌口信息
+            user_allergies = health_ctx.get("allergies", [])
+            if user_allergies:
+                health_analysis.append(f"忌口/过敏原: {', '.join(user_allergies)}")
 
             health_context_str = "\n• ".join(health_analysis) if health_analysis else "健康状态正常"
             
-            # 为所有餐厅生成AI理由（最多10个）
-            target_count = min(len(recommendations), 10)
+            # 只给排名靠前的餐厅生成AI理由（LLM调用是主要耗时瓶颈，5家≈3秒，20家≈10秒）
+            # 其余餐厅保留规则引擎生成的 quick_reason（毫秒级）
+            target_count = min(len(recommendations), 20)
             target_restaurants = recommendations[:target_count]
             
             restaurants_info = "\n".join([
@@ -1232,37 +1426,38 @@ class DecisionAgent(BaseAgent):
             # 更智能的prompt，让DeepSeek理解完整上下文（包含健康数据）
             prompt = f"""你是一个贴心的美食推荐助手。请根据当前环境和用户健康状态为以下{target_count}家餐厅生成个性化推荐理由。
 
-🌍 【当前环境】
-• 天气：{weather_condition}，{temperature}°C，湿度{humidity}%
-• 时间：{time_desc} {period_desc}（{hour}点）
-• 交通：{congestion_level}（拥堵指数{congestion_index:.1f}）
+【当前环境】
+- 天气：{weather_condition}，{temperature}度，湿度{humidity}%
+- 时间：{time_desc} {period_desc}（{hour}点）
+- 交通：{congestion_level}（拥堵指数{congestion_index:.1f}）
 
-💚 【健康状态】（来自OPPO健康监测）
-• {health_context_str}
+【健康状态】（来自OPPO健康监测）
+- {health_context_str}
 
-📊 【环境分析】
-• {weather_analysis[0]}
-• {traffic_analysis}
-{f"• 👤 {user_context}" if user_context else ""}
+【环境分析】
+- {weather_analysis[0]}
+- {traffic_analysis}
+{f"- {user_context}" if user_context else ""}
 
-🍽️ 【待推荐餐厅】
+【待推荐餐厅】
 {restaurants_info}
 
-✍️ 【输出要求】
-1. 每条理由25-45字，必须体现当前环境和健康状态特点
-2. 语气温暖亲切，适当使用1-2个emoji
-3. 根据环境和健康状态智能匹配餐厅特点，例如：
-   - 🥶 低温天：火锅/热汤类提"暖身驱寒"
-   - 🌧️ 雨天：强调"温暖治愈""配送快"
-   - 🚗 拥堵时：近距离餐厅提"就在附近""快速送达"
-   - 🎉 周末/节日：可提"犒劳自己""享受美食"
-   - ☀️ 好天气：可提"心情愉悦""美食相伴"
-   - 🏃 运动后：轻食/蛋白类提"运动后补充""健康能量"
-   - 😰 压力大：甜品/奶茶类提"舒缓压力""治愈心情"
-   - 😴 睡眠不足：咖啡/能量类提"提神醒脑""补充活力"
-   - 🚶 活动量大：碳水/蛋白类提"能量补给""活力满满"
-4. 第1名可特别强调"今日首推"
-5. 严格按以下格式输出，每行一条：
+【输出要求】
+1. 每条理由20-40字，必须体现当前真实环境（天气、温度、时段）和用户健康状态
+2. 禁止使用任何emoji图标符号，只用纯文字
+3. 每家餐厅的理由必须不同且具体，结合该餐厅的菜系特点，严禁出现雷同的泛用句式
+4. 必须引用真实数据，如实际温度、实际天气、实际时段，不要编造
+5. 根据环境和健康状态智能匹配：
+   - 低温天+火锅/热汤类：提暖身驱寒
+   - 雨天：强调温暖治愈、配送快
+   - 拥堵时+近距离：提就在附近、快速送达
+   - 周末/节日：可提犒劳自己
+   - 运动后+轻食/蛋白类：提运动后补充
+   - 压力大+甜品/奶茶：提舒缓压力
+   - 睡眠不足+咖啡/茶：提提神醒脑
+   - 活动量大+碳水/蛋白：提能量补给
+6. 第1名可强调"今日首推"
+7. 严格按以下格式输出，每行一条：
 1. 理由内容
 2. 理由内容
 ...依此类推（共{target_count}条）"""
@@ -1270,7 +1465,7 @@ class DecisionAgent(BaseAgent):
             response = await self.llm_client.chat.completions.create(
                 model=self.llm_model,
                 messages=[
-                    {"role": "system", "content": "你是一个温暖贴心的美食推荐助手。你需要根据当前天气、时间、交通等环境信息，为每家餐厅生成一句个性化的推荐理由。推荐语要体现你对用户的关心，同时突出餐厅与当前环境的契合度。请严格按格式输出。"},
+                    {"role": "system", "content": "你是一个温暖贴心的美食推荐助手。根据当前天气、时间、交通、用户健康状态等真实环境信息，为每家餐厅生成一句个性化且各不相同的推荐理由。禁止使用任何emoji图标符号，只用纯文字。每条理由必须具体、不雷同，体现该餐厅与当前环境的独特契合点。请严格按格式输出。"},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=1200,
@@ -1340,90 +1535,90 @@ class DecisionAgent(BaseAgent):
         
         # ========== 1. 排名标识 ==========
         if rank == 1:
-            reasons.append("🏆 今日首推")
+            reasons.append("今日首推")
         elif rank <= 3:
-            reasons.append("⭐ 精选推荐")
-        
+            reasons.append("精选推荐")
+
         # ========== 2. 天气+温度相关推荐 ==========
         if temperature <= 10:
             if is_hot_food:
-                reasons.append(f"❄️ {temperature}°C寒冷天气，热食暖身")
+                reasons.append(f"{temperature}°C寒冷天气，热食暖身")
             if any(k in cuisine for k in ["火锅", "砂锅", "汤", "粥", "麻辣"]):
                 reasons.append("冬日暖胃首选")
         elif temperature >= 30:
             if any(k in cuisine for k in ["冷面", "沙拉", "凉皮", "冰", "饮"]):
-                reasons.append(f"🌡️ {temperature}°C高温，清凉解暑")
+                reasons.append(f"{temperature}°C高温，清凉解暑")
             else:
                 reasons.append("开胃爽口")
         elif 10 < temperature < 20:
-            reasons.append(f"🍂 {temperature}°C秋冬适宜")
-        
+            reasons.append(f"{temperature}°C秋冬适宜")
+
         # 天气状况
         if weather_condition:
             if weather_condition in ["雨", "小雨", "中雨", "大雨", "暴雨"]:
                 if distance <= 1000:
-                    reasons.append(f"🌧️ 雨天近距离送达")
+                    reasons.append("雨天近距离送达")
                 if is_hot_food:
                     reasons.append("雨天热食暖心")
             elif weather_condition in ["雪", "小雪", "中雪", "大雪"]:
-                reasons.append("❄️ 雪天暖胃推荐")
+                reasons.append("雪天暖胃推荐")
             elif weather_condition in ["晴", "多云"]:
                 if temperature >= 20 and temperature <= 28:
-                    reasons.append("☀️ 天气宜人，享美食")
-        
+                    reasons.append("天气宜人，享美食")
+
         # ========== 3. 时间段相关推荐 ==========
         if meal_period == "breakfast" or (6 <= hour < 10):
             if any(k in cuisine for k in ["早餐", "粥", "豆浆", "包子", "油条", "面"]):
-                reasons.append("🌅 早餐优选")
+                reasons.append("早餐优选")
         elif meal_period == "lunch" or (11 <= hour < 14):
             if delivery_time <= 25:
-                reasons.append("🍱 午餐快速送达")
+                reasons.append("午餐快速送达")
         elif meal_period == "dinner" or (17 <= hour < 20):
-            reasons.append("🌙 晚餐精选")
+            reasons.append("晚餐精选")
         elif meal_period == "afternoon_tea" or (14 <= hour < 17):
             if any(k in cuisine for k in ["甜品", "奶茶", "咖啡", "蛋糕", "下午茶"]):
-                reasons.append("☕ 下午茶时光")
+                reasons.append("下午茶时光")
         elif meal_period == "night_snack" or hour >= 21 or hour < 6:
             if any(k in cuisine for k in ["烧烤", "小龙虾", "夜宵", "串串", "啤酒"]):
-                reasons.append("🌃 夜宵必点")
-        
+                reasons.append("夜宵必点")
+
         # ========== 4. 周末/节假日推荐 ==========
         if is_weekend:
-            reasons.append("🎉 周末犒劳自己")
+            reasons.append("周末犒劳自己")
         if is_holiday or festival:
             fest_name = festival if festival else "假日"
-            reasons.append(f"🎊 {fest_name}特惠")
-        
+            reasons.append(f"{fest_name}特惠")
+
         # ========== 5. 交通状况推荐 ==========
         if congestion > 1.5:
             if distance <= 800:
-                reasons.append("🚗 拥堵时段近距离优选")
-        
+                reasons.append("拥堵时段近距离优选")
+
         # ========== 6. 基础评分推荐 ==========
         if rating >= 4.5:
-            reasons.append(f"👍 高分好评({rating}分)")
+            reasons.append(f"高分好评({rating}分)")
         elif rating >= 4.0:
             reasons.append(f"口碑不错({rating}分)")
-        
+
         # ========== 7. 距离优势 ==========
         if distance <= 500:
-            reasons.append("📍 距离超近")
+            reasons.append("距离超近")
         elif distance <= 1000:
             reasons.append("距离较近")
-        
+
         # ========== 8. 配送时间 ==========
         if delivery_time <= 20:
-            reasons.append("⚡ 配送快速")
-        
+            reasons.append("配送快速")
+
         # ========== 9. 价格优势 ==========
         if avg_price <= 20:
-            reasons.append("💰 超高性价比")
+            reasons.append("超高性价比")
         elif avg_price <= 35:
             reasons.append("价格实惠")
-        
+
         # ========== 10. 回头客因素 ==========
         if arm.pulls > 5 and arm.average_reward > 0.7:
-            reasons.append("👥 回头客最爱")
+            reasons.append("回头客最爱")
         
         # 组合理由（去重并限制数量）
         unique_reasons = list(dict.fromkeys(reasons))  # 保持顺序去重
@@ -1451,7 +1646,7 @@ class DecisionAgent(BaseAgent):
             features = arm.features
             score = (
                 features.get("rating", 4.0) * 15 +
-                (1 - features.get("distance", 2000) / 5000) * 20 +
+                (1 - features.get("distance", 2000) / 20000) * 20 +
                 arm.average_reward * 10
             )
             return round(min(100, max(0, score)), 1)
@@ -1493,33 +1688,33 @@ class DecisionAgent(BaseAgent):
         # 环境概述（天气+交通+时间）
         # 天气描述
         if is_bad_weather or weather_condition in ["暴雨", "大雨", "中雨", "雪", "大雪"]:
-            environment_summary.append(f"🌧️ {weather_condition}（{temperature}°C）")
+            environment_summary.append(f"{weather_condition}（{temperature}°C）")
             reasoning_parts.append(f"由于当前{weather_condition}天气，优先为您推荐距离近、包装好、配送快的餐厅")
             weight_explanations.append("⚖️ 便利性权重+15%（恶劣天气下配送效率更重要）")
         elif temperature <= 10:
-            environment_summary.append(f"❄️ {weather_condition} {temperature}°C（寒冷）")
+            environment_summary.append(f"{weather_condition} {temperature}°C（寒冷）")
             reasoning_parts.append(f"当前温度仅{temperature}°C，为您优选火锅、热汤等暖身热食")
             weight_explanations.append("⚖️ 热食类权重+12%（低温天气暖身需求上升）")
         elif temperature >= 30:
-            environment_summary.append(f"🌡️ {weather_condition} {temperature}°C（炎热）")
+            environment_summary.append(f"{weather_condition} {temperature}°C（炎热）")
             reasoning_parts.append(f"今天{temperature}°C高温天气，为您推荐清爽开胃的餐厅")
             weight_explanations.append("⚖️ 清凉类权重+10%（高温天气清爽食物更受欢迎）")
         elif weather_condition in ["小雨", "阴"]:
             environment_summary.append(f"🌤️ {weather_condition} {temperature}°C")
             reasoning_parts.append("阴雨天气，为您推荐暖心美食")
         else:
-            environment_summary.append(f"☀️ {weather_condition} {temperature}°C")
+            environment_summary.append(f"{weather_condition} {temperature}°C")
         
         # 交通描述
         if congestion_index > 1.8 or congestion_level in ["严重拥堵", "拥堵"]:
-            environment_summary.append(f"🚗 {congestion_level}")
+            environment_summary.append(f"交通{congestion_level}")
             reasoning_parts.append(f"当前道路{congestion_level}（指数{congestion_index:.1f}），已优先筛选近距离餐厅确保配送时效")
             weight_explanations.append(f"⚖️ 距离权重+{int((congestion_index-1)*10)}%（交通拥堵需缩短配送距离）")
         elif congestion_index > 1.3:
-            environment_summary.append("🚗 交通略堵")
+            environment_summary.append("交通略堵")
             reasoning_parts.append("交通略有拥堵，已适当调整配送时间预估")
         else:
-            environment_summary.append("🚗 畅通")
+            environment_summary.append("交通畅通")
 
         # 时间描述
         period_names = {

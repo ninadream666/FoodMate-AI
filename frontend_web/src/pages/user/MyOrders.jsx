@@ -75,8 +75,9 @@ export default function MyOrders() {
   // 判断订单是否可取消
   const canCancelOrder = (status) => {
     // 支持新的对象结构
+    // PENDING/PAID: 直接取消退款；CONFIRMED/PREPARING: 需商家审批
     const statusCode = typeof status === 'object' && status !== null ? status.code : status;
-    return ['PENDING', 'PAID'].includes(statusCode);
+    return ['PENDING', 'PAID', 'CONFIRMED', 'PREPARING'].includes(statusCode);
   };
 
   return (
@@ -129,14 +130,14 @@ export default function MyOrders() {
                       <div key={order.id} className="flex flex-col gap-4 p-4 border border-gray-100 rounded-lg hover:shadow-md transition-shadow bg-white">
                         {/* 订单头部：商家与状态 */}
                         <div className="flex flex-wrap items-center justify-between gap-4">
-                          <div className="flex items-center gap-3">
-                            <div className="bg-gray-100 rounded-md size-10 flex items-center justify-center text-orange-500">
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className="bg-gray-100 rounded-md size-10 flex-shrink-0 flex items-center justify-center text-orange-500">
                               <span className="material-symbols-outlined">storefront</span>
                             </div>
-                            <p className="font-semibold">{getMerchantName(order)}</p>
+                            <p className="font-semibold truncate">{getMerchantName(order)}</p>
                             <span className="material-symbols-outlined text-gray-400 text-base">chevron_right</span>
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <div className="flex items-center gap-4 text-sm text-gray-500 flex-shrink-0">
                             <p>下单时间: {new Date(order.createdAt).toLocaleString()}</p>
                             <p className={`font-medium ${getOrderStatusColor(order.status)}`}>
                               {getOrderStatusText(order.status)}

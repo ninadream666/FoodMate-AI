@@ -14,6 +14,7 @@ const AppTheme = {
 
 // 健康上下文 Provider
 import { HealthProvider } from './src/hooks/useHealthContext';
+import AdaptiveOverlay from './src/components/AdaptiveOverlay';
 
 // 导入页面
 import LoginScreen from './src/screens/LoginScreen';
@@ -33,6 +34,7 @@ import OrderConfirmScreen from './src/screens/OrderConfirmScreen';
 import MerchantOnboardingScreen from './src/screens/merchant/MerchantOnboardingScreen';
 import MerchantShopInfoScreen from './src/screens/merchant/MerchantShopInfoScreen';
 import RefundAuditScreen from './src/screens/merchant/RefundAuditScreen';
+import MerchantOrdersScreen from './src/screens/merchant/MerchantOrdersScreen';
 import ServiceMarketplaceScreen from './src/screens/merchant/ServiceMarketplaceScreen';
 import SettlementDashboardScreen from './src/screens/merchant/SettlementDashboardScreen';
 import NutriVisionResultScreen from './src/screens/NutriVisionResultScreen';
@@ -42,6 +44,14 @@ import SmartPricingScreen from './src/screens/merchant/SmartPricingScreen';
 import MenuManagementScreen from './src/screens/merchant/MenuManagementScreen';
 // 调试工具
 import LocationDebugScreen from './src/screens/LocationDebugScreen';
+import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
+import FavoritesScreen from './src/screens/FavoritesScreen';
+import BrowseHistoryScreen from './src/screens/BrowseHistoryScreen';
+import HealthDataScreen from './src/screens/HealthDataScreen';
+
+// 网络状态全局监听（App 启动时初始化一次）
+import { startNetworkMonitor } from './src/services/networkUtils';
+startNetworkMonitor();
 
 const Stack = createNativeStackNavigator();
 
@@ -181,6 +191,11 @@ function App(): React.JSX.Element {
               options={{ title: '退款审批' }}
             />
             <Stack.Screen
+              name="MerchantOrders"
+              component={MerchantOrdersScreen}
+              options={{ title: '订单管理' }}
+            />
+            <Stack.Screen
               name="ServiceMarketplace"
               component={ServiceMarketplaceScreen}
               options={{ title: '服务市场' }}
@@ -191,6 +206,32 @@ function App(): React.JSX.Element {
               options={{ title: '财务结算' }}
             />
 
+            {/* 隐私政策 */}
+            <Stack.Screen
+              name="PrivacyPolicy"
+              component={PrivacyPolicyScreen}
+              options={{ title: '隐私政策' }}
+            />
+
+            {/* 健康数据 */}
+            <Stack.Screen
+              name="HealthData"
+              component={HealthDataScreen}
+              options={{ title: '健康数据' }}
+            />
+
+            {/* 收藏 & 历史 */}
+            <Stack.Screen
+              name="Favorites"
+              component={FavoritesScreen}
+              options={{ title: '我的收藏' }}
+            />
+            <Stack.Screen
+              name="BrowseHistory"
+              component={BrowseHistoryScreen}
+              options={{ title: '浏览历史' }}
+            />
+
             {/* 调试工具 - 仅用于开发 */}
             <Stack.Screen
               name="LocationDebug"
@@ -199,6 +240,7 @@ function App(): React.JSX.Element {
             />
           </Stack.Navigator>
         </NavigationContainer>
+        <AdaptiveOverlay />
       </HealthProvider>
     </SafeAreaProvider>
   );
