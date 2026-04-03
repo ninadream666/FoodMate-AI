@@ -4,13 +4,7 @@ import React, { memo, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
 import OptimizedImage from './OptimizedImage';
-
-// 默认图片列表（已简化 URL）
-const defaultImages = [
-    'https://loremflickr.com/400/300/food,restaurant',
-    'https://loremflickr.com/400/300/dish,cuisine',
-    'https://loremflickr.com/400/300/meal,dinner',
-];
+import { getMerchantImageByReason } from '../config/imageDictionary';
 
 interface Props {
     restaurant: any;
@@ -21,14 +15,23 @@ const RestaurantCard = memo(({ restaurant, onPress }: Props) => {
     // 数据处理
     const name = restaurant.name || '未知餐厅';
 
-    // 图片处理：使用 useMemo 避免每次渲染都计算随机图片
+    // AI推荐理由：后端返回的是 reason 字段（在 recommendations 数组每个item里）
+    // 优先级: reason > recommendation_reason > match_reasons[0] > description
+    const recommendationReason = restaurant.reason
+        || restaurant.recommendation_reason
+        || (restaurant.match_reasons && restaurant.match_reasons.length > 0 ? restaurant.match_reasons[0] : null)
+        || restaurant.description
+        || null;
+
+    // 图片处理：使用 useMemo 避免每次渲染都计算图片，并接入智能图库字典
     const imageUrl = useMemo(() => {
         const url = restaurant.image || restaurant.imageUrl || restaurant.features?.image || '';
-        if (!url || url.includes('unsplash.com')) {
-            return defaultImages[Math.floor(Math.random() * defaultImages.length)];
+        // 拦截无效图片 URL，交给独立字典库处理
+        if (!url || url.includes('unsplash.com') || url.includes('example.com')) {
+            return getMerchantImageByReason(recommendationReason || '', restaurant.id || Math.random());
         }
         return url;
-    }, [restaurant.image, restaurant.imageUrl, restaurant.features?.image]);
+    }, [restaurant.image, restaurant.imageUrl, restaurant.features?.image, recommendationReason, restaurant.id]);
 
     // AI评分：优先使用后端返回的 score（60-100），final_score，最后默认85
     // 后端 DecisionAgent 返回的 score 已经是 60-100 范围
@@ -40,14 +43,6 @@ const RestaurantCard = memo(({ restaurant, onPress }: Props) => {
     const deliveryTime = restaurant.deliveryTime || restaurant.estimated_delivery_time || (restaurant.features?.delivery_time) || '30分钟';
     const distance = restaurant.distance || (restaurant.features?.distance);
     const distanceDisplay = distance ? `${(distance / 1000).toFixed(2)}km` : '1.20km';
-
-    // AI推荐理由：后端返回的是 reason 字段（在 recommendations 数组每个item里）
-    // 优先级: reason > recommendation_reason > match_reasons[0] > description
-    const recommendationReason = restaurant.reason
-        || restaurant.recommendation_reason
-        || (restaurant.match_reasons && restaurant.match_reasons.length > 0 ? restaurant.match_reasons[0] : null)
-        || restaurant.description
-        || null;
 
     // 根据评分获取颜色
     const getScoreColor = (s: number) => {
@@ -86,7 +81,7 @@ const RestaurantCard = memo(({ restaurant, onPress }: Props) => {
                     width={400}
                     style={styles.image}
                     priority="normal"
-                    fallbackUri={defaultImages[0]}
+                    fallbackUri={imageUrl}
                 />
                 {/* 评分角标 - 磨砂玻璃效果 */}
                 <View style={[styles.scoreBadge, { backgroundColor: getScoreBgColor(score) }]}>

@@ -8,9 +8,9 @@ logger = logging.getLogger(__name__)
 
 class NutriVisionClient:
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY
-        self.model = settings.GEMINI_MODEL
-        self.base_url = settings.GEMINI_BASE_URL
+        self.api_key = settings.AI_API_KEY
+        self.model = settings.AI_MODEL
+        self.base_url = settings.AI_BASE_URL
 
     async def analyze_menu(self, image_base64: str, health_tags: list) -> dict:
         if not self.api_key:
