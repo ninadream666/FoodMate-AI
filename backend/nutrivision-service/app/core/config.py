@@ -7,10 +7,10 @@ class Settings(BaseSettings):
     
     # API 密钥与模型配置
     # 优先从环境变量读取
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    AI_API_KEY: str = os.getenv("AI_API_KEY", "")
+    AI_MODEL: str = os.getenv("AI_MODEL", "gpt-4.1-mini")
     # 中转商提供的 OpenAI 兼容接口地址
-    GEMINI_BASE_URL: str = os.getenv("GEMINI_BASE_URL", "https://yinli.one/v1/chat/completions")
+    AI_BASE_URL: str = os.getenv("AI_BASE_URL", "https://yinli.one/v1/chat/completions")
     
     class Config:
         env_file = ".env"

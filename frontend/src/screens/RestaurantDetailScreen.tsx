@@ -17,6 +17,7 @@ import { merchantService } from '../services/merchantService';
 import { profileService } from '../services/profileService';
 import MenuListItem from '../components/MenuListItem';
 import CartBar from '../components/CartBar';
+import { hashId } from '../config/imageDictionary'; // 【新增引入】利用图库字典的 hash 算法
 
 // 北欧风主题
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
@@ -41,7 +42,6 @@ const organizeMenuByCategory = (menuItems: any[]) => {
 const RestaurantDetailScreen = ({ route, navigation }: any) => {
     const { restaurant } = route.params || {};
     const id = restaurant?.id || route.params?.id;
-    console.log('🏪 餐厅数据:', JSON.stringify({ image: restaurant?.image, imageUrl: restaurant?.imageUrl, features: restaurant?.features?.image }, null, 2));
 
     const [sections, setSections] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -51,9 +51,7 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
 
     useEffect(() => {
         loadMenu();
-        // 记录浏览历史
         profileService.recordHistory(id).catch(() => {});
-        // 检查收藏状态
         profileService.getFavorites().then((favs: any[]) => {
             if (Array.isArray(favs) && favs.includes(String(id))) setIsFavorite(true);
         }).catch(() => {});
@@ -79,7 +77,6 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
         });
     }, []);
 
-    // 更新 headerRight 响应收藏状态变化
     useEffect(() => {
         navigation.setOptions({
             headerRight: () => (
@@ -105,7 +102,6 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
 
     const loadMenu = async () => {
         try {
-            // 关键修改：加了 (merchantService as any) 来避开 TS 报错
             const data = await (merchantService as any).getPublicMenu(id);
             const organized = organizeMenuByCategory(data);
             setSections(organized);
@@ -133,7 +129,29 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
         });
     };
 
-    // 加载态 - 北欧风居中微暖
+    // 【核心修复3】提前计算好商家主图，彻底屏蔽外网，强制走后端代理！
+    const bannerImageUrl = (() => {
+        const url = restaurant?.image || restaurant?.imageUrl || restaurant?.features?.image || '';
+        
+        const isBadUrl = !url || 
+            url.includes('unsplash.com') || 
+            url.includes('example.com') || 
+            url.includes('loremflickr.com') || 
+            url.includes('placehold.co') ||
+            url.includes('localhost') ||
+            url.includes('127.0.0.1');
+
+        if (!isBadUrl) {
+            return url;
+        }
+
+        const safeId = id || 'default_merchant';
+        const hash = hashId(safeId); // 使用相同的 hash 函数锁定图片
+        
+        // 动态拼装走后端代理的 URL
+        return `http://127.0.0.1:8081/api/images/proxy?tag=restaurant,interior&width=800&height=400&hash=${hash}`;
+    })();
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -146,7 +164,6 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
         );
     }
 
-    // 横幅图片透明度动画（滚动时渐隐）
     const bannerOpacity = scrollY.interpolate({
         inputRange: [0, 150],
         outputRange: [1, 0.6],
@@ -167,14 +184,7 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
             <View>
                 <View style={styles.bannerWrapper}>
                     <Image
-                        source={{ uri: (() => {
-                            const url = restaurant?.image || restaurant?.imageUrl || restaurant?.features?.image || '';
-                            // 如果是 Unsplash 链接（国内无法访问）或为空，用 picsum 替代
-                            if (!url || url.includes('unsplash.com')) {
-                                return `https://loremflickr.com/800/400/restaurant,food`;
-                            }
-                            return url;
-                        })() }}
+                        source={{ uri: bannerImageUrl }}
                         style={styles.banner}
                         resizeMode="cover"
                     />
@@ -227,7 +237,12 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
                             <Text style={styles.sectionCount}>{section.data.length}道</Text>
                         </View>
                         {section.data.map((item: any) => (
-                            <MenuListItem key={item.id.toString()} dish={item} onAdd={handleAddToCart} />
+                            <MenuListItem 
+                                key={item.id.toString()} 
+                                dish={item} 
+                                onAdd={handleAddToCart} 
+                                fallbackMerchantImage={bannerImageUrl} 
+                            />
                         ))}
                         {sectionIndex < sections.length - 1 && <View style={styles.sectionDivider} />}
                     </View>
@@ -235,19 +250,16 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
                 <View style={{ height: 120 }} />
             </Animated.ScrollView>
 
-            {/* ========== 底部购物车栏 ========== */}
             <CartBar cartItems={cartItems} onViewCart={handleViewCart} />
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    // ============ 容器 ============
     container: {
         flex: 1,
         backgroundColor: colors.background,
     },
-    // 加载状态
     loadingContainer: {
         flex: 1,
         backgroundColor: colors.background,
@@ -269,22 +281,15 @@ const styles = StyleSheet.create({
         color: colors.textSecondary,
         fontWeight: fontWeight.medium,
     },
-
-    // ============ 横幅区 ============
     bannerWrapper: {
         height: 180,
         overflow: 'hidden',
         backgroundColor: colors.backgroundGradientEnd,
     },
-    bannerImageWrapper: {
-        width: '100%',
-        height: '100%',
-    },
     banner: {
         width: '100%',
         height: '100%',
     },
-    // 横幅底部渐变遮罩（模拟浅底渐变效果 Image2）
     bannerGradient: {
         position: 'absolute',
         bottom: 0,
@@ -292,17 +297,11 @@ const styles = StyleSheet.create({
         right: 0,
         height: 80,
         backgroundColor: 'transparent',
-        // 用半透明白色模拟渐变过渡
-        borderTopWidth: 0,
-        ...(Platform.OS === 'ios' ? {} : {}),
-        // 用多层叠加模拟渐变
         shadowColor: colors.background,
         shadowOffset: { width: 0, height: -40 },
         shadowOpacity: 1,
         shadowRadius: 30,
     },
-
-    // ============ 信息卡片（磨砂风格 Image3） ============
     infoCardWrapper: {
         marginTop: -spacing.xxl,
         paddingHorizontal: spacing.lg,
@@ -324,8 +323,6 @@ const styles = StyleSheet.create({
         marginBottom: spacing.md,
         letterSpacing: 0.3,
     },
-
-    // 元信息行
     metaRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -381,8 +378,6 @@ const styles = StyleSheet.create({
         color: colors.success,
         fontWeight: fontWeight.semibold,
     },
-
-    // 标签行
     tagRow: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -401,8 +396,6 @@ const styles = StyleSheet.create({
         color: colors.textSecondary,
         fontWeight: fontWeight.medium,
     },
-
-    // ============ 分类区 ============
     sectionWrapper: {
         marginBottom: spacing.xs,
     },

@@ -17,10 +17,10 @@ class Settings(BaseSettings):
         "amqp://dev:dev123@rabbitmq:5672/"
     )
     
-    # Gemini API 配置
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    # AI API 配置
+    AI_API_KEY: str = os.getenv("AI_API_KEY", "")
     # 默认为你指定的 preview 模型
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
+    AI_MODEL: str = os.getenv("AI_MODEL", "deepseek-chat")
     
     # 业务规则
     # AUTO_APPROVE_THRESHOLD: float = 0.05

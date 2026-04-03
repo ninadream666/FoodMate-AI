@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import ValidationError
 from .models.schemas import VisionAnalysisRequest, SingleFoodAnalysisRequest, VisionAnalysisResponse
-from .core.gemini_vision import vision_client
+from .core.gpt_vision import vision_client
 from .core.food_classifier import food_classifier
 from .core.config import settings
 

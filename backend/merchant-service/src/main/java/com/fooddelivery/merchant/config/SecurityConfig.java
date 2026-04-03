@@ -65,6 +65,9 @@ public class SecurityConfig {
                         // Swagger 文档
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**").permitAll()
 
+                        // 图片请求代理
+                        .requestMatchers("/api/images/proxy").permitAll()
+
                         // ========== 其他所有请求必须认证 ==========
                         .anyRequest().authenticated())
 

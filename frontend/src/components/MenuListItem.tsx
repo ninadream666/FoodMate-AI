@@ -1,27 +1,64 @@
 import React, { memo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
-import OptimizedImage from './OptimizedImage';
-
-// 使用更简短的默认图片 URL
-const defaultImage = 'https://loremflickr.com/200/200/food,dish';
+import { getDishImage } from '../config/imageDictionary';
 
 interface Props {
     dish: any;
     onAdd: (dish: any) => void;
+    fallbackMerchantImage?: string; // 接收从详情页传下来的商家主图兜底
 }
 
-const MenuListItem = memo(({ dish, onAdd }: Props) => {
+const MenuListItem = memo(({ dish, onAdd, fallbackMerchantImage }: Props) => {
+    
+    // 动态计算该菜品的最终配图 URL
+    const displayImage = (() => {
+        // 兼容后端可能使用的多种图片字段名
+        let finalUrl = dish.imageUrl || dish.image || dish.picture || '';
+        
+        // 【核心修复】启用最霸道的“白名单”模式：
+        // 无论数据库里存了什么（比如 http://10.0.2.2... 这种本地测试网，或者其他未知的残缺路径）
+        // 只要里面没有明确包含我们专属的代理接口 '/api/images/proxy'
+        // 就一律视为脏数据，强行拦截！
+        const isBadUrl = !finalUrl || !finalUrl.includes('/api/images/proxy');
+
+        if (isBadUrl) {
+            // 【米饭专属特判】
+            // 因为图库字典里“饭”包含了炒饭、烩饭等，容易让白米饭显示成五颜六色的炒饭
+            // 这里直接强制拦截，只要名字叫米饭，就锁死请求一碗白米饭 (white,rice,bowl)
+            if (dish.name === '米饭' || dish.name === '白米饭') {
+                // 生成安全的 hash 确保后端不溢出
+                const safeHash = (dish.id ? String(dish.id).charCodeAt(0) : Math.floor(Math.random() * 1000)) % 2147483647;
+                finalUrl = `http://127.0.0.1:8081/api/images/proxy?tag=white,rice,bowl&width=200&height=200&hash=${safeHash}`;
+            } 
+            // 【例汤专属特判】
+            // 将默认的例汤固定为视觉效果更好的西红柿汤
+            else if (dish.name === '例汤' || dish.name.includes('番茄') || dish.name.includes('西红柿')) {
+                const safeHash = (dish.id ? String(dish.id).charCodeAt(0) : Math.floor(Math.random() * 1000)) % 2147483647;
+                finalUrl = `http://127.0.0.1:8081/api/images/proxy?tag=tomato,soup&width=200&height=200&hash=${safeHash}`;
+            } 
+            else {
+                // 其他菜品正常走智能代理匹配，获取高清美食图
+                finalUrl = getDishImage(
+                    dish.name, 
+                    dish.category, 
+                    '', // 传入空字符，防止小菜品错误继承商家大横幅导致比例失调
+                    dish.id || Math.random()
+                );
+            }
+        }
+
+        return finalUrl;
+    })();
+
     return (
         <View style={styles.container}>
-            {/* 左侧图片 - 使用优化的图片组件 */}
-            <OptimizedImage
-                uri={(!dish.imageUrl || dish.imageUrl.includes('unsplash.com') || dish.imageUrl.includes('picsum.photos')) ? defaultImage : dish.imageUrl}
-                width={150}
+            {/* 使用原生 Image 组件，彻底告别第三方库的莫名拦截机制 */}
+            <Image
+                source={{ uri: displayImage }}
                 style={styles.image}
-                priority="low"
-                fallbackUri={defaultImage}
+                resizeMode="cover"
             />
 
             {/* 中间信息 */}
@@ -46,7 +83,7 @@ const MenuListItem = memo(({ dish, onAdd }: Props) => {
     );
 });
 
-// 磨砂风格样式（Image3 卡片 + Image2 阴影原则）
+// 磨砂风格样式
 const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
@@ -64,7 +101,6 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
     },
-    // 圆角图片 - 磨砂风格（Image3 ClipRRect）
     image: {
         width: 76,
         height: 76,
@@ -93,7 +129,6 @@ const styles = StyleSheet.create({
         fontWeight: fontWeight.bold,
         color: colors.primary,
     },
-    // 添加按钮 - 可点击元素带阴影（Image2 原则）
     addButton: {
         width: 36,
         height: 36,

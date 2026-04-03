@@ -9,7 +9,7 @@ from datetime import datetime
 
 from .config import settings
 from .models import SalesHistory, PricingProposal, Base
-from .gemini_agent import gemini_client
+from .deepseek_agent import deepseek_client
 from .clients import service_client # 引入新写的 HTTP 客户端
 
 engine = create_async_engine(settings.DATABASE_URL, echo=False)
@@ -122,7 +122,7 @@ async def analyze_merchant(session, rabbitmq_channel, merchant_id, auto_approval
                 continue
 
             # 调用 AI 分析
-            analysis = await gemini_client.analyze_price(item_name, current_price, stats)
+            analysis = await deepseek_client.analyze_price(item_name, current_price, stats)
             
             suggested = float(analysis.get("suggested_price", current_price))
             strategy = analysis.get("strategy_type", "MAINTAIN")
