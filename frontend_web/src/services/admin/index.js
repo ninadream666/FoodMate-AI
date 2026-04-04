@@ -39,32 +39,32 @@ export { default as apiTester, runApiTests, testOrderService, testPlatformServic
 /**
  * 根据API测试文件分析的服务端口映射：
  * 
- * 🏪 商家服务 (merchantService): 8081
+ *  商家服务 (merchantService): 8081
  *   - 商家注册、认证、信息管理
  *   - 商品管理、店铺设置
  * 
- * 🎯 营销服务 (marketingService): 8082  
+ *  营销服务 (marketingService): 8082  
  *   - 优惠券模板创建与管理
  *   - 优惠券发放与计算
  * 
- * 👥 用户服务 (userService): 8083
+ *  用户服务 (userService): 8083
  *   - 用户注册、登录、个人信息
  *   - 用户认证与权限管理
  * 
- * 📦 订单服务 (orderService): 8084
+ *  订单服务 (orderService): 8084
  *   - 订单创建、查询、状态管理
  *   - 订单统计、趋势分析
  *   - 支付确认、退款处理
  * 
- * 👤 用户资料服务 (profileService): 8086
+ *  用户资料服务 (profileService): 8086
  *   - 用户详细资料管理
  *   - 地址簿、偏好设置
  * 
- * 🤖 推荐服务 (recommendationService): 8087
+ *  推荐服务 (recommendationService): 8087
  *   - 个性化推荐算法
  *   - 商品推荐、商家推荐
  * 
- * 🏢 平台服务 (platformService): 8088
+ *  平台服务 (platformService): 8088
  *   - 分成管理、结算处理
  *   - 平台配置、系统设置
  *   - 内部接口服务
@@ -91,7 +91,7 @@ export const getAllServices = () => ({
 
 /**
  * 获取API端点常量
- * @returns {Object} API_ENDPOINTS 对象
+ * @returns {Object} API_ENDPOINTS对象
  */
 export const getApiEndpoints = () => API_ENDPOINTS;
 

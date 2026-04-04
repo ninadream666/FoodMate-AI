@@ -25,10 +25,10 @@ public interface MerchantRepository extends JpaRepository<Merchant, Long> {
     // 查询所有开启了动态定价的商家
     List<Merchant> findByEnableDynamicPricing(Boolean enableDynamicPricing);
 
-    // 根据外部 ID 查询（支持智能体返回的 ID）
+    // 根据外部ID查询（支持智能体返回的ID）
     Optional<Merchant> findByExternalId(String externalId);
 
-    // 检查外部 ID 是否存在
+    // 检查外部ID是否存在于数据库中
     boolean existsByExternalId(String externalId);
 
     // 根据来源查询
@@ -40,7 +40,7 @@ public interface MerchantRepository extends JpaRepository<Merchant, Long> {
     // 根据评分范围查询
     List<Merchant> findByRatingGreaterThanEqual(Double minRating);
 
-    // 查询未被认领的商家（owner_user_id 为 null）
+    // 查询未被认领的商家（owner_user_id为null）
     List<Merchant> findByOwnerUserIdIsNull();
 
     // 按名称关键字查询未被认领的商家

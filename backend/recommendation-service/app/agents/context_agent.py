@@ -340,7 +340,6 @@ class ContextAgent(BaseAgent):
         """分析时间上下文"""
         try:
             if self.calendar_service:
-                # 使用正确的方法名 get_calendar_info
                 calendar_info = await self.calendar_service.get_calendar_info(date_str)
                 if calendar_info:
                     # CalendarInfo 属性：date, weekday, is_holiday, holiday_name, is_work_day

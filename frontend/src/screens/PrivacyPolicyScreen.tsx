@@ -6,7 +6,7 @@ const PrivacyPolicyScreen = () => {
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
             <View style={styles.content}>
-                <Text style={styles.title}>FoodMate AI 隐私政策</Text>
+                <Text style={styles.title}>FoodMate AI隐私政策</Text>
                 <Text style={styles.updateDate}>最后更新日期：2026年3月</Text>
 
                 <Text style={styles.sectionTitle}>一、我们收集的信息</Text>

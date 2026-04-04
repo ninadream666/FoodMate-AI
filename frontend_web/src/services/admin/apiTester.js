@@ -1,6 +1,6 @@
 /**
  * API 测试和调试工具
- * 基于 api-tests.http 文件的接口分析
+ * 基于api-tests.http文件的接口分析
  */
 
 import { orderService, orderStatsService, API_ENDPOINTS } from './index';
@@ -11,7 +11,7 @@ class ApiTester {
         this.isRunning = false;
     }
 
-    // ============== 订单服务接口测试 (8084) ==============
+    // ============== 订单服务接口测试 ==============
 
     async testOrderServiceEndpoints() {
         console.log('🧪 开始测试订单服务接口...');
@@ -54,7 +54,7 @@ class ApiTester {
         return await Promise.allSettled(tests);
     }
 
-    // ============== 平台服务接口测试 (8088) ==============
+    // ============== 平台服务接口测试 ==============
 
     async testPlatformServiceEndpoints() {
         console.log('🧪 开始测试平台服务接口...');
@@ -220,13 +220,10 @@ class ApiTester {
                 const baseUrl = `http://localhost:${service.port}`;
                 console.log(`🔍 检查 ${service.name} (${baseUrl})`);
 
-                // 这里可以添加实际的连接测试逻辑
-                // 比如发送 OPTIONS 请求或者 GET /health 请求
-
                 diagnostics.push({
                     service: service.name,
                     port: service.port,
-                    status: 'unknown', // 需要实际测试才能确定
+                    status: 'unknown',
                     message: '需要实际网络请求来验证',
                     timestamp: new Date().toISOString()
                 });

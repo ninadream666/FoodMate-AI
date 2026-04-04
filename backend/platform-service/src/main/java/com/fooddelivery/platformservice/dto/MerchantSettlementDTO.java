@@ -32,7 +32,7 @@ public class MerchantSettlementDTO {
     private LocalDate periodStart;
     private LocalDate periodEnd;
     private String periodLabel;
-    private String periodDisplay;  // 如 "2024年1月" 或 "2024年第3周"
+    private String periodDisplay;
     
     // 金额
     private Integer totalOrderCount;
@@ -116,13 +116,13 @@ public class MerchantSettlementDTO {
 
     private static String formatPeriodDisplay(SettlementType type, String periodLabel) {
         if (type == SettlementType.MONTHLY) {
-            // periodLabel 格式如 2024-01
+            // periodLabel格式：2024-01
             String[] parts = periodLabel.split("-");
             if (parts.length == 2) {
                 return parts[0] + "年" + Integer.parseInt(parts[1]) + "月";
             }
         } else {
-            // periodLabel 格式如 2024-W03
+            // periodLabel格式：2024-W03
             String[] parts = periodLabel.split("-W");
             if (parts.length == 2) {
                 return parts[0] + "年第" + Integer.parseInt(parts[1]) + "周";

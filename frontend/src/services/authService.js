@@ -5,8 +5,8 @@ import api from './apiClient';
 export const authService = {
     // 登录
     login: async (username, password, role) => {
-        // 调用 apiClient，服务选 'auth'，路径 '/login'
-        // 这里的 'auth' 对应 serviceConfig.js 里的 http://10.0.2.2:8083/api/auth
+        // 调用apiClient，服务选'auth'，路径'/login'
+        // 这里的'auth'对应 serviceConfig.js里的http://10.0.2.2:8083/api/auth
         const data = await api.post('auth', '/login', {
             username,
             password,
@@ -48,13 +48,13 @@ export const authService = {
         await AsyncStorage.removeItem('userId');
     },
 
-    // 检查是否已登录 (异步)
+    // 检查是否已登录（异步）
     isLoggedIn: async () => {
         const token = await AsyncStorage.getItem('token');
         return !!token;
     },
 
-    // 获取当前用户信息 (异步)
+    // 获取当前用户信息（异步）
     getCurrentUser: async () => {
         try {
             const userStr = await AsyncStorage.getItem('user');

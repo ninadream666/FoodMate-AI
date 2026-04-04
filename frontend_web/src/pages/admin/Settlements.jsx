@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import settlementService from '../../services/admin/settlementService';
 
-// 结算状态标签组件 (北欧语义化重构)
+// 结算状态标签组件
 const SettlementStatusBadge = ({ status }) => {
     const statusConfig = {
         PENDING_CONFIRM: {
@@ -36,7 +36,7 @@ const SettlementStatusBadge = ({ status }) => {
     );
 };
 
-// 结算详情模态框组件 (毛玻璃高级拟态重构)
+// 结算详情模态框组件
 const SettlementDetailModal = ({ isOpen, onClose, settlementId, showAlert, showConfirm }) => {
     const [settlement, setSettlement] = useState(null);
     const [commissions, setCommissions] = useState([]);
@@ -258,7 +258,7 @@ const SettlementDetailModal = ({ isOpen, onClose, settlementId, showAlert, showC
     );
 };
 
-// 结算管理主页面 (重构版)
+// 结算管理主页面
 const Settlements = () => {
     const [settlements, setSettlements] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -356,7 +356,7 @@ const Settlements = () => {
         fetchSettlements({ page: newPage });
     };
 
-    // 批量打款 (替换原生 Confirm/Alert)
+    // 批量打款
     const handleBatchPay = async () => {
         if (selectedSettlements.length === 0) {
             showAlert('请先勾选需要打款的结算单');
@@ -377,7 +377,7 @@ const Settlements = () => {
         });
     };
 
-    // 确认结算单 (替换原生 Confirm)
+    // 确认结算单
     const handleConfirmSettlement = (settlementId) => {
         showConfirm('确定要确认这份结算单吗？一旦确认将可进入打款流程。', async () => {
             setDialog(prev => ({ ...prev, isOpen: false }));
@@ -625,7 +625,7 @@ const Settlements = () => {
                     )}
                 </div>
 
-                {/* 分页组件 (精美北欧样式) */}
+                {/* 分页组件 */}
                 {pagination.totalPages > 1 && (
                     <div className="flex items-center justify-between bg-surface px-6 py-4 rounded-2xl border border-border-light shadow-sm">
                         <p className="text-sm font-medium text-text-secondary">
@@ -667,7 +667,7 @@ const Settlements = () => {
                 showConfirm={showConfirm}
             />
 
-            {/* 全局基础定制化 Modal 弹窗 */}
+            {/* 全局基础定制化Modal弹窗 */}
             {dialog.isOpen && (
                 <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-overlay backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-surface rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-border-light">

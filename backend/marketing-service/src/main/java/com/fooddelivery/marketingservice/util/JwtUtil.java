@@ -22,7 +22,7 @@ public class JwtUtil {
         return extractClaim(token, Claims::getSubject);
     }
 
-    // 提取userId (与User Service逻辑一致)
+    // 提取userId，与User Service逻辑一致
     public Long extractUserId(String token) {
         return extractClaim(token, claims -> claims.get("userId", Long.class));
     }

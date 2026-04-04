@@ -61,20 +61,20 @@ public class PricingEventConsumer {
                 request.setPrice(newPrice);
                 menuService.updateMenuItem(menuItemId, request);
                 
-                // 记录 proposal
+                // 记录proposal
                 saveProposal(proposalId, merchantId, menuItemId, newPrice, reason, "AUTO_APPLIED");
 
-                // --- 发送通知：已自动调整 ---
+                // 发送通知：已自动调整
                 String content = String.format("【%s】的菜品【%s】价格已自动调整：%.2f -> %.2f。原因：%s", 
                         merchantName, itemName, oldPrice, newPrice, reason);
                 createNotification(merchantId, "价格自动调整通知", content);
 
             } else {
-                // 需要手动审批：存入数据库
+                // 需要手动审批，存入数据库
                 log.info("Saving manual approval task for item {}", menuItemId);
                 saveProposal(proposalId, merchantId, menuItemId, newPrice, reason, "PENDING");
 
-                // --- [新增] 发送通知：待审批 ---
+                // 发送通知：待审批
                 String content = String.format("AI 建议调整【%s】的价格：%.2f -> %.2f。原因：%s。请前往审批。", 
                         itemName, oldPrice, newPrice, reason);
                 createNotification(merchantId, "价格调整建议待审批", content);

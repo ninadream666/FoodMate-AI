@@ -16,7 +16,7 @@ class MarketingService {
 
     // ============== 优惠券模板管理 ==============
 
-    // 创建优惠券模板 (POST /api/admin/coupons/templates)
+    // 创建优惠券模板
     async createCouponTemplate(templateData) {
         try {
             const response = await marketingApi.post('/api/admin/coupons/templates', templateData);
@@ -27,7 +27,7 @@ class MarketingService {
         }
     }
 
-    // 获取优惠券模板列表 (GET /api/admin/coupons/templates)
+    // 获取优惠券模板列表
     async getCouponTemplates(params = {}) {
         try {
             const response = await marketingApi.get('/api/admin/coupons/templates', { params });
@@ -38,7 +38,7 @@ class MarketingService {
         }
     }
 
-    // 切换优惠券模板状态 (PUT /api/admin/coupons/templates/{id}/toggle)
+    // 切换优惠券模板状态
     async toggleCouponTemplate(templateId) {
         try {
             const response = await marketingApi.put(`/api/admin/coupons/templates/${templateId}/toggle`);
@@ -49,7 +49,7 @@ class MarketingService {
         }
     }
 
-    // 启用优惠券模板 (PUT /api/admin/coupons/templates/{id}/enable)
+    // 启用优惠券模板
     async enableCouponTemplate(templateId) {
         try {
             const response = await marketingApi.put(`/api/admin/coupons/templates/${templateId}/enable`);
@@ -60,7 +60,7 @@ class MarketingService {
         }
     }
 
-    // 禁用优惠券模板 (PUT /api/admin/coupons/templates/{id}/disable)
+    // 禁用优惠券模板
     async disableCouponTemplate(templateId) {
         try {
             const response = await marketingApi.put(`/api/admin/coupons/templates/${templateId}/disable`);
@@ -71,7 +71,7 @@ class MarketingService {
         }
     }
 
-    // 获取单个优惠券模板 (GET /api/admin/coupons/templates/{id})
+    // 获取单个优惠券模板
     async getCouponTemplate(templateId) {
         try {
             const response = await marketingApi.get(`/api/admin/coupons/templates/${templateId}`);
@@ -82,7 +82,7 @@ class MarketingService {
         }
     }
 
-    // 更新优惠券模板 (PUT /api/admin/coupons/templates/{id})
+    // 更新优惠券模板
     async updateCouponTemplate(templateId, templateData) {
         try {
             const response = await marketingApi.put(`/api/admin/coupons/templates/${templateId}`, templateData);
@@ -93,7 +93,7 @@ class MarketingService {
         }
     }
 
-    // 删除优惠券模板 (DELETE /api/admin/coupons/templates/{id})
+    // 删除优惠券模板
     async deleteCouponTemplate(templateId) {
         try {
             const response = await marketingApi.delete(`/api/admin/coupons/templates/${templateId}`);
@@ -106,7 +106,7 @@ class MarketingService {
 
     // ============== 优惠券发放管理 ==============
 
-    // 发放优惠券 (POST /coupons/issue)
+    // 发放优惠券
     async issueCoupon(issueData) {
         try {
             const response = await marketingApi.post('/coupons/issue', issueData);
@@ -117,7 +117,7 @@ class MarketingService {
         }
     }
 
-    // 管理员发放优惠券 (POST /api/coupons/admin/issue)
+    // 管理员发放优惠券
     async adminIssueCoupon(issueData) {
         try {
             const response = await marketingApi.post('/api/coupons/admin/issue', issueData);
@@ -128,7 +128,7 @@ class MarketingService {
         }
     }
 
-    // 管理员批量发放优惠券 (POST /api/coupons/admin/issue-batch)
+    // 管理员批量发放优惠券
     async adminIssueCouponBatch(issueData) {
         try {
             const response = await marketingApi.post('/api/coupons/admin/issue-batch', issueData);
@@ -139,14 +139,14 @@ class MarketingService {
         }
     }
 
-    // 管理员发放优惠券（别名，保持向后兼容）
+    // 管理员发放优惠券
     async issueCouponByAdmin(issueData) {
         return this.adminIssueCoupon(issueData);
     }
 
     // ============== 用户优惠券查询 ==============
 
-    // 获取用户可用优惠券 (GET /coupons/user/{userId}/available)
+    // 获取用户可用优惠券
     async getUserAvailableCoupons(userId) {
         try {
             const response = await marketingApi.get(`/coupons/user/${userId}/available`);
@@ -157,7 +157,7 @@ class MarketingService {
         }
     }
 
-    // 获取用户所有优惠券 (GET /coupons/user/{userId}/all)
+    // 获取用户所有优惠券
     async getUserAllCoupons(userId) {
         try {
             const response = await marketingApi.get(`/coupons/user/${userId}/all`);
@@ -168,7 +168,7 @@ class MarketingService {
         }
     }
 
-    // 获取用户优惠券（默认获取所有）
+    // 获取用户优惠券，默认获取所有
     async getUserCoupons(userId, params = {}) {
         return this.getUserAllCoupons(userId);
     }
@@ -177,7 +177,7 @@ class MarketingService {
 
     // ============== 营销活动 ==============
 
-    // 获取活动列表 (GET /coupons/campaigns)
+    // 获取活动列表
     async getCampaigns(params = {}) {
         try {
             const response = await marketingApi.get('/coupons/campaigns', { params });

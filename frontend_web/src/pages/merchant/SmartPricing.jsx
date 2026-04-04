@@ -4,7 +4,7 @@ import { aiPricingService } from '../../services/aiPricingService';
 import { merchantService } from '../../services/merchantService';
 
 /**
- * 商家 AI 定价页面 (北欧主题 + 表格左对齐修复版)
+ * 商家AI定价页面
  */
 export default function SmartPricing() {
   const { merchant } = useOutletContext();
@@ -137,7 +137,7 @@ export default function SmartPricing() {
           <h1 className="text-text-primary text-3xl font-extrabold tracking-tight">AI 智能定价</h1>
         </div>
         <p className="text-text-secondary text-base max-w-2xl">
-          利用大数据与 AI 模型优化菜品价格，在保障销量的同时提升整体利润。
+          利用大数据与AI模型优化菜品价格，在保障销量的同时提升整体利润。
         </p>
       </header>
 

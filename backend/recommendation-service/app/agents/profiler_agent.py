@@ -37,12 +37,12 @@ class UserProfile:
         self.preferred_distance: int = 3000  # meters
         self.user_segment: str = "standard"  # budget, standard, premium
         self.time_sensitivity: str = "normal"  # relaxed, normal, urgent
-        # 🆕 订单历史分析结果
+        # 订单历史分析结果
         self.cuisine_order_frequency: Dict[str, int] = {}  # 菜系订单频率
         self.time_pattern: Dict[str, int] = {}  # 时段订单分布
         self.weekday_pattern: Dict[str, int] = {}  # 工作日/周末分布
         self.reorder_merchants: Dict[str, int] = {}  # 复购商家
-        # 🆕 浏览历史分析结果
+        # 浏览历史分析结果
         self.browse_interest: Dict[str, int] = {}  # 浏览菜系兴趣
         self.browse_merchants: Dict[str, int] = {}  # 浏览商家频次
 
@@ -58,7 +58,7 @@ class UserProfile:
             "preferred_distance": self.preferred_distance,
             "user_segment": self.user_segment,
             "time_sensitivity": self.time_sensitivity,
-            # 🆕 行为分析数据
+            # 行为分析数据
             "cuisine_order_frequency": self.cuisine_order_frequency,
             "time_pattern": self.time_pattern,
             "weekday_pattern": self.weekday_pattern,
@@ -289,14 +289,14 @@ class ProfilerAgent(BaseAgent):
                 logger.warning(f"Error calculating user segment: {e}")
                 profile.user_segment = "standard"
 
-            # 🆕 集成订单历史分析结果
+            # 集成订单历史分析结果
             order_analysis = data.get("order_history_analysis") or {}
             profile.cuisine_order_frequency = order_analysis.get("cuisine_frequency") or {}
             profile.time_pattern = order_analysis.get("time_pattern") or {}
             profile.weekday_pattern = order_analysis.get("weekday_pattern") or {}
             profile.reorder_merchants = order_analysis.get("reorder_merchants") or {}
             
-            # 🆕 根据订单历史增强菜系偏好
+            # 根据订单历史增强菜系偏好
             if profile.cuisine_order_frequency:
                 try:
                     # 按频率排序，获取top5菜系
@@ -313,12 +313,12 @@ class ProfilerAgent(BaseAgent):
                 except Exception as e:
                     logger.warning(f"Error processing cuisine order frequency: {e}")
             
-            # 🆕 集成浏览历史分析结果
+            # 集成浏览历史分析结果
             browse_analysis = data.get("browse_history_analysis") or {}
             profile.browse_interest = browse_analysis.get("cuisine_interest") or {}
             profile.browse_merchants = browse_analysis.get("browse_merchants") or {}
             
-            # 🆕 根据浏览历史发现潜在兴趣（浏览但未下单的菜系）
+            # 根据浏览历史发现潜在兴趣（浏览但未下单的菜系）
             if hasattr(profile, 'browse_interest') and profile.browse_interest:
                 try:
                     for cuisine, count in profile.browse_interest.items():
@@ -356,20 +356,6 @@ class ProfilerAgent(BaseAgent):
         profile.reorder_merchants = {}
         profile.browse_interest = {}
         profile.browse_merchants = {}
-        
-        return profile
-        profile = UserProfile(user_id)
-        
-        # 设置默认偏好（模拟常见用户）
-        profile.preferred_cuisines = ["中餐", "快餐"]
-        profile.price_range = {"min": 20, "max": 50}
-        profile.taste_preferences = []
-        profile.dietary_restrictions = []
-        profile.order_frequency = "regular"
-        profile.average_rating = 4.0
-        profile.preferred_distance = 3000
-        profile.user_segment = "standard"
-        profile.time_sensitivity = "normal"
         
         return profile
     
@@ -439,7 +425,7 @@ class ProfilerAgent(BaseAgent):
         # 根据天气调整
         weather = context.get("weather", {})
         if weather.get("is_bad_weather"):
-            # 恶劣天气，添加热食偏好（不限制距离，由评分权重调节）
+            # 恶劣天气，添加热食偏好。不限制距离，由评分权重调节
             if "火锅" not in adjusted["cuisines"]:
                 adjusted["cuisines"].append("热汤类")
 

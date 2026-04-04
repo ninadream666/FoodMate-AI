@@ -1,15 +1,15 @@
 """
 ML 模型训练管理 API
 
-提供 HTTP 接口管理 ML 模型的训练、状态查看和策略切换，
-在 Docker 容器内直接调用，无需单独启动训练进程。
+提供HTTP接口管理ML模型的训练、状态查看和策略切换，
+在Docker容器内直接调用，无需单独启动训练进程。
 
 端点:
   POST /api/v2/ml/train           — 触发模型训练（后台异步执行）
   POST /api/v2/ml/generate-mock   — 生成模拟训练数据
-  GET  /api/v2/ml/status          — 查看训练数据量 & 模型状态
-  POST /api/v2/ml/switch-strategy — 运行时切换 MAB/ML 策略
-  GET  /api/v2/ml/feature-importance — LightGBM 特征重要性
+  GET  /api/v2/ml/status          — 查看训练数据量&模型状态
+  POST /api/v2/ml/switch-strategy — 运行时切换MAB/ML策略
+  GET  /api/v2/ml/feature-importance — LightGBM特征重要性
 """
 
 import os
@@ -40,7 +40,7 @@ MODEL_DIR = os.getenv("ML_MODEL_DIR", os.path.join(ROOT_DIR, "models"))
 
 
 # ============================================================
-# Request / Response 模型
+# Request/Response模型
 # ============================================================
 
 class TrainRequest(BaseModel):
@@ -78,7 +78,7 @@ def _run_training(
     results = {}
 
     try:
-        # 训练 LightGBM
+        # 训练LightGBM
         if not deepfm_only:
             try:
                 from app.ml.train_lightgbm import (
@@ -101,7 +101,7 @@ def _run_training(
                 results["lightgbm"] = {"status": "error", "error": str(e)}
                 logger.error(f"❌ LightGBM 训练失败: {e}")
 
-        # 训练 DeepFM
+        # 训练DeepFM
         if not lgb_only:
             try:
                 from app.ml.train_deepfm import train_deepfm
@@ -145,7 +145,7 @@ async def trigger_training(req: TrainRequest, background_tasks: BackgroundTasks)
             detail=f"训练数据不存在: {data_path}。请先调用 /ml/generate-mock 生成模拟数据，或等待推荐服务积累真实数据。"
         )
 
-    # 用线程池跑训练（避免阻塞 asyncio event loop）
+    # 用线程池跑训练，避免阻塞asyncio event loop
     import concurrent.futures
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
     loop = asyncio.get_running_loop()

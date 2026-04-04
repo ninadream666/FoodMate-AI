@@ -3,12 +3,12 @@ package com.fooddelivery.merchant.dto;
 import lombok.Data;
 
 /**
- * 真实餐厅 DTO - 用于导入智能体/地图 API 返回的餐厅数据
+ * 真实餐厅 DTO - 用于导入智能体/地图API返回的餐厅数据
  */
 @Data
 public class RealRestaurantDTO {
     
-    // 外部 ID，如 B0LDM1F2K5（来自智能体/地图 API）
+    // 外部ID，如B0LDM1F2K5（来自智能体/地图API）
     private String externalId;
     
     // 餐厅名称
@@ -23,7 +23,7 @@ public class RealRestaurantDTO {
     // 经度
     private Double longitude;
     
-    // 图片 URL
+    // 图片URL
     private String imageUrl;
     
     // 评分（0-5）

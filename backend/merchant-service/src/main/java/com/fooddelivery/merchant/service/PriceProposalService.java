@@ -22,7 +22,7 @@ public class PriceProposalService {
         return repository.findByMerchantIdAndStatus(merchantId, "PENDING");
     }
 
-    // 获取商家的所有提案历史 (包括自动审批、已批准、已拒绝)
+    // 获取商家的所有提案历史，包括自动审批、已批准、已拒绝
     public List<PriceChangeProposal> getProposalHistory(Long merchantId) {
         return repository.findByMerchantIdOrderByCreatedAtDesc(merchantId);
     }

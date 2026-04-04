@@ -14,7 +14,7 @@ export default function ServiceMarketplace() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // --- 定制化 UI 弹窗状态 ---
+  // --- 定制化UI弹窗状态 ---
   const [dialog, setDialog] = useState({
     isOpen: false,
     type: 'alert', // 'alert' | 'confirm'
@@ -124,7 +124,7 @@ export default function ServiceMarketplace() {
         <p className="text-text-secondary text-sm">订阅增值服务，获取更多流量与特权</p>
       </div>
 
-      {/* 一级 Tab 切换区 */}
+      {/* 一级Tab切换区 */}
       <div className="border-b border-border-light">
         <div className="flex gap-8">
           <button
@@ -370,7 +370,6 @@ export default function ServiceMarketplace() {
                               <td className="px-6 py-4 text-sm text-text-tertiary font-mono text-left">
                                 {endTime ? new Date(endTime).toLocaleDateString() : '-'}
                               </td>
-                              {/* 修正：操作列内容改为居中对齐 */}
                               <td className="px-6 py-4 text-center">
                                 {sub.status === 'ACTIVE' && !sub.isMandatory && (
                                   <button 
@@ -394,7 +393,7 @@ export default function ServiceMarketplace() {
         </div>
       )}
 
-      {/* --- 全局定制化 Modal 弹窗 --- */}
+      {/* --- 全局定制化Modal弹窗 --- */}
       {dialog.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-surface rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-border-light">

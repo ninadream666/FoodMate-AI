@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Primary;
 @Configuration
 public class RabbitMQConfig {
 
-    // 保持与 Python 服务一致：使用 "pricing.events"
+    // 保持与Python服务一致：使用 "pricing.events"
     public static final String PRICING_EXCHANGE = "pricing.events";
     public static final String PRICING_QUEUE = "merchant.pricing.updates";
 
@@ -25,7 +25,7 @@ public class RabbitMQConfig {
         return new TopicExchange(PRICING_EXCHANGE);
     }
 
-    // 主队列：绑定死信交换机，消费失败的消息自动转到 DLQ
+    // 主队列：绑定死信交换机，消费失败的消息自动转到DLQ
     @Bean
     public Queue pricingQueue() {
         return QueueBuilder.durable(PRICING_QUEUE)
@@ -34,7 +34,7 @@ public class RabbitMQConfig {
                 .build();
     }
 
-    // 绑定队列到交换机，监听所有价格提案 (price.proposal.*)
+    // 绑定队列到交换机，监听所有价格提案（price.proposal.*）
     @Bean
     public Binding binding(Queue pricingQueue, TopicExchange pricingExchange) {
         return BindingBuilder.bind(pricingQueue).to(pricingExchange).with("price.proposal.#");

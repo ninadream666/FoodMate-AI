@@ -1,6 +1,6 @@
 ﻿-- 10_more_pricing_data_v2.sql
 -- 为商家 1 (Bob's Burger / 张记面馆) 添加第二批测试菜品和销量数据
--- 目的：用于 Demo 演示，再次触发 AI 的不同定价策略 (涨价、降价、维持)
+-- 目的：用于Demo演示，再次触发AI的不同定价策略 (涨价、降价、维持)
 
 DO $$
 DECLARE
@@ -38,9 +38,9 @@ BEGIN
     VALUES (1, '澳洲M9和牛', '顶级纹理，入口即化', 588.00, '主食', 'http://example.com/wagyu.jpg', true)
     RETURNING id INTO v_wagyu_id;
 
-    -- 2. 模拟销量数据 (插入 orders 和 order_items 表)
+    -- 2. 模拟销量数据
     
-    -- 2.1 爆款：麻辣小龙虾 (55 单 -> 强劲需求 -> 涨价)
+    -- 2.1 爆款：麻辣小龙虾（55单 -> 强劲需求 -> 涨价）
     FOR i IN 1..55 LOOP
         INSERT INTO orders (user_id, merchant_id, total_amount, status, created_at)
         VALUES (1, 1, 196.00, 'COMPLETED', NOW() - (random() * interval '7 days'))
@@ -50,7 +50,7 @@ BEGIN
         VALUES (v_order_id, v_crayfish_id, 98.00, 2);
     END LOOP;
 
-    -- 2.2 滞销款：冰镇酸梅汤 (仅 2 单 -> 需求不足 -> 降价)
+    -- 2.2 滞销款：冰镇酸梅汤（仅2单 -> 需求不足 -> 降价）
     FOR i IN 1..2 LOOP
         INSERT INTO orders (user_id, merchant_id, total_amount, status, created_at)
         VALUES (1, 1, 18.00, 'COMPLETED', NOW() - (random() * interval '7 days'))
@@ -60,7 +60,7 @@ BEGIN
         VALUES (v_order_id, v_plum_juice_id, 18.00, 1);
     END LOOP;
 
-    -- 2.3 常规款：扬州炒饭 (18 单 -> 供需平衡 -> 维持)
+    -- 2.3 常规款：扬州炒饭（18单 -> 供需平衡 -> 维持）
     FOR i IN 1..18 LOOP
         INSERT INTO orders (user_id, merchant_id, total_amount, status, created_at)
         VALUES (1, 1, 25.00, 'COMPLETED', NOW() - (random() * interval '7 days'))
@@ -70,7 +70,7 @@ BEGIN
         VALUES (v_order_id, v_fried_rice_id, 25.00, 1);
     END LOOP;
 
-    -- 2.4 销量尚可：蒜泥拍黄瓜 (25 单 -> 表现不错 -> 维持或微涨)
+    -- 2.4 销量尚可：蒜泥拍黄瓜（25单 -> 表现不错 -> 维持或微涨）
     FOR i IN 1..25 LOOP
         INSERT INTO orders (user_id, merchant_id, total_amount, status, created_at)
         VALUES (1, 1, 12.00, 'COMPLETED', NOW() - (random() * interval '7 days'))
@@ -80,7 +80,7 @@ BEGIN
         VALUES (v_order_id, v_cucumber_id, 12.00, 1);
     END LOOP;
     
-    -- 2.5 高价冷门：澳洲M9和牛 (0 单 -> 严重滞销 -> 建议降价)
+    -- 2.5 高价冷门：澳洲M9和牛（0单 -> 严重滞销 -> 建议降价）
     -- 不插入任何订单
 
 END $$;

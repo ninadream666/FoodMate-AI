@@ -4,7 +4,6 @@ import { merchantOrderService } from '../../services/merchantOrderService';
 
 /**
  * 商家端 - 退款审批页面
- * 已重构：全面注入北欧风主题、自定义弹窗
  */
 export default function RefundAudit() {
   const { merchant } = useOutletContext();
@@ -48,12 +47,10 @@ export default function RefundAudit() {
       
       console.log("API返回原始数据:", data);
 
-      // 兼容性处理：适配不同的后端返回结构
       let list = [];
       if (Array.isArray(data)) {
         list = data;
       } else if (data && Array.isArray(data.orders)) {
-        // 修复点：适配 { count: 1, orders: [...] } 结构
         list = data.orders;
       } else if (data && Array.isArray(data.content)) {
         list = data.content; // Spring Page
@@ -260,7 +257,7 @@ export default function RefundAudit() {
         </div>
       </div>
 
-      {/* 定制化 Reject Modal */}
+      {/* 定制化Reject Modal */}
       {showRejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay backdrop-blur-sm animate-in fade-in">
           <div className="bg-surface w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200 border border-border-light">
@@ -303,7 +300,7 @@ export default function RefundAudit() {
         </div>
       )}
 
-      {/* 全局基础提示 Modal */}
+      {/* 全局基础提示Modal */}
       {dialog.isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-overlay backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-surface rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-border-light">

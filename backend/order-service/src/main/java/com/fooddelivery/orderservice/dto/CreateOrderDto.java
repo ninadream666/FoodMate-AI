@@ -6,7 +6,7 @@ import java.util.List;
 
 @Data
 public class CreateOrderDto {
-    private String merchantId;  // 支持数字 ID 或外部 ID（如 B0FFKPDZZI）
+    private String merchantId;  // 支持数字ID或外部ID
     private List<OrderItemDto> items;
 
     @Data

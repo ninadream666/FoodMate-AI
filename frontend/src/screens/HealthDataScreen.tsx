@@ -111,7 +111,7 @@ const HealthDataScreen = ({ navigation }: any) => {
         </View>
     );
 
-    // 从 calories 字符串中提取数字 (如 "350 kcal" -> 350)
+    // 从calories字符串中提取数字，如 "350 kcal" -> 350
     const parseCalories = (cal: string): number => {
         const match = cal?.match(/[\d.]+/);
         return match ? parseFloat(match[0]) : 0;
@@ -123,12 +123,12 @@ const HealthDataScreen = ({ navigation }: any) => {
         const result = item.result || {};
         const items = result.items || [];
 
-        // 从 items 中提取菜品名称
+        // 从items中提取菜品名称
         const foodName = items.length > 0
             ? items.map((i: any) => i.name).join('、')
             : (result.foodName || result.name || (isFood ? '食物分析' : '菜单扫描'));
 
-        // 从 items 中计算总热量
+        // 从items中计算总热量
         const totalCalories = items.length > 0
             ? items.reduce((sum: number, i: any) => sum + parseCalories(i.calories), 0)
             : parseCalories(result.calories || result.totalCalories || '');
@@ -194,7 +194,7 @@ const HealthDataScreen = ({ navigation }: any) => {
                     </View>
                 )}
 
-                {/* AI 健康总结 */}
+                {/* AI健康总结 */}
                 {result.health_summary && (
                     <View style={styles.summaryContainer}>
                         <Text style={styles.summaryLabel}>AI 总结</Text>

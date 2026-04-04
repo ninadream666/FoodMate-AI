@@ -22,7 +22,7 @@ const VoiceEngineLoading: React.FC<VoiceEngineLoadingProps> = ({ progress, onCan
     const progressAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        // 1. 启动中心盾牌的呼吸灯动画
+        // 启动中心盾牌的呼吸灯动画
         Animated.loop(
             Animated.sequence([
                 Animated.timing(pulseAnim, {
@@ -40,7 +40,7 @@ const VoiceEngineLoading: React.FC<VoiceEngineLoadingProps> = ({ progress, onCan
     }, []);
 
     useEffect(() => {
-        // 2. 平滑过渡真实进度条
+        // 平滑过渡真实进度条
         Animated.timing(progressAnim, {
             toValue: progress,
             duration: 300,
@@ -49,10 +49,10 @@ const VoiceEngineLoading: React.FC<VoiceEngineLoadingProps> = ({ progress, onCan
         }).start();
     }, [progress]);
 
-    // 根据进度展示不同的硬核装X文案
+    // 根据进度展示不同文案
     let statusText = "正在请求安全通信隧道...";
-    if (progress > 5) statusText = "正在下载端侧隐私大模型 (1500条微调版)...";
-    if (progress > 70) statusText = "校验 GGUF 模型文件完整性...";
+    if (progress > 5) statusText = "正在下载端侧隐私大模型...";
+    if (progress > 70) statusText = "校验GGUF模型文件完整性...";
     if (progress > 90) statusText = "正在热部署端侧推理引擎...";
     if (progress === 100) statusText = "引擎部署完成，安全启动中...";
 

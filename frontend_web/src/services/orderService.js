@@ -1,6 +1,6 @@
 /**
  * 订单服务
- * 对接 order-service (端口 8084)
+ * 对接order-service
  */
 
 import { API_BASE, get, post, getAuthHeaders } from './apiClient';
@@ -21,16 +21,16 @@ export const createOrder = async (orderData) => {
   const token = localStorage.getItem('token');
   if (!token) throw new Error('未登录');
 
-  // 调试：打印 token 信息（不打印完整 token，只打印前后部分）
+  // 调试：打印token信息（不打印完整token，只打印前后部分）
   console.log('Token 存在:', !!token);
   console.log('Token 长度:', token.length);
   console.log('Token 前20字符:', token.substring(0, 20) + '...');
 
-  // 检查 token 格式（JWT 应该有3段，用.分隔）
+  // 检查token格式（JWT应该有3段，用.分隔）
   const tokenParts = token.split('.');
   console.log('Token 段数:', tokenParts.length, tokenParts.length === 3 ? '(JWT格式正确)' : '(非标准JWT格式)');
 
-  // 尝试解码 JWT payload 查看过期时间
+  // 尝试解码JWT payload查看过期时间
   if (tokenParts.length === 3) {
     try {
       const payload = JSON.parse(atob(tokenParts[1]));
@@ -194,27 +194,21 @@ export const ORDER_STATUS = {
 
 /**
  * 获取订单状态文本
- * 支持新的对象结构: { code: 'PAID', description: '已支付' }
  */
 export const getOrderStatusText = (status) => {
-  // 如果是对象，优先使用description，然后使用code
   if (typeof status === 'object' && status !== null) {
     return status.description || ORDER_STATUS[status.code]?.label || status.code;
   }
-  // 如果是字符串，使用原有的逻辑
   return ORDER_STATUS[status]?.label || status;
 };
 
 /**
  * 获取订单状态样式
- * 支持新的对象结构: { code: 'PAID', description: '已支付' }
  */
 export const getOrderStatusColor = (status) => {
-  // 如果是对象，使用code字段
   if (typeof status === 'object' && status !== null) {
     return ORDER_STATUS[status.code]?.color || 'text-gray-600';
   }
-  // 如果是字符串，使用原有的逻辑
   return ORDER_STATUS[status]?.color || 'text-gray-600';
 };
 

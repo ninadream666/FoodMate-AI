@@ -206,7 +206,7 @@ export default function Profile() {
                         />
                       </div>
 
-                      {/* 手机号 (限制数字和长度) */}
+                      {/* 手机号 */}
                       <div className="flex flex-col relative">
                         <div className="flex justify-between items-center pb-2">
                           <p className="text-sm font-medium text-gray-700">手机号</p>

@@ -84,7 +84,7 @@ export default function Wallet() {
     <div className="relative flex h-auto min-h-screen w-full flex-col bg-[#f8f7f5] overflow-x-hidden font-sans text-[#1c130d]">
       <div className="layout-container flex h-full grow flex-col">
 
-        {/* --- Header (复用统一风格) --- */}
+        {/* --- Header --- */}
         <header className="flex items-center justify-between border-b border-solid border-[#f4ece7] px-6 lg:px-10 py-4 bg-white shadow-sm">
           <div className="flex items-center gap-4 cursor-pointer" onClick={() => navigate('/home')}>
             <div className="size-6 text-orange-500">
@@ -104,7 +104,7 @@ export default function Wallet() {
         </header>
 
         <div className="flex flex-1">
-          {/* --- Sidebar (复用统一风格) --- */}
+          {/* --- Sidebar --- */}
           <aside className="w-64 flex-shrink-0 p-6 hidden md:block bg-white border-r border-[#f4ece7]">
             <div className="flex flex-col gap-2">
               <SidebarItem icon="person" label="个人资料" onClick={() => navigate('/profile')} />
@@ -118,7 +118,7 @@ export default function Wallet() {
           <main className="flex-1 p-6 lg:p-8">
             <div className="flex flex-col gap-8 max-w-5xl mx-auto">
 
-              {/* 钱包卡片 (橙色渐变) */}
+              {/* 钱包卡片 */}
               <div className="flex flex-col gap-4 p-8 rounded-xl bg-gradient-to-br from-orange-500 to-orange-400 text-white shadow-lg relative overflow-hidden">
                 {/* 装饰性背景圆圈 */}
                 <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>

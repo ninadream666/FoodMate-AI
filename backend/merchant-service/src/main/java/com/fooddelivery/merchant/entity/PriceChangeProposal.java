@@ -16,13 +16,13 @@ public class PriceChangeProposal {
     private Long merchantId;
     private Long menuItemId;
 
-    // 提案来自 AI 的哪个 proposal ID
+    // 提案来自AI的哪个proposal ID
     private Long externalProposalId;
 
     private BigDecimal currentPrice;
     private BigDecimal suggestedPrice;
     
-    private String reason; // AI 给出的理由
+    private String reason; // AI给出的理由
     
     @Column(nullable = false)
     private String status; // PENDING, APPROVED, REJECTED, AUTO_APPLIED

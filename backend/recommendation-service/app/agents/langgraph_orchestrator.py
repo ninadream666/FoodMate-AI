@@ -4,10 +4,10 @@ LangGraph 智能体编排器
 基于 LangGraph 的图状态机编排器，实现多智能体协作工作流：
 
 工作流程:
-1. START → ContextAgent (环境感知)
-2. ContextAgent → ProfilerAgent (用户画像)  
-3. ProfilerAgent → DecisionAgent (MAB决策)
-4. DecisionAgent → END (输出结果)
+1. START → ContextAgent：环境感知
+2. ContextAgent → ProfilerAgent：用户画像  
+3. ProfilerAgent → DecisionAgent：MAB决策
+4. DecisionAgent → END：输出结果
 
 支持条件分支:
 - 恶劣天气时跳过远距离餐厅
@@ -47,7 +47,7 @@ class WorkflowState(TypedDict, total=False):
     """
     工作流状态定义
     
-    LangGraph 使用 TypedDict 来定义图的状态结构，
+    LangGraph使用TypedDict来定义图的状态结构，
     所有节点共享此状态，可以读取和更新状态中的字段。
     """
     # 输入参数
@@ -96,10 +96,9 @@ class NodeResult:
 
 class LangGraphOrchestrator:
     """
-    LangGraph 智能体编排器
+    LangGraph智能体编排器
     
-    使用 LangGraph 构建有状态的、图状的多智能体系统，
-    实现 ContextAgent → ProfilerAgent → DecisionAgent 的协作工作流。
+    使用LangGraph构建有状态的、图状的多智能体系统，实现ContextAgent → ProfilerAgent → DecisionAgent的协作工作流。
     """
     
     def __init__(self, 
@@ -116,7 +115,7 @@ class LangGraphOrchestrator:
             map_service: 地图服务
             calendar_service: 日历服务
             user_service: 用户服务
-            mab_strategy: MAB策略 (ucb1, thompson, epsilon, contextual)
+            mab_strategy: MAB策略(ucb1, thompson, epsilon, contextual)
         """
         # 创建智能体
         self.context_agent = create_context_agent(
@@ -262,7 +261,7 @@ class LangGraphOrchestrator:
         """
         协同过滤节点
         
-        执行 CollaborativeAgent，基于 FoodCF-Encoder + NCF 计算跨用户协同过滤分数。
+        执行CollaborativeAgent，基于FoodCF-Encoder+NCF计算跨用户协同过滤分数。
         """
         logger.info("Executing collaborative_analysis node")
         
@@ -294,13 +293,13 @@ class LangGraphOrchestrator:
         """
         决策节点
         
-        执行 DecisionAgent，使用 MAB 算法进行最终推荐决策。
-        注入 CollaborativeAgent 的协同过滤分数。
+        执行DecisionAgent，使用MAB算法进行最终推荐决策。
+        注入CollaborativeAgent的协同过滤分数。
         """
         logger.info("Executing decision_making node")
         
         try:
-            # 调用决策智能体 (注入协同过滤分数)
+            # 调用决策智能体，注入协同过滤分数
             result = await self.decision_agent.process({
                 "restaurants": state.get("restaurants", []),
                 "context_analysis": state.get("context_analysis", {}),
@@ -374,8 +373,8 @@ class LangGraphOrchestrator:
         """
         用户画像后的路由决策
         
-        正常流程: profile → collaborative → decision
-        无餐厅: profile → end
+        正常流程：profile → collaborative → decision
+        无餐厅：profile → end
         """
         profile = state.get("profile_analysis", {})
         
@@ -443,7 +442,7 @@ class LangGraphOrchestrator:
         
         try:
             if self.app and LANGGRAPH_AVAILABLE:
-                # 使用 LangGraph 执行工作流
+                # 使用LangGraph执行工作流
                 config = {"configurable": {"thread_id": workflow_id}}
                 final_state = await self.app.ainvoke(initial_state, config)
             else:
@@ -481,25 +480,25 @@ class LangGraphOrchestrator:
     
     async def _fallback_orchestrate(self, state: WorkflowState) -> WorkflowState:
         """
-        回退编排方法（当 LangGraph 不可用时）
+        回退编排方法。LangGraph不可用时作为兜底。
         
         按顺序执行各个智能体。
         """
         logger.info("Using fallback orchestration (sequential)")
         
-        # 1. 环境分析
+        # 环境分析
         context_result = await self._context_node(state)
         state.update(context_result)
         
-        # 2. 用户画像
+        # 用户画像
         profile_result = await self._profile_node(state)
         state.update(profile_result)
         
-        # 3. 协同过滤
+        # 协同过滤
         collaborative_result = await self._collaborative_node(state)
         state.update(collaborative_result)
         
-        # 4. 决策
+        # 决策
         decision_result = await self._decision_node(state)
         state.update(decision_result)
         
@@ -507,15 +506,15 @@ class LangGraphOrchestrator:
     
     def update_reward(self, restaurant_id: str, reward: float):
         """
-        更新餐厅奖励（用于在线学习）
+        更新餐厅奖励。
         
         当用户完成订单或给出反馈时调用此方法，
-        用于 MAB 算法的在线学习。
+        用于MAB算法的在线学习。
         """
         self.decision_agent.update_reward(restaurant_id, reward)
     
     def set_mab_strategy(self, strategy: str):
-        """动态切换 MAB 策略"""
+        """动态切换MAB策略"""
         self.decision_agent.set_strategy(strategy)
     
     def get_agent_states(self) -> Dict[str, Any]:
@@ -537,7 +536,7 @@ def create_langgraph_orchestrator(
     mab_strategy: str = "contextual"
 ) -> LangGraphOrchestrator:
     """
-    创建 LangGraph 编排器实例
+    创建LangGraph编排器实例
     
     Args:
         weather_service: 天气服务
@@ -547,7 +546,7 @@ def create_langgraph_orchestrator(
         mab_strategy: MAB策略
         
     Returns:
-        LangGraphOrchestrator 实例
+        LangGraphOrchestrator实例
     """
     return LangGraphOrchestrator(
         weather_service=weather_service,

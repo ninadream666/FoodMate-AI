@@ -80,7 +80,7 @@ class QuickDiagnostic {
 
         for (const endpoint of endpoints) {
             try {
-                // 简单的连通性测试，只发送HEAD请求
+                // 连通性测试，只发送HEAD请求
                 const response = await fetch(endpoint.url, {
                     method: 'HEAD',
                     headers: {

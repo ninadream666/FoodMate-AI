@@ -65,11 +65,11 @@ public class MerchantService {
     }
 
     /**
-     * 通过任意 ID 获取商家（支持数字 ID 和外部 ID）
+     * 通过任意ID获取商家（支持数字ID和外部ID）
      */
     @Cacheable(value = "merchants", key = "'any_' + #merchantId", unless = "#result == null || !#result.isPresent()")
     public Optional<MerchantDto> findByAnyId(String merchantId) {
-        // 先尝试作为数字 ID 查询
+        // 先尝试作为数字ID查询
         try {
             Long id = Long.parseLong(merchantId);
             Optional<Merchant> merchant = merchantRepository.findById(id);
@@ -77,19 +77,19 @@ public class MerchantService {
                 return Optional.of(mapToDto(merchant.get()));
             }
         } catch (NumberFormatException ignored) {
-            // 不是数字，继续按外部 ID 查询
+            // 不是数字，继续按外部ID查询
         }
 
-        // 按外部 ID 查询
+        // 按外部ID查询
         return merchantRepository.findByExternalId(merchantId)
                 .map(this::mapToDto);
     }
 
     /**
-     * 通过任意 ID 获取商家实体（支持数字 ID 和外部 ID）
+     * 通过任意ID获取商家实体（支持数字ID和外部ID）
      */
     public Optional<Merchant> findEntityByAnyId(String merchantId) {
-        // 先尝试作为数字 ID 查询
+        // 先尝试作为数字ID查询
         try {
             Long id = Long.parseLong(merchantId);
             Optional<Merchant> merchant = merchantRepository.findById(id);
@@ -97,15 +97,15 @@ public class MerchantService {
                 return merchant;
             }
         } catch (NumberFormatException ignored) {
-            // 不是数字，继续按外部 ID 查询
+            // 不是数字，继续按外部ID查询
         }
 
-        // 按外部 ID 查询
+        // 按外部ID查询
         return merchantRepository.findByExternalId(merchantId);
     }
 
     /**
-     * 通过外部 ID 获取商家
+     * 通过外部ID获取商家
      */
     public Optional<MerchantDto> findByExternalId(String externalId) {
         return merchantRepository.findByExternalId(externalId)
@@ -150,7 +150,7 @@ public class MerchantService {
     }
 
     /**
-     * 导入真实餐厅（来自智能体/地图 API）
+     * 导入真实餐厅（来自智能体/地图API）
      * 自动根据菜系类型生成默认菜品
      */
     @Transactional
@@ -242,19 +242,19 @@ public class MerchantService {
             templates.add(new MenuItemTemplate("毛肚", 42.0, "七上八下，脆嫩爽口", "涮菜"));
             templates.add(new MenuItemTemplate("鲜虾滑", 35.0, "手打虾滑，Q弹鲜美", "涮菜"));
             templates.add(new MenuItemTemplate("蔬菜拼盘", 28.0, "时令蔬菜，营养健康", "涮菜"));
-        } else if (cuisine.contains("川菜") || cuisine.contains("sichuan")) {
+        } else if (cuisine.contains("川") || cuisine.contains("sichuan")) {
             templates.add(new MenuItemTemplate("麻婆豆腐", 28.0, "麻辣鲜香，下饭神器", "热菜"));
             templates.add(new MenuItemTemplate("水煮牛肉", 58.0, "麻辣鲜嫩，肉质细腻", "热菜"));
             templates.add(new MenuItemTemplate("回锅肉", 38.0, "肥而不腻，香辣可口", "热菜"));
             templates.add(new MenuItemTemplate("宫保鸡丁", 35.0, "酸甜微辣，花生香脆", "热菜"));
             templates.add(new MenuItemTemplate("担担面", 18.0, "芝麻花生，麻辣鲜香", "主食"));
-        } else if (cuisine.contains("粤菜") || cuisine.contains("cantonese") || cuisine.contains("茶餐厅")) {
+        } else if (cuisine.contains("粤") || cuisine.contains("cantonese") || cuisine.contains("茶餐厅")) {
             templates.add(new MenuItemTemplate("白切鸡", 48.0, "皮爽肉滑，原汁原味", "热菜"));
             templates.add(new MenuItemTemplate("叉烧饭", 28.0, "蜜汁叉烧，甜香四溢", "主食"));
             templates.add(new MenuItemTemplate("虾饺", 32.0, "晶莹剔透，鲜虾Q弹", "点心"));
             templates.add(new MenuItemTemplate("肠粉", 22.0, "滑嫩爽口，酱香浓郁", "点心"));
             templates.add(new MenuItemTemplate("煲仔饭", 35.0, "锅巴香脆，腊味浓郁", "主食"));
-        } else if (cuisine.contains("日料") || cuisine.contains("日本") || cuisine.contains("寿司")
+        } else if (cuisine.contains("日") || cuisine.contains("日本") || cuisine.contains("寿司")
                 || cuisine.contains("japanese")) {
             templates.add(new MenuItemTemplate("三文鱼刺身", 58.0, "新鲜三文鱼，入口即化", "刺身"));
             templates.add(new MenuItemTemplate("寿司拼盘", 68.0, "多种口味，精致美味", "寿司"));
@@ -315,7 +315,7 @@ public class MerchantService {
     }
 
     /**
-     * 将 Merchant 实体转换为 DTO（公开方法）
+     * 将Merchant实体转换为DTO（公开方法）
      */
     public MerchantDto toDto(Merchant merchant) {
         return mapToDto(merchant);

@@ -6,7 +6,7 @@ import { orderApi, platformApi, API_ENDPOINTS } from './apiConfig';
  */
 class OrderStatsService {
 
-    // ============== 订单基础统计 (订单服务:8084) ==============
+    // ============== 订单基础统计 ==============
 
     // 获取订单统计概览
     async getOrderStats(params = {}) {
@@ -50,7 +50,7 @@ class OrderStatsService {
         }
     }
 
-    // 获取订单趋势(最近7天)
+    // 获取最近7天订单趋势
     async getOrderTrends(params = {}) {
         try {
             const response = await orderApi.get(API_ENDPOINTS.ORDERS.ADMIN_TRENDS, { params });
@@ -62,7 +62,7 @@ class OrderStatsService {
         }
     }
 
-    // ============== 分成数据统计 (平台服务:8088) ==============
+    // ============== 分成数据统计 ==============
 
     // 获取订单分成详情(内部接口)
     async getOrderCommission(orderId) {

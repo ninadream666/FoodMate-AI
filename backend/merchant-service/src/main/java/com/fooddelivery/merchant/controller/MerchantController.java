@@ -76,7 +76,7 @@ public class MerchantController {
     }
 
     /**
-     * 获取商家信息（支持数字 ID 和外部 ID）
+     * 获取商家信息（支持数字ID和外部ID）
      * GET /merchants/{id}
      */
     @GetMapping("/{id}")
@@ -88,7 +88,7 @@ public class MerchantController {
     }
 
     /**
-     * 通过外部 ID 获取商家
+     * 通过外部ID获取商家
      * GET /merchants/external/{externalId}
      */
     @GetMapping("/external/{externalId}")
@@ -201,8 +201,8 @@ public class MerchantController {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
     }
 
-    // 从 SecurityContext 获取当前用户ID
-    // 根据 JwtAuthenticationFilter，Principal 直接存储为 Long 类型的 userId
+    // 从SecurityContext获取当前用户ID
+    // 根据JwtAuthenticationFilter，Principal直接存储为Long类型的userId
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {

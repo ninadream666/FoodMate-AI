@@ -302,7 +302,7 @@ export const useCouponFilter = (coupons, defaultFilters = {}) => {
 };
 
 /**
- * 优惠券验证 Hook
+ * 优惠券验证Hook
  * @param {Object} coupon - 优惠券对象
  * @param {number} orderAmount - 订单金额
  */

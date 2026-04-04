@@ -18,8 +18,8 @@ import java.io.IOException;
 import java.util.Collections;
 
 /**
- * JWT 认证过滤器
- * 从请求头提取 JWT token，验证并设置 Spring Security 上下文
+ * JWT认证过滤器
+ * 从请求头提取JWT token，验证并设置Spring Security上下文
  */
 @Component
 @RequiredArgsConstructor
@@ -36,7 +36,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
         final String authHeader = request.getHeader("Authorization");
         
-        // 简易日志，方便排查 403 问题
         if (request.getRequestURI().contains("/merchants")) {
             logger.info("Processing: " + request.getMethod() + " " + request.getRequestURI());
             if (authHeader != null) logger.info("Auth Header present (len=" + authHeader.length() + ")");

@@ -39,7 +39,7 @@ class LocationService {
                 return false;
             }
         }
-        return true; // iOS 权限在 Info.plist 中配置
+        return true; // iOS权限在Info.plist中配置
     }
 
     // 获取当前位置（快速优先策略：网络定位和GPS并行竞速）
@@ -164,16 +164,14 @@ class LocationService {
         try {
             console.log('🔍 开始完整定位流程...');
 
-            // 1. 检查并请求权限
+            // 检查并请求权限
             const hasPermission = await this.requestLocationPermission();
             if (!hasPermission) {
                 console.warn('位置权限被拒绝，使用默认位置');
-                // 移除弹窗，用默认位置代替
-                // Alert.alert('权限不足', '需要位置权限才能获取真实位置');
                 return DEFAULT_LOCATION;
             }
 
-            // 2. 检查位置服务是否开启
+            // 检查位置服务是否开启
             const isLocationEnabled = await this.checkLocationEnabled();
             if (!isLocationEnabled) {
                 console.warn('⚠️ 位置服务检查失败，但继续尝试定位...');
@@ -182,7 +180,7 @@ class LocationService {
                 console.log('✅ 位置服务检查通过');
             }
 
-            // 3. 获取位置
+            // 获取位置
             console.log('📍 权限和服务都正常，开始定位...');
             const location = await this.getCurrentLocation();
             this.currentLocation = location; // 缓存位置

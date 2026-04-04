@@ -45,7 +45,7 @@ DROP TABLE IF EXISTS users;
 -- 2. 开始建表
 -- ============================================================
 
--- 2.1 用户表 (最核心的基础表)
+-- 2.1 用户表（最核心的基础表）
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -60,7 +60,7 @@ CREATE TABLE users (
     last_level_change_at TIMESTAMP
 );
 
--- 2.2 商家表 (依赖 users)
+-- 2.2 商家表（依赖users）
 CREATE TABLE merchants (
     id BIGSERIAL PRIMARY KEY,
     owner_user_id BIGINT REFERENCES users (id),
@@ -82,7 +82,7 @@ CREATE TABLE merchants (
     source VARCHAR(20) DEFAULT 'LOCAL'
 );
 
--- 2.3 定价策略表 (依赖 merchants)
+-- 2.3 定价策略表（依赖merchants）
 CREATE TABLE pricing_strategies (
     id BIGSERIAL PRIMARY KEY,
     merchant_id BIGINT REFERENCES merchants (id),
@@ -101,7 +101,7 @@ CREATE TABLE pricing_strategies (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2.4 菜单项表 (依赖 merchants)
+-- 2.4 菜单项表（依赖merchants）
 CREATE TABLE menu_items (
     id BIGSERIAL PRIMARY KEY,
     merchant_id BIGINT REFERENCES merchants (id),
@@ -115,7 +115,7 @@ CREATE TABLE menu_items (
     current_dynamic_price DECIMAL(10, 2),
     cost_type VARCHAR(50) DEFAULT 'FIXED',
     cost_amount DECIMAL(10, 2),
-    pricing_strategy_id BIGINT, -- 逻辑上关联 pricing_strategies，但建表时不强制FK以简化
+    pricing_strategy_id BIGINT, -- 逻辑上关联pricing_strategies，但建表时不强制FK以简化
     last_price_update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_dynamic BOOLEAN DEFAULT FALSE
 );
@@ -145,7 +145,7 @@ CREATE TABLE price_change_proposals (
     handled_at TIMESTAMP
 );
 
--- 2.5 收货地址表 (依赖 users)
+-- 2.5 收货地址表（依赖users）
 CREATE TABLE addresses (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users (id) ON DELETE CASCADE,
@@ -156,7 +156,7 @@ CREATE TABLE addresses (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2.6 订单主表 (依赖 users, merchants)
+-- 2.6 订单主表（依赖users, merchants）
 CREATE TABLE orders (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL, -- 逻辑外键
@@ -180,7 +180,7 @@ CREATE TABLE orders (
     payment_channel VARCHAR(50) -- 支付渠道：APP, MINI_PROGRAM, H5, WEB
 );
 
--- 2.7 订单详情表 (依赖 orders)
+-- 2.7 订单详情表（依赖orders）
 CREATE TABLE order_items (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT REFERENCES orders (id) ON DELETE CASCADE,
@@ -189,7 +189,7 @@ CREATE TABLE order_items (
     quantity INT NOT NULL
 );
 
--- 2.8 取消记录表 (依赖 users, orders)
+-- 2.8 取消记录表（依赖users, orders）
 CREATE TABLE cancellation_records (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users (id),
@@ -197,7 +197,7 @@ CREATE TABLE cancellation_records (
     cancelled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2.9 菜单项成本表 (依赖 menu_items)
+-- 2.9 菜单项成本表（依赖menu_items）
 CREATE TABLE menu_item_costs (
     id BIGSERIAL PRIMARY KEY,
     menu_item_id BIGINT REFERENCES menu_items (id),
@@ -210,7 +210,7 @@ CREATE TABLE menu_item_costs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2.10 定价历史表 (依赖 menu_items, merchants)
+-- 2.10 定价历史表（依赖menu_items, merchants）
 CREATE TABLE pricing_history (
     id BIGSERIAL PRIMARY KEY,
     menu_item_id BIGINT REFERENCES menu_items (id),
@@ -223,7 +223,7 @@ CREATE TABLE pricing_history (
     changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2.11 价格弹性表 (依赖 menu_items, merchants)
+-- 2.11 价格弹性表（依赖menu_items, merchants）
 CREATE TABLE price_elasticity (
     id BIGSERIAL PRIMARY KEY,
     menu_item_id BIGINT REFERENCES menu_items (id),
@@ -239,7 +239,7 @@ CREATE TABLE price_elasticity (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2.12 折扣推荐表 (依赖 merchants, menu_items)
+-- 2.12 折扣推荐表（依赖merchants, menu_items）
 CREATE TABLE discount_recommendations (
     id BIGSERIAL PRIMARY KEY,
     merchant_id BIGINT REFERENCES merchants (id),
@@ -256,7 +256,7 @@ CREATE TABLE discount_recommendations (
     expires_at TIMESTAMP
 );
 
--- 2.13 定价A/B测试表 (依赖 merchants, menu_items)
+-- 2.13 定价A/B测试表（依赖merchants, menu_items）
 CREATE TABLE pricing_ab_tests (
     id BIGSERIAL PRIMARY KEY,
     merchant_id BIGINT REFERENCES merchants (id),
@@ -276,7 +276,7 @@ CREATE TABLE pricing_ab_tests (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2.14 订单状态历史表 (依赖 orders)
+-- 2.14 订单状态历史表 （依赖orders）
 CREATE TABLE order_status_history (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT REFERENCES orders (id),
@@ -287,7 +287,7 @@ CREATE TABLE order_status_history (
 
 -- ==================== 营销服务表 ====================
 
--- 2.15 优惠券模板表 (相对独立)
+-- 2.15 优惠券模板表（相对独立）
 CREATE TABLE coupon_templates (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -308,7 +308,7 @@ CREATE TABLE coupon_templates (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2.16 用户优惠券表 (依赖 users, coupon_templates)
+-- 2.16 用户优惠券表（依赖users, coupon_templates）
 CREATE TABLE user_coupons (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,

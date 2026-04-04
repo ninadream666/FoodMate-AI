@@ -8,16 +8,14 @@ export const isCouponExpired = (coupon) => {
 };
 
 export const walletService = {
-    // 1. 获取余额（当前无后端钱包服务，显示为 0）
+    // 获取余额
     getBalance: async () => {
         return { balance: 0.00, currency: '¥' };
     },
 
-    // 2. 获取用户所有优惠券
+    // 获取用户所有优惠券
     getAllCoupons: async (userId) => {
         try {
-            // 对应 Web 的 GET /api/coupons/user/{userId}/all
-            // 注意：这里的 'coupons' 对应 serviceConfig.js 里的配置
             const result = await api.get('coupons', `/user/${userId}/all`);
             return result.data || [];
         } catch (error) {
@@ -26,7 +24,7 @@ export const walletService = {
         }
     },
 
-    // 3. 领取优惠券
+    // 领取优惠券
     claimCoupon: async (couponTemplateId, userId) => {
         return await api.post('coupons', '/issue', { couponTemplateId, userId });
     },

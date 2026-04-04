@@ -33,7 +33,7 @@
             <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
 
-        <!-- Security & JWT -->
+        <!-- Security&JWT -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
@@ -56,7 +56,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- OpenFeign (新增) -->
+        <!-- OpenFeign -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
@@ -85,7 +85,7 @@
 
     <build>
         <plugins>
-             <!-- Maven 编译器插件 -->
+             <!-- Maven编译器插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

@@ -5,7 +5,7 @@ WORKDIR /app
 # 复制依赖文件
 COPY requirements.txt .
 
-# 安装Python依赖（升级pip解决hash校验问题）
+# 安装Python依赖
 RUN pip install --upgrade pip \
     && pip install --no-cache-dir torch==2.5.1+cpu torchvision==0.20.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu \
     && pip install --no-cache-dir -r requirements.txt
@@ -16,10 +16,10 @@ COPY agent_orchestrator.py .
 COPY enhanced_mcp_server.py .
 COPY mcp_http_server.py .
 
-# 创建 ML 模型 & 训练数据目录（容器内持久化通过 volume 挂载）
+# 创建ML模型&训练数据目录（容器内持久化通过volume挂载）
 RUN mkdir -p /app/models /app/ml_data
 
-# ML 相关环境变量默认值
+# ML相关环境变量默认值
 ENV ML_DATA_DIR=/app/ml_data
 ENV ML_MODEL_DIR=/app/models
 

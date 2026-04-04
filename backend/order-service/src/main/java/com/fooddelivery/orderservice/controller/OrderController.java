@@ -40,7 +40,7 @@ public class OrderController {
     private final OrderService orderService;
     private final MerchantServiceClient merchantServiceClient;
 
-    // 下单 — 限流 + 隔板保护（防止刷单 + 限制并发写入数据库）
+    // 下单 — 限流+隔板保护，防止刷单+限制并发写入数据库
     @PostMapping
     @RateLimiter(name = "createOrder", fallbackMethod = "createOrderFallback")
     @Bulkhead(name = "orderWrite", fallbackMethod = "createOrderFallback")
@@ -86,7 +86,7 @@ public class OrderController {
         return ResponseEntity.ok(orderRepository.save(order));
     }
 
-    // 查我的订单 — 断路器保护（下游数据库故障时快速失败）
+    // 查我的订单 — 断路器保护，下游数据库故障时快速失败
     @GetMapping("/my-orders")
     @CircuitBreaker(name = "orderService", fallbackMethod = "getMyOrdersFallback")
     public ResponseEntity<?> getMyOrders(
@@ -149,7 +149,7 @@ public class OrderController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // ============ 降级方法（大流量/故障时的兜底响应） ============
+    // ============ 大流量/故障时的兜底响应 ============
 
     public ResponseEntity<Order> createOrderFallback(CreateOrderDto dto, Authentication auth, Throwable t) {
         log.warn("[降级] 下单请求被限流或隔板拦截: {}", t.getMessage());

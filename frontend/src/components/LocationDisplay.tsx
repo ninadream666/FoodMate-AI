@@ -46,7 +46,7 @@ function LocationDisplay({ onLocationChange, showRefresh = true }: LocationDispl
             const currentLocation = await locationService.getLocationWithPermission();
             console.log('📍 LocationDisplay: 获取到位置', currentLocation);
 
-            // 检查位置是否真的改变了（避免相同位置重复更新）
+            // 检查位置是否真的改变，避免相同位置重复更新
             if (location &&
                 Math.abs(currentLocation.latitude - location.latitude) < 0.0001 &&
                 Math.abs(currentLocation.longitude - location.longitude) < 0.0001) {
@@ -202,5 +202,5 @@ const styles = StyleSheet.create({
     },
 });
 
-// 使用 React.memo 防止不必要的重新渲染
+// 使用React.memo防止不必要的重新渲染
 export default React.memo(LocationDisplay);

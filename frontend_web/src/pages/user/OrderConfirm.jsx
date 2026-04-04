@@ -12,7 +12,7 @@ const defaultDishImages = [
     'https://lh3.googleusercontent.com/aida-public/AB6AXuCCMN7b4zYVFSVM8i5TWgyWcKYuiJbENG81R8eugOUr74m1XVp2aodGdJ1SmveJM9Ow5jbCxnVkApGd33OSisQrq_WWQlQr0TrZYsE5C34UoRCILMF6B_trsPF5AUeKStWQ6oRYa6Fyr7hA_czV1W29_8PCQySdBWqSw5UGd5AjV_RzEe9PgNr1cEIhjX3T4pOkRN57Bj__sCQMOH_WClvYnsXqNIuYPE2nk_sDZVU_fwgGX5Uy0bIws8_Zpdb5rMznM0107khtiKVk',
 ];
 
-// Logo SVG 组件
+// Logo SVG组件
 const LogoIcon = () => (
     <svg fill="currentColor" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
         <path clipRule="evenodd" d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z" fillRule="evenodd"></path>
@@ -75,7 +75,7 @@ export default function OrderConfirm() {
         address: '123 Blossom Hill Rd, San Jose, CA 95123',
     });
 
-    // 初始化优惠券状态（使用从购物车传递的数据）
+    // 初始化优惠券状态，使用从购物车传递的数据
     const [selectedCouponIds, setSelectedCouponIds] = useState(selectedCouponIdsFromState);
     const [availableCoupons, setAvailableCoupons] = useState(availableCouponsFromState);
     const [selectedCoupons, setSelectedCoupons] = useState(selectedCouponsFromState);
@@ -88,7 +88,7 @@ export default function OrderConfirm() {
     const user = userStr ? JSON.parse(userStr) : null;
     const userId = user?.id;
 
-    // 计算订单金额（不包含优惠）
+    // 计算订单金额，不包含优惠
     const subtotal = subtotalFromState > 0 ? subtotalFromState : orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     const [remark, setRemark] = useState('');
@@ -170,7 +170,7 @@ export default function OrderConfirm() {
         });
     };
 
-    // 确认支付 - 调用真实订单 API
+    // 确认支付 - 调用真实订单API
     const handleConfirmPayment = async () => {
         setIsProcessing(true);
         setError(null);
@@ -284,7 +284,7 @@ export default function OrderConfirm() {
         } catch (error) {
             console.error('创建订单失败:', error);
 
-            // 403 错误通常是后端权限配置问题，在开发模式下降级处理
+            // 403错误通常是后端权限配置问题，在开发模式下降级处理
             const isDev403 = error.message.includes('创建订单失败') || error.message === '';
             const isNetworkError = error.message.includes('未登录') || error.message.includes('Failed to fetch');
 

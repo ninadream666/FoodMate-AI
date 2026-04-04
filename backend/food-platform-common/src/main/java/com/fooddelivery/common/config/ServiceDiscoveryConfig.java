@@ -11,5 +11,5 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(name = "eureka.client.enabled", havingValue = "true", matchIfMissing = true)
 public class ServiceDiscoveryConfig {
     // 该配置类的存在即表示启用了服务发现
-    // 在 Spring Cloud 2023.0.0+ 中，@EnableEurekaClient 已被移除，只需要依赖存在即可自动启用
+    // 在Spring Cloud 2023.0.0+中，@EnableEurekaClient已被移除，只需要依赖存在即可自动启用
 }

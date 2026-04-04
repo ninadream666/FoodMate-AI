@@ -4,7 +4,7 @@ from typing import List, Dict, Any
 
 logger = logging.getLogger(__name__)
 
-# 服务地址配置 (Docker Compose 环境下使用服务名)
+# 服务地址配置
 MERCHANT_SERVICE_URL = "http://merchant-service:8080"
 ORDER_SERVICE_URL = "http://order-service:8080"
 
@@ -16,7 +16,6 @@ class ServiceClient:
         """
         try:
             async with httpx.AsyncClient() as client:
-                # 调用我们刚刚新建的 Internal Controller
                 url = f"{MERCHANT_SERVICE_URL}/merchants/internal/{merchant_id}/menu-items"
                 # 设置超时，防止卡死
                 resp = await client.get(url, timeout=5.0)
@@ -31,7 +30,7 @@ class ServiceClient:
 
     async def get_sales_stats(self, merchant_id: int, days: int = 30) -> Dict[int, Dict]:
         """
-        调用 Order Service 获取真实销量统计
+        调用Order Service获取真实销量统计
         返回格式: {menu_item_id: {quantity: 100, totalRevenue: 5000}}
         """
         try:
@@ -45,7 +44,7 @@ class ServiceClient:
                     # 转换为字典以便快速查找: {item_id: stats_obj}
                     stats_map = {}
                     for item in data:
-                        # 确保 menuItemId 存在
+                        # 确保menuItemId存在
                         if 'menuItemId' in item:
                             stats_map[item['menuItemId']] = item
                     return stats_map
@@ -58,7 +57,7 @@ class ServiceClient:
 
     async def get_active_merchants(self) -> List[Dict[str, Any]]:
         """
-        调用 Merchant Service 获取所有开启动态定价的商家
+        调用Merchant Service获取所有开启动态定价的商家
         """
         try:
             async with httpx.AsyncClient() as client:

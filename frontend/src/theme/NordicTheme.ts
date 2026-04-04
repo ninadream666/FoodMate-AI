@@ -1,24 +1,24 @@
 /**
  * NordicTheme.ts - 北欧风格主题配置
  *
- * 设计原则（参考三张参考图）：
- * 1. 简约 + 质感：干净不是空白，节制中的细节表达
+ * 设计原则：
+ * 1. 简约+质感：干净不是空白，节制中的细节表达
  * 2. 浅底渐变：温和的背景色过渡（奶白到淡灰）
- * 3. 磨砂风格：毛玻璃效果的卡片（ClipRRect / Container 风格）
+ * 3. 磨砂风格：毛玻璃效果的卡片（ClipRRect/Container风格）
  * 4. 阴影只在可点元素上，列表以分组留白区隔
  * 5. 底部导航轻而稳：图+文组合，选中态主色填充
- * 6. 北欧风 ≠ 冷淡风：语音搜索、配送时间等细节体现人情味
+ * 6. 北欧风≠冷淡风：语音搜索、配送时间等细节体现人情味
  *
- * 配色参考：Image1（温暖珊瑚橙北欧外卖App）
- * 渐变/阴影参考：Image2（浅底渐变，阴影只在可点元素）
- * 卡片风格参考：Image3（磨砂风格卡片，圆角图片）
+ * 配色参考：温暖珊瑚橙北欧外卖App
+ * 渐变/阴影参考：浅底渐变，阴影只在可点元素
+ * 卡片风格参考：磨砂风格卡片，圆角图片
  */
 
 // ============================================================
-// 主色调 - 温暖柔和的北欧配色（参考 Image1）
+// 主色调 - 温暖柔和的北欧配色
 // ============================================================
 export const colors = {
-  // 主色 - 温暖的珊瑚橙/杏色系（Image1 主按钮/强调色）
+  // 主色 - 温暖的珊瑚橙/杏色系（主按钮/强调色）
   primary: '#F2784B',           // 主色-柔和珊瑚橙（比原来更温暖、饱和度稍低）
   primaryLight: '#F9A882',      // 浅杏色（hover / 浅背景）
   primaryDark: '#D9613A',       // 深橙色（pressed 状态）
@@ -30,7 +30,7 @@ export const colors = {
   secondaryLight: '#B5DDCA',    // 极浅绿
   accent: '#7BA3C4',            // 柔和天空蓝（信息/链接）
 
-  // 中性色 - 北欧风格的暖灰调（参考 Image2 浅底渐变）
+  // 中性色 - 北欧风格的暖灰调
   white: '#FFFFFF',
   background: '#FAFAF8',        // 主背景（微暖奶白——不纯白，有质感）
   backgroundGradientStart: '#FFFFFF',       // 渐变起点：纯白
@@ -39,7 +39,7 @@ export const colors = {
 
   surface: '#FFFFFF',           // 卡片表面（纯白）
   surfaceHover: '#FDFCFB',      // 悬停态（微暖）
-  surfaceFrosted: 'rgba(255, 255, 255, 0.92)', // 磨砂卡片表面（Image3）
+  surfaceFrosted: 'rgba(255, 255, 255, 0.92)', // 磨砂卡片表面
 
   border: '#EDE9E3',            // 边框色（暖灰，比原来更柔和）
   borderLight: '#F5F2ED',       // 浅边框
@@ -62,7 +62,7 @@ export const colors = {
   info: '#7BA3C4',
   infoBg: '#EEF4FA',
 
-  // 磨砂效果色 - 核心视觉效果（Image3 卡片风格）
+  // 磨砂效果色 - 核心视觉效果（卡片风格）
   frostedBg: 'rgba(255, 255, 255, 0.85)',
   frostedBgStrong: 'rgba(255, 255, 255, 0.94)',
   frostedBorder: 'rgba(0, 0, 0, 0.05)',
@@ -79,7 +79,7 @@ export const colors = {
 };
 
 // ============================================================
-// 间距系统（8pt 网格，留白区隔）
+// 间距系统（8pt网格，留白区隔）
 // ============================================================
 export const spacing = {
   xs: 4,
@@ -89,11 +89,11 @@ export const spacing = {
   xl: 20,
   xxl: 24,
   xxxl: 32,
-  section: 28,   // 分组间距（Image2 列表以分组留白区隔）
+  section: 28,   // 分组间距（列表以分组留白区隔）
 };
 
 // ============================================================
-// 圆角（Image1 圆形按钮 + Image3 圆角卡片）
+// 圆角（圆形按钮 + 圆角卡片）
 // ============================================================
 export const borderRadius = {
   xs: 4,
@@ -132,7 +132,7 @@ export const fontWeight = {
 };
 
 // ============================================================
-// 阴影配置 - 只用于可点击元素（Image2 核心原则）
+// 阴影配置 - 只用于可点击元素（核心原则）
 // ============================================================
 export const shadows = {
   none: {
@@ -158,7 +158,7 @@ export const shadows = {
     shadowRadius: 4,
     elevation: 1,
   },
-  // 中等阴影 - 用于可点击卡片的 hover / pressed 态
+  // 中等阴影 - 用于可点击卡片的hover / pressed态
   md: {
     shadowColor: '#2C3038',
     shadowOffset: { width: 0, height: 4 },
@@ -166,7 +166,7 @@ export const shadows = {
     shadowRadius: 8,
     elevation: 2,
   },
-  // 大阴影 - 用于浮层 / 弹窗
+  // 大阴影 - 用于浮层/弹窗
   lg: {
     shadowColor: '#2C3038',
     shadowOffset: { width: 0, height: 8 },
@@ -190,7 +190,7 @@ export const shadows = {
     shadowRadius: 12,
     elevation: 4,
   },
-  // 磨砂卡片阴影 - 柔和扩散（Image3）
+  // 磨砂卡片阴影 - 柔和扩散
   frosted: {
     shadowColor: '#2C3038',
     shadowOffset: { width: 0, height: 3 },
@@ -198,7 +198,7 @@ export const shadows = {
     shadowRadius: 12,
     elevation: 2,
   },
-  // 可点击卡片阴影（仅可点击元素使用！Image2 核心原则）
+  // 可点击卡片阴影 - 仅可点击元素使用
   card: {
     shadowColor: '#2C3038',
     shadowOffset: { width: 0, height: 3 },
@@ -212,7 +212,7 @@ export const shadows = {
 // 常用组件样式 - 北欧磨砂风格
 // ============================================================
 export const componentStyles = {
-  // 磨砂卡片样式 - 核心视觉元素（Image3）
+  // 磨砂卡片样式 - 核心视觉元素
   frostedCard: {
     backgroundColor: colors.cardBg,
     borderRadius: borderRadius.xl,
@@ -221,7 +221,7 @@ export const componentStyles = {
     ...shadows.frosted,
   },
 
-  // 普通卡片样式（不可点击时无阴影 —— Image2 原则）
+  // 普通卡片样式 - 不可点击时无阴影
   card: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
@@ -229,7 +229,7 @@ export const componentStyles = {
     borderColor: colors.cardBorder,
   },
 
-  // 可点击卡片（带阴影 —— Image2 原则）
+  // 可点击卡片 - 带阴影
   cardTouchable: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
@@ -238,7 +238,7 @@ export const componentStyles = {
     ...shadows.card,
   },
 
-  // 圆形图标按钮（Image1 Popular Category 圆形按钮）
+  // 圆形图标按钮
   circleButton: {
     width: 48,
     height: 48,
@@ -251,7 +251,7 @@ export const componentStyles = {
     ...shadows.sm,
   },
 
-  // 主按钮 - 温暖珊瑚橙（Image1 CTA 按钮风格）
+  // 主按钮 - 温暖珊瑚橙（CTA按钮风格）
   primaryButton: {
     backgroundColor: colors.primary,
     borderRadius: borderRadius.xxl,
@@ -272,7 +272,7 @@ export const componentStyles = {
     color: colors.textPrimary,
   },
 
-  // 分组容器 - 留白区隔（Image2）
+  // 分组容器 - 留白区隔
   sectionContainer: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
@@ -282,7 +282,7 @@ export const componentStyles = {
     borderColor: colors.cardBorder,
   },
 
-  // 底部导航（Image1：轻而稳，图+文）
+  // 底部导航 - 轻而稳，图+文
   tabBar: {
     backgroundColor: colors.surface,
     borderTopWidth: 1,
@@ -291,7 +291,7 @@ export const componentStyles = {
     paddingTop: spacing.sm,
   },
 
-  // 列表项容器（无阴影，通过留白分隔 —— Image2）
+  // 列表项容器 - 无阴影，通过留白分隔
   listItem: {
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
@@ -300,7 +300,7 @@ export const componentStyles = {
 };
 
 // ============================================================
-// 类别圆形图标样式（Image1 Popular Category 模块）
+// 类别圆形图标样式
 // ============================================================
 export const categoryStyles = {
   container: {
@@ -335,10 +335,10 @@ export const categoryStyles = {
 };
 
 // ============================================================
-// 磨砂列表项样式（Image3 卡片风格）
+// 磨砂列表项样式
 // ============================================================
 export const frostedListItem = {
-  // 不可点击的列表项（无阴影）
+  // 不可点击的列表项 - 无阴影
   container: {
     backgroundColor: colors.cardBg,
     borderRadius: borderRadius.lg,
@@ -348,7 +348,7 @@ export const frostedListItem = {
     borderWidth: 1,
     borderColor: colors.cardBorder,
   },
-  // 可点击的列表项（有阴影 —— Image2）
+  // 可点击的列表项 - 有阴影
   containerTouchable: {
     backgroundColor: colors.cardBg,
     borderRadius: borderRadius.lg,

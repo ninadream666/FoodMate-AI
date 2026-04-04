@@ -20,7 +20,7 @@ public class FeignConfig {
                 if (attributes != null) {
                     String authorization = attributes.getRequest().getHeader("Authorization");
                     if (authorization != null) {
-                        // 透传给下游服务 (Order Service)
+                        // 透传给下游服务Order Service
                         template.header("Authorization", authorization);
                     }
                 }

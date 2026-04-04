@@ -15,7 +15,6 @@ import java.util.List;
 
 /**
  * 内部接口 - 供其他微服务调用
- * 注意：生产环境应增加内部认证机制
  */
 @RestController
 @RequestMapping("/api/internal/commissions")

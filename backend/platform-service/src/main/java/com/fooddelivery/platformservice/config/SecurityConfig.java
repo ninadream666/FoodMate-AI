@@ -32,17 +32,17 @@ public class SecurityConfig {
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 http
                                 .csrf(AbstractHttpConfigurer::disable)
-                                // 1. 启用 CORS (关键缺失点)
+                                // 启用CORS
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth
-                                                // ========== CORS 预检请求 (必须放行) ==========
+                                                // ========== CORS预检请求 ==========
                                                 .requestMatchers(new AntPathRequestMatcher("/**",
                                                                 HttpMethod.OPTIONS.name()))
                                                 .permitAll()
 
-                                                // ========== Swagger & 监控 ==========
+                                                // ========== Swagger&监控 ==========
                                                 .requestMatchers(
                                                                 new AntPathRequestMatcher("/swagger-ui/**"),
                                                                 new AntPathRequestMatcher("/api-docs/**"),
@@ -52,7 +52,7 @@ public class SecurityConfig {
                                                                 new AntPathRequestMatcher("/health"))
                                                 .permitAll()
 
-                                                // ========== 临时放行用于测试的接口 ==========
+                                                // ========== 测试接口 ==========
                                                 .requestMatchers(
                                                                 new AntPathRequestMatcher(
                                                                                 "/api/admin/dashboard/overview"),
@@ -91,7 +91,7 @@ public class SecurityConfig {
                 return http.build();
         }
 
-        // 2. 添加 CORS 配置 Bean (与其他服务保持一致)
+        // 添加CORS配置Bean
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration config = new CorsConfiguration();

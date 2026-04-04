@@ -2,7 +2,7 @@
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// API 错误处理类
+// API错误处理类
 export class ApiError extends Error {
     constructor(message, status = null, code = null, data = null) {
         super(message);

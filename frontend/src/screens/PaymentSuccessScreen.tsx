@@ -45,12 +45,12 @@ const PaymentSuccessScreen = ({ route, navigation }: any) => {
                     <Text style={styles.price}>¥{order?.total?.toFixed(2) || '0.00'}</Text>
                 </View>
 
-                {/* 优惠信息 (如有) */}
+                {/* 优惠信息 */}
                 {order?.couponDiscount > 0 && (
                     <View style={styles.savingBox}>
                         <Text style={styles.savingIcon}>✨</Text>
                         <Text style={styles.savingText}>
-                            AI 智能优化已生效，为您节省 ¥{order.couponDiscount.toFixed(2)}
+                            AI智能优化已生效，为您节省 ¥{order.couponDiscount.toFixed(2)}
                         </Text>
                     </View>
                 )}

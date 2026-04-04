@@ -1,20 +1,15 @@
 /**
  * 智能外卖平台 - 前端统一图库字典
- * 目的：剥离庞杂的图片匹配与兜底逻辑，保持 UI 组件的整洁，并提供基于 ID 的图片稳定性。
- * 升级版：引入“图像标签池(Tag Pool)”和哈希散列算法。
- * 终极细化版：将极其相似的品类（如生煎与小笼、冒菜与麻辣烫、各类猪肉部位）进行了彻底的正则拆分，
- * 确保评委在极限测试时，能感受到系统极其精准的语义理解与图文匹配能力。
+ * 目的：剥离庞杂的图片匹配与兜底逻辑，保持UI组件的整洁，并提供基于ID的图片稳定性。
+ * 引入图像标签池（Tag Pool）和哈希散列算法。
  */
 
-// ==========================================
-// 核心配置：使用你的 merchantService 作为图片代理
-// ==========================================
-// 我们直接把请求发给你现成的商家服务（8081端口）
+// 核心配置：使用merchantService作为图片代理
 const BACKEND_IMAGE_PROXY = 'http://127.0.0.1:8081/api/images/proxy';
 
 /**
- * 字符串一致性 Hash 函数
- * 将商家 ID 或菜品 ID 转化为一个固定的正整数，用于锁定随机图
+ * 字符串一致性Hash函数
+ * 将商家ID或菜品ID转化为一个固定的正整数，用于锁定随机图
  */
 export const hashId = (id: string | number): number => {
     if (!id) return 1;
@@ -22,11 +17,9 @@ export const hashId = (id: string | number): number => {
     let hash = 0;
     for (let i = 0; i < strId.length; i++) {
         hash = strId.charCodeAt(i) + ((hash << 5) - hash);
-        // 【根源修复】强制位运算截断，防止 JavaScript 浮点数加法导致数值指数级溢出
+        // 强制位运算截断，防止JavaScript浮点数加法导致数值指数级溢出
         hash = hash | 0; 
     }
-    // 【根源修复】增加 % 2147483647 (Java Integer.MAX_VALUE)
-    // 彻底确保不管前端怎么算，传给后端的 hash 永远在安全范围内，消除 400 报错！
     return Math.abs(hash) % 2147483647;
 };
 
@@ -38,17 +31,17 @@ const getTagFromPool = (tagPool: string[], hash: number): string => {
 };
 
 /**
- * 核心优化：后端 API 图像代理
- * 后端接收到 tag 后，再去真实图库拉取并返回图片流。
+ * 核心优化：后端API图像代理
+ * 后端接收到tag后，再去真实图库拉取并返回图片流。
  */
 const buildImageUrl = (tag: string, hash: number, width: number, height: number): string => {
-    // 【双重保险】在拼接 URL 时再做一次安全截断，万无一失
+    // 在拼接URL时再做一次安全截断
     const safeHash = Math.abs(Number(hash)) % 2147483647 || 1;
     return `${BACKEND_IMAGE_PROXY}?tag=${encodeURIComponent(tag)}&width=${width}&height=${height}&hash=${safeHash}`;
 };
 
 // ==========================================
-// 1. 商家推荐维度的图片映射池 (大图 400x300)
+// 商家推荐维度的图片映射池，大图400x300
 // ==========================================
 interface TagMapping {
     regex: RegExp;
@@ -56,7 +49,7 @@ interface TagMapping {
 }
 
 const merchantMappings: TagMapping[] = [
-    // --- 细化韩料 ---
+    // --- 韩料 ---
     {
         regex: /烤肉|韩式烤肉/,
         tags: ['korean,bbq', 'bulgogi,meat', 'grilled,pork', 'bbq,beef', 'samgyeopsal,pork', 'korean,grill', 'bbq,meat', 'galbi,beef', 'charcoal,bbq', 'grilled,meat']
@@ -65,7 +58,7 @@ const merchantMappings: TagMapping[] = [
         regex: /韩料|韩式|大酱汤|炸酱面|部队锅|冷面/,
         tags: ['korean,bibimbap', 'kimchi,soup', 'korean,food', 'tteokbokki,spicy', 'kimbap,roll', 'soju,drink', 'korean,pancake', 'korean,stew', 'banchan,sidedish', 'korean,noodle']
     },
-    // --- 细化川渝特色 (火锅、冒菜、麻辣烫等完全拆分) ---
+    // --- 川渝特色 ---
     {
         regex: /火锅/,
         tags: ['hotpot,spicy', 'sichuan,hotpot', 'chinesefondue', 'hotpot,meat', 'boiling,hotpot', 'hotpot,beef', 'hotpot,vegetables', 'hotpot,meal', 'spicy,broth', 'shabu,shabu']
@@ -207,12 +200,11 @@ export const getMerchantImageByReason = (reason: string, id: string | number): s
 };
 
 // ==========================================
-// 2. 菜品详情维度的图片映射池 (小图 200x200)
-// 注意：正则必须从最精细的开始排，防止被宽泛的词覆盖
+// 菜品详情维度的图片映射池，小图200x200
 // ==========================================
 
 const dishNameMappings: TagMapping[] = [
-    // --- 面条家族彻底拆分 ---
+    // --- 面条 ---
     { 
         regex: /汤面/, 
         tags: ['noodle,soup', 'ramen,soup', 'hot,noodle,bowl', 'beef,noodle,soup', 'pork,noodle,soup', 'clear,broth,noodle', 'chicken,noodle,soup', 'seafood,noodle,soup', 'vegetable,noodle,soup', 'asian,noodle,soup'] 
@@ -242,7 +234,7 @@ const dishNameMappings: TagMapping[] = [
         tags: ['noodle,bowl', 'chinese,noodle', 'handpulled,noodle', 'dan,dan,noodle', 'wonton,noodle', 'pork,noodle', 'spicy,noodle,bowl', 'asian,noodle', 'wheat,noodle', 'noodle,dish'] 
     },
 
-    // --- 粉类家族彻底拆分 ---
+    // --- 粉类 ---
     { 
         regex: /螺蛳粉/, 
         tags: ['luosifen', 'river,snail,noodle', 'spicy,snail,noodle', 'stinky,noodle', 'guangxi,noodle', 'sour,bamboo,noodle', 'spicy,sour,noodle', 'snail,rice,noodle', 'luosifen,bowl', 'authentic,luosifen'] 
@@ -256,7 +248,7 @@ const dishNameMappings: TagMapping[] = [
         tags: ['glass,noodle', 'vermicelli', 'mungbean,noodle', 'stirfried,rice,noodle', 'rice,stick', 'beef,ho,fun', 'pad,thai', 'pho,noodle', 'flat,rice,noodle', 'spicy,vermicelli'] 
     },
 
-    // --- 海鲜贝类彻底拆分 ---
+    // --- 海鲜贝类 ---
     { 
         regex: /生蚝/, 
         tags: ['raw,oyster', 'grilled,oyster', 'oyster,shell', 'garlic,oyster', 'steamed,oyster', 'fresh,oyster', 'baked,oyster', 'oyster,platter', 'lemon,oyster', 'seafood,oyster'] 
@@ -286,7 +278,7 @@ const dishNameMappings: TagMapping[] = [
         tags: ['seafood,platter', 'mixed,seafood', 'seafood,boil', 'fresh,seafood', 'seafood,dish', 'seafood,stew', 'grilled,seafood', 'steamed,seafood', 'seafood,feast', 'shellfish,platter'] 
     },
 
-    // --- 猪肉家族彻底拆分 ---
+    // --- 猪肉 ---
     { 
         regex: /排骨/, 
         tags: ['pork,ribs', 'spare,ribs', 'sweet,sour,ribs', 'braised,ribs', 'steamed,ribs', 'fried,ribs', 'garlic,ribs', 'bbq,ribs', 'roasted,ribs', 'spicy,ribs'] 
@@ -326,7 +318,7 @@ const dishNameMappings: TagMapping[] = [
         tags: ['roast,beef', 'beef,stew', 'wagyu,beef', 'beef,slice', 'beef,noodle', 'brisket,food', 'beef,curry', 'stirfry,beef', 'beef,teriyaki', 'beef,bowl'] 
     },
 
-    // --- 家禽家族彻底拆分 ---
+    // --- 家禽 ---
     { 
         regex: /鸭/, 
         tags: ['roast,duck', 'peking,duck', 'braised,duck', 'smoked,duck', 'crispy,duck', 'duck,breast', 'sliced,duck', 'duck,leg', 'cantonese,roast,duck', 'duck,dish'] 
@@ -344,7 +336,7 @@ const dishNameMappings: TagMapping[] = [
         tags: ['roast,chicken', 'fried,chicken', 'steamed,chicken', 'braised,chicken', 'chicken,breast', 'chicken,dish', 'grilled,chicken', 'soy,sauce,chicken', 'chicken,thigh', 'whole,chicken'] 
     },
 
-    // --- 蔬菜家族彻底拆分 ---
+    // --- 蔬菜 ---
     { 
         regex: /沙拉/, 
         tags: ['green,salad', 'fruit,salad', 'mixed,salad', 'caesar,salad', 'salad,bowl', 'fresh,salad', 'vegetable,salad', 'quinoa,salad', 'healthy,salad', 'diet,salad'] 
@@ -386,7 +378,7 @@ const dishNameMappings: TagMapping[] = [
         tags: ['vegetable,platter', 'mixed,vegetables', 'steamed,vegetables', 'roasted,vegetables', 'grilled,vegetables', 'healthy,vegetables', 'fresh,vegetables', 'stirfried,vegetables', 'vegetable,medley', 'root,vegetables'] 
     },
 
-    // --- 汤粥分离 ---
+    // --- 汤粥 ---
     { 
         regex: /粥/, 
         tags: ['congee,bowl', 'rice,porridge', 'seafood,congee', 'pork,congee', 'plain,congee', 'sweet,porridge', 'chicken,congee', 'healthy,porridge', 'breakfast,congee', 'millet,porridge'] 
@@ -396,7 +388,7 @@ const dishNameMappings: TagMapping[] = [
         tags: ['soup,bowl', 'hot,soup', 'clear,soup', 'thick,soup', 'meat,soup', 'vegetable,soup', 'chicken,soup', 'tomato,soup', 'mushroom,soup', 'seafood,soup'] 
     },
 
-    // --- 饺子点心完全分离 ---
+    // --- 饺子点心 ---
     { 
         regex: /饺子|水饺/, 
         tags: ['dumplings,plate', 'boiled,dumplings', 'jiaozi', 'pork,dumpling', 'steamed,dumplings', 'chinese,dumplings', 'shrimp,dumpling', 'vegetable,dumpling', 'handmade,dumplings', 'dumplings,vinegar'] 
@@ -418,7 +410,7 @@ const dishNameMappings: TagMapping[] = [
         tags: ['chaoshou', 'sichuan,wonton', 'spicy,wonton,oil', 'chili,oil,wonton', 'red,oil,wonton', 'spicy,pork,wonton', 'sichuan,dumpling', 'hot,spicy,wonton', 'garlic,chili,wonton', 'authentic,chaoshou'] 
     },
 
-    // --- 包子点心完全分离 ---
+    // --- 包子点心 ---
     { 
         regex: /包子/, 
         tags: ['steamed,bun', 'baozi', 'pork,bun', 'vegetable,bun', 'chinese,steamed,bun', 'stuffed,bun', 'fluffy,bun', 'meat,bun', 'sweet,bean,bun', 'breakfast,bun'] 
@@ -436,7 +428,7 @@ const dishNameMappings: TagMapping[] = [
         tags: ['shengjianbao', 'pan,fried,bun', 'crispy,bottom,bun', 'pan,fried,pork,bun', 'shanghai,fried,bun', 'juicy,fried,bun', 'sesame,fried,bun', 'golden,fried,bun', 'pork,shengjian', 'fried,soup,bun'] 
     },
 
-    // --- 西式快餐细化 ---
+    // --- 西式快餐 ---
     { 
         regex: /热狗/, 
         tags: ['hotdog,mustard', 'sausage,bun', 'hotdog,ketchup', 'grilled,hotdog', 'chili,dog', 'cheese,dog', 'newyork,hotdog', 'gourmet,hotdog', 'street,hotdog', 'hotdog,meal'] 
@@ -458,7 +450,7 @@ const dishNameMappings: TagMapping[] = [
         tags: ['french,fries', 'fried,chicken', 'chicken,nuggets', 'crispy,fries', 'potato,wedges', 'golden,fries', 'fried,snack', 'chicken,wings', 'ketchup,fries', 'fried,food'] 
     },
 
-    // --- 日料拆分 ---
+    // --- 日料 ---
     { 
         regex: /寿司|刺身|三文鱼/, 
         tags: ['sushi,roll', 'sashimi,salmon', 'nigiri,sushi', 'sushi,platter', 'maki,roll', 'japanese,sushi', 'sushi,boat', 'raw,fish', 'tuna,sashimi', 'sushi,chef'] 
@@ -468,7 +460,7 @@ const dishNameMappings: TagMapping[] = [
         tags: ['unagi,rice', 'eel,bowl', 'grilled,eel', 'unagi,don', 'japanese,eel', 'eel,sushi', 'bbq,eel', 'sweet,eel', 'unagi,bento', 'eel,dish'] 
     },
 
-    // --- 饮品拆分 ---
+    // --- 饮品 ---
     { 
         regex: /奶茶|波霸|珍珠|果茶/, 
         tags: ['milktea,boba', 'bubble,tea', 'pearl,milktea', 'taro,milktea', 'brownsugar,boba', 'fruit,tea', 'cheese,tea', 'matcha,boba', 'boba,drink', 'milktea,cup'] 
@@ -486,7 +478,7 @@ const dishNameMappings: TagMapping[] = [
         tags: ['soda,ice', 'cola,drink', 'sparkling,water', 'softdrink,glass', 'carbonated,drink', 'sprite,drink', 'fanta,drink', 'orange,soda', 'lemon,soda', 'soda,can'] 
     },
 
-    // --- 甜点烘焙拆分 ---
+    // --- 甜点烘焙 ---
     { 
         regex: /蛋糕|提拉米苏|慕斯/, 
         tags: ['cake,slice', 'chocolate,cake', 'cheesecake,dessert', 'strawberry,cake', 'sponge,cake', 'cupcake,dessert', 'tart,dessert', 'layer,cake', 'birthday,cake', 'mousse,cake'] 
@@ -533,10 +525,6 @@ export const getDishImage = (name: string, category: string, fallbackMerchantImg
     const hash = hashId(id);
     const targetName = name || '';
     const targetCategory = category || '';
-
-    // ==========================================
-    // 新增：套餐与特价的定制匹配逻辑
-    // ==========================================
     
     // 套餐匹配 -> 中餐那类的随机一张图
     if (targetName.includes('套餐') || targetName.includes('招牌')) {
@@ -552,11 +540,7 @@ export const getDishImage = (name: string, category: string, fallbackMerchantImg
         return buildImageUrl(tag, hash, 200, 200);
     }
 
-    // ==========================================
-    // 原有优先级逻辑保持不变
-    // ==========================================
-
-    // 第一优先级：极其细粒度的菜名 Regex 匹配
+    // 第一优先级：极其细粒度的菜名Regex匹配
     for (const mapping of dishNameMappings) {
         if (mapping.regex.test(targetName)) {
             const tag = getTagFromPool(mapping.tags, hash);
@@ -564,7 +548,7 @@ export const getDishImage = (name: string, category: string, fallbackMerchantImg
         }
     }
 
-    // 第二优先级：分类兜底匹配 (涵盖绝大部分常用品类)
+    // 第二优先级：分类兜底匹配，涵盖绝大部分常用品类
     for (const mapping of dishCategoryMappings) {
         if (mapping.regex.test(targetCategory)) {
             const tag = getTagFromPool(mapping.tags, hash);

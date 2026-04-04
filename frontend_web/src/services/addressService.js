@@ -1,4 +1,4 @@
-// 对应 vite.config.js 里的配置 '/api/users' -> User Service
+// 对应vite.config.js里的配置 '/api/users' -> User Service
 const API_URL = '/api/users/address';
 
 export const addressService = {
@@ -16,10 +16,8 @@ export const addressService = {
     });
 
     if (!response.ok) {
-      // 如果是 401 或 403，可能需要重新登录
       if (response.status === 401 || response.status === 403) {
         console.warn('认证失败，Token 可能已过期，请重新登录');
-        // 可以在这里清除 token 并跳转登录页
       }
       const errorText = await response.text().catch(() => '');
       throw new Error(errorText || `获取地址失败: ${response.status}`);

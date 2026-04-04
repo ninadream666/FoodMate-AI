@@ -1,7 +1,7 @@
 """
-增强版 MCP 服务器 - 多智能体协议服务
+增强版MCP服务器 - 多智能体协议服务
 
-实现标准化的 Model Context Protocol (MCP)，
+实现标准化的Model Context Protocol (MCP)，
 让各服务以标准化方式暴露能力，支持即插即用。
 
 服务能力:
@@ -48,7 +48,7 @@ DEFAULT_CITY = os.getenv("DEFAULT_CITY", "深圳")
 DEFAULT_LATITUDE = float(os.getenv("DEFAULT_LATITUDE", "22.5431"))
 DEFAULT_LONGITUDE = float(os.getenv("DEFAULT_LONGITUDE", "114.0579"))
 
-# 初始化 MCP 服务器
+# 初始化MCP服务器
 mcp = FastMCP("SmartDeliveryAgentSystem")
 
 # 初始化服务
@@ -87,7 +87,7 @@ init_services()
 
 
 # =============================================================================
-# 环境感知工具 (Context Awareness Tools)
+# 环境感知工具（Context Awareness Tools）
 # =============================================================================
 
 @mcp.tool()
@@ -265,7 +265,7 @@ async def get_traffic_analysis(
 
 
 # =============================================================================
-# 用户画像工具 (User Profiling Tools)
+# 用户画像工具（User Profiling Tools）
 # =============================================================================
 
 @mcp.tool()
@@ -359,7 +359,7 @@ async def get_user_preferences(
 
 
 # =============================================================================
-# 推荐决策工具 (Recommendation Decision Tools)
+# 推荐决策工具（Recommendation Decision Tools）
 # =============================================================================
 
 @mcp.tool()
@@ -475,7 +475,7 @@ async def make_mab_decision(
     top_k: int = 5
 ) -> str:
     """
-    🎰 MAB决策工具
+    MAB决策工具
     
     使用多臂老虎机算法对餐厅进行排序。
     
@@ -543,7 +543,7 @@ async def update_recommendation_feedback(
     feedback_type: str = "order"
 ) -> str:
     """
-    📊 更新推荐反馈
+    更新推荐反馈
     
     记录用户对推荐的反馈，用于MAB算法的在线学习。
     
@@ -587,7 +587,7 @@ async def update_recommendation_feedback(
 
 
 # =============================================================================
-# 餐厅搜索工具 (Restaurant Search Tools)
+# 餐厅搜索工具（Restaurant Search Tools）
 # =============================================================================
 
 @mcp.tool()
@@ -601,7 +601,7 @@ async def search_restaurants(
     limit: int = 20
 ) -> str:
     """
-    🔍 搜索附近餐厅
+    搜索附近餐厅
     
     使用高德POI API搜索附近餐厅。
     
@@ -648,13 +648,13 @@ async def search_restaurants(
 
 
 # =============================================================================
-# 系统工具 (System Tools)
+# 系统工具（System Tools）
 # =============================================================================
 
 @mcp.tool()
 async def get_agent_system_status() -> str:
     """
-    ⚙️ 获取智能体系统状态
+    获取智能体系统状态
     
     返回所有智能体的当前状态和配置信息。
     
@@ -704,7 +704,7 @@ async def get_agent_system_status() -> str:
 @mcp.tool()
 async def switch_mab_strategy(strategy: str) -> str:
     """
-    🔄 切换MAB策略
+    切换MAB策略
     
     动态切换推荐决策使用的MAB算法。
     
@@ -750,7 +750,7 @@ async def switch_mab_strategy(strategy: str) -> str:
 
 
 # =============================================================================
-# MCP 资源 (Resources)
+# MCP资源（Resources）
 # =============================================================================
 
 @mcp.resource("agent://context-agent/capabilities")

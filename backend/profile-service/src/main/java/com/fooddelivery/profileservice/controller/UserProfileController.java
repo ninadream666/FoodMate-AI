@@ -28,7 +28,7 @@ public class UserProfileController {
     public ResponseEntity<UserContextDto> getUserContext(@RequestHeader("Authorization") String authHeader) {
         String username = getCurrentUsername();
         
-        // 解析 Token 获取 UserId
+        // 解析Token获取UserId
         String token = authHeader.substring(7);
         Long userId = jwtUtil.extractUserId(token);
 
@@ -94,7 +94,7 @@ public class UserProfileController {
         
         profile.getBrowseHistory().add(record);
         
-        // 限制最近50条（暂定，后续考虑是否修改）
+        // 限制最近50条
         if (profile.getBrowseHistory().size() > 50) {
             profile.getBrowseHistory().remove(0);
         }
@@ -117,7 +117,7 @@ public class UserProfileController {
         String username = getCurrentUsername();
         UserProfile profile = service.getOrCreateProfile(username);
         
-        // 精准删除：只删除 ID 匹配的那一条
+        // 精准删除：只删除ID匹配的那一条
         profile.getBrowseHistory().removeIf(record -> 
             record.getRecordId() != null && record.getRecordId().equals(recordId)
         );

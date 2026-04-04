@@ -61,7 +61,7 @@ public class MerchantSettlement {
     private LocalDate periodEnd;
 
     /**
-     * 周期标签，如 2024-01 或 2024-W03
+     * 周期标签，如2024-01或2024-W03
      */
     @Column(name = "period_label", nullable = false, length = 20)
     private String periodLabel;
@@ -99,7 +99,7 @@ public class MerchantSettlement {
     private String adjustmentReason;
 
     /**
-     * 商家净收入（订单金额 - 分成 + 调整）
+     * 商家净收入=订单金额-分成+调整
      */
     @Column(name = "net_income", nullable = false, precision = 12, scale = 2)
     private BigDecimal netIncome;

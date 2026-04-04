@@ -41,22 +41,22 @@ public class CreditService {
      */
     @Transactional
     public void recordCancellationAndUpdateCredit(Long userId, Long orderId) {
-        // 1. 记录取消事件
+        // 记录取消事件
         CancellationHistory history = new CancellationHistory();
         history.setUserId(userId);
         history.setOrderId(orderId);
         history.setCancelledAt(LocalDateTime.now());
         cancellationHistoryRepository.save(history);
 
-        // 2. 获取用户
+        // 获取用户
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
 
-        // 3. 更新最近取消次数
+        // 更新最近取消次数
         int recentCount = getRecentCancellationCount(userId);
         user.setRecentCancellations(recentCount);
 
-        // 4. 检查是否需要降级信用等级（7天内3+次取消）
+        // 检查是否需要降级信用等级（7天内3+次取消）
         if (recentCount >= 3) {
             if (user.getCreditLevel() == null || user.getCreditLevel() > 1) {
                 int newLevel = (user.getCreditLevel() != null ? user.getCreditLevel() : 5) - 1;

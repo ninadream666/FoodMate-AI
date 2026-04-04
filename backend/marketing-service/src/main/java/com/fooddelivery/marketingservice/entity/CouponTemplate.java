@@ -47,7 +47,7 @@ public class CouponTemplate {
 
     /**
      * 优惠门槛金额（满X元）
-     * 对于无门槛券和免运费券，可以为 null 或 0
+     * 对于无门槛券和免运费券，可以为null或0
      */
     @Column(precision = 10, scale = 2)
     private BigDecimal minOrderAmount;
@@ -68,7 +68,7 @@ public class CouponTemplate {
     private BigDecimal maxDiscount;
 
     /**
-     * 发放总量限制（0 表示无限制）
+     * 发放总量限制（0表示无限制）
      */
     @Column(nullable = false)
     private Integer totalQuantity;

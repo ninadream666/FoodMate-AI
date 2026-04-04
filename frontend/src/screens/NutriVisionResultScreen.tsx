@@ -19,7 +19,7 @@ import { profileService } from '../services/profileService';
 import { getNetworkStatus } from '../services/networkUtils';
 import NutriVisionLoading from '../components/NutriVisionLoading';
 
-// 简单图标组件 (替代 Material Icons)
+// 简单图标组件
 const Icon = ({ name, size = 24, color = '#333' }: any) => {
     let symbol = '•';
     switch (name) {
@@ -37,7 +37,7 @@ const Icon = ({ name, size = 24, color = '#333' }: any) => {
 };
 
 const NutriVisionResultScreen = ({ route, navigation }: any) => {
-    // 路由参数 (包含 mode 参数用于区分 API 分发)
+    // 路由参数
     const { imageUri, imageBase64, healthTags, mode = 'menu' } = route.params || {};
 
     const [loading, setLoading] = useState(true);
@@ -77,12 +77,12 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
             console.log(`🚀 开始调用模型分析, 模式: ${mode}`);
             let data;
             
-            // API 智能分发
+            // API智能分发
             if (mode === 'food') {
-                // 拍菜品：走自研 CV + 降级版 LLM，速度快
+                // 拍菜品：走自研CV+降级版LLM，速度快
                 data = await nutriVisionService.analyzeFood(imageBase64, healthTags);
             } else {
-                // 拍菜单：走多模态巨物 LLM 模型
+                // 拍菜单：走多模态LLM模型
                 data = await nutriVisionService.analyzeMenu(imageBase64, healthTags);
             }
             
@@ -97,8 +97,7 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
 
     const handleSaveRecord = async () => {
         try {
-            // 只保存分析结果，不传 imageUri（本地路径对服务端无意义，且增大数据量）
-            // 也不传 imageBase64（避免将整张图片存入数据库，节省大量存储空间）
+            // 只保存分析结果
             await profileService.saveHealthRecord({
                 type: mode === 'food' ? 'single_food' : 'menu_scan',
                 result: result,
@@ -111,7 +110,7 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
         }
     };
 
-    // 1. 渲染加载页
+    // 渲染加载页
     if (loading) {
         return (
             <NutriVisionLoading 
@@ -122,7 +121,7 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
         );
     }
 
-    // 2. 渲染错误页
+    // 渲染错误页
     if (errorMsg) {
         return (
             <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -136,7 +135,7 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
         );
     }
 
-    // 3. 渲染结果页
+    // 渲染结果页
     return (
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
@@ -152,7 +151,7 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 
-                {/* 1. 概览卡片 */}
+                {/* 概览卡片 */}
                 <View style={styles.summaryCard}>
                     {/* 图片区域 */}
                     <View style={styles.summaryImageContainer}>
@@ -167,10 +166,10 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                         </View>
                     </View>
                     
-                    {/* AI 总结 */}
+                    {/* AI总结 */}
                     <View style={styles.aiSummaryBox}>
                         <View style={styles.aiHeader}>
-                            <Text style={styles.aiTitle}>AI 智能总结</Text>
+                            <Text style={styles.aiTitle}>AI智能总结</Text>
                         </View>
                         <Text style={styles.aiText}>
                             {result?.health_summary || '暂无总结'}
@@ -178,7 +177,7 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                     </View>
                 </View>
 
-                {/* 2. 智能小助理推荐 (横向滚动) */}
+                {/* 智能小助理推荐（横向滚动） */}
                 {result?.top_recommendations && result.top_recommendations.length > 0 && (
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
@@ -186,7 +185,6 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                         </View>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.recsScroll}>
                             {result.top_recommendations.map((recName: string, index: number) => {
-                                // 尝试从 items 中找到完整信息
                                 const itemDetail = result.items?.find((i: any) => i.name === recName);
                                 return (
                                     <TouchableOpacity 
@@ -202,7 +200,6 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                                         <View style={styles.recBadge}>
                                             <Text style={styles.recBadgeText}>健康首选</Text>
                                         </View>
-                                        {/* 移除 numberOfLines，允许完全显示 */}
                                         <Text style={styles.recDesc}>
                                             {itemDetail?.calories || '推荐选择'} • {itemDetail?.ingredients?.[0] || 'AI严选'}
                                         </Text>
@@ -213,7 +210,7 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                     </View>
                 )}
 
-                {/* 3. 详细透视列表 */}
+                {/* 详细透视列表 */}
                 <View style={styles.section}>
                     <Text style={[styles.sectionTitle, { marginBottom: 12, marginTop: 8 }]}>全菜单营养明细</Text>
                     
@@ -225,13 +222,12 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                         >
                             <View style={styles.itemLeft}>
                                 <View style={styles.itemHeader}>
-                                    {/* 移除 numberOfLines，允许完全显示 */}
                                     <Text style={styles.itemName}>{item.name}</Text>
                                     {item.is_recommended && (
                                         <Feather name="check-circle" size={14} color="#4caf50" />
                                     )}
                                 </View>
-                                {/* 警告 Badge */}
+                                {/* 警告Badge */}
                                 {item.warnings && (
                                     <View style={styles.warningBadge}>
                                         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 4 }}>
@@ -285,7 +281,7 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
 
             {/* --- Modals --- */}
 
-            {/* 1. 查看原图 Modal */}
+            {/* 查看原图Modal */}
             <Modal visible={showOriginalImage} transparent={true} animationType="fade" onRequestClose={() => setShowOriginalImage(false)}>
                 <View style={styles.modalContainer}>
                     <TouchableOpacity 
@@ -298,7 +294,7 @@ const NutriVisionResultScreen = ({ route, navigation }: any) => {
                 </View>
             </Modal>
 
-            {/* 2. 菜品详情小卡片 Modal (改为 ScrollView 以支持长文本) */}
+            {/* 菜品详情小卡片Modal，支持长文本 */}
             <Modal visible={!!selectedItem} transparent={true} animationType="fade" onRequestClose={() => setSelectedItem(null)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.detailCard}>

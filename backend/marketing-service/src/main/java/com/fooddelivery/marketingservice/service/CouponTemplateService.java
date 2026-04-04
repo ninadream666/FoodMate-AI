@@ -137,7 +137,7 @@ public class CouponTemplateService {
     }
 
     /**
-     * 下架优惠券（禁用）
+     * 下架优惠券
      * 
      * @param templateId 模板ID
      * @return 更新后的优惠券模板信息
@@ -218,7 +218,7 @@ public class CouponTemplateService {
     }
 
     /**
-     * 转换为 DTO
+     * 转换为DTO
      */
     private CouponTemplateDTO convertToDTO(CouponTemplate template) {
         return CouponTemplateDTO.builder()

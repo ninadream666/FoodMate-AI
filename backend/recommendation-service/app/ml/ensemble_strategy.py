@@ -1,12 +1,12 @@
 """
-EnsembleMLStrategy — MABStrategy 子类
+EnsembleMLStrategy — MABStrategy子类
 
-在 DecisionAgent 的策略工厂中注册为 "ml_ensemble"，
-调用 LightGBM + DeepFM Ensemble 推理引擎进行排序。
+在DecisionAgent的策略工厂中注册为 "ml_ensemble"，
+调用LightGBM+DeepFM Ensemble推理引擎进行排序。
 
 降级逻辑:
-  模型可用 → ML Ensemble 排序
-  模型不可用 → 自动降级到 ContextualBanditStrategy（规则排序）
+  模型可用 → ML Ensemble排序
+  模型不可用 → 自动降级到ContextualBanditStrategy（规则排序）
 """
 
 import logging
@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 
 class EnsembleMLStrategy:
     """
-    LightGBM + DeepFM 融合排序策略
+    LightGBM+DeepFM融合排序策略
 
-    实现与 MABStrategy 相同的接口:
+    实现与MABStrategy相同的接口:
       - select(arms, context) -> RestaurantArm
       - rank_all(arms, context) -> List[RestaurantArm]
     """
@@ -37,9 +37,9 @@ class EnsembleMLStrategy:
         Parameters
         ----------
         lgb_weight : float
-            LightGBM 在 ensemble 中的权重
+            LightGBM在ensemble中的权重
         deepfm_weight : float
-            DeepFM 在 ensemble 中的权重
+            DeepFM在ensemble中的权重
         fallback_strategy : MABStrategy | None
             模型不可用时的降级策略（默认为 ContextualBanditStrategy）
         """
@@ -54,12 +54,12 @@ class EnsembleMLStrategy:
 
     def rank_all(self, arms, context: Dict[str, Any] = None):
         """
-        对所有 arm 排序（核心方法）
+        对所有arm排序（核心方法）
 
-        1. 将每个 arm 提取为统一特征
-        2. 调用 Ensemble 推理引擎批量打分
+        1. 将每个arm提取为统一特征
+        2. 调用Ensemble推理引擎批量打分
         3. 按分数降序排序
-        4. 模型失败时降级到 fallback_strategy
+        4. 模型失败时降级到fallback_strategy
         """
         if not arms:
             return []
@@ -75,11 +75,11 @@ class EnsembleMLStrategy:
                 mab_pulls=arm.pulls,
                 mab_avg_reward=arm.average_reward,
             )
-            # 补充 name 字段供意图匹配
+            # 补充name字段供意图匹配
             fd["_name"] = arm.name
             feature_dicts.append(fd)
 
-        # ML 推理
+        # ML推理
         scores = self.engine.predict(feature_dicts)
 
         if scores is None:
@@ -87,10 +87,10 @@ class EnsembleMLStrategy:
             logger.warning("⚠️ ML Ensemble 不可用，降级到规则策略")
             if self.fallback_strategy:
                 return self.fallback_strategy.rank_all(arms, context)
-            # 无 fallback，按 average_reward 排序
+            # 无fallback，按average_reward排序
             return sorted(arms, key=lambda a: a.average_reward, reverse=True)
 
-        # 将分数绑定到 arm 上（注入 _ml_score 便于后续 _calculate_display_score 使用）
+        # 将分数绑定到arm上，注入_ml_score便于后续_calculate_display_score使用
         arm_score_pairs = list(zip(arms, scores))
 
         # 按分数降序排列
@@ -98,7 +98,7 @@ class EnsembleMLStrategy:
 
         sorted_arms = []
         for arm, score in arm_score_pairs:
-            # 将 ML 分数存入 features 供展示层使用
+            # 将ML分数存入features供展示层使用
             arm.features["_ml_score"] = score
             sorted_arms.append(arm)
 

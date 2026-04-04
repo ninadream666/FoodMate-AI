@@ -17,7 +17,7 @@ export default function MerchantShopInfo() {
       
       {/* Hero Section */}
       <div className="relative w-full flex flex-col">
-        {/* Cover Image (使用随机默认图，因为 DTO 里没有封面字段) */}
+        {/* Cover Image */}
         <div 
           className="w-full h-64 rounded-2xl bg-center bg-cover bg-no-repeat relative overflow-hidden shadow-sm border border-border-light" 
           style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCEyZOFLvpSJQmhrieg5ITzRMw1rnbitSpU5r68a0fs9z66UkrV90dSuupbL5QJvPUAcXb_XvlfW9FqgKVa-zZ1hbFrpLcscc0HU1ETrKRLZLoe5bOTGLbwiPcrXi47iuHlCe4i4sXv7v3dr-17-i5pa4z0Eyu7tIGVhqyrgEe0T1jLiBWdStjNiWMJa_U4sOdSXPCwCPstFSIwb5qG1a0O_Amb0XCi022o_fabkotm0SawyY1drxMW9-_KsJ7-f-dRO4m4-dCUCvna")' }}
@@ -28,7 +28,7 @@ export default function MerchantShopInfo() {
         {/* Shop Identity Overlay */}
         <div className="px-6 -mt-12 relative flex flex-col sm:flex-row items-start sm:items-end gap-5">
           <div className="w-32 h-32 rounded-full border-4 border-background bg-surface shadow-md flex items-center justify-center overflow-hidden">
-             {/* Logo (DTO 无 Logo，使用图标代替) */}
+             {/* Logo */}
              <span className="material-symbols-outlined text-6xl text-primary">storefront</span>
           </div>
           
@@ -42,7 +42,7 @@ export default function MerchantShopInfo() {
                 营业中
               </span>
             </div>
-            {/* 地址显示在 Header 区域 */}
+            {/* 地址显示在Header区域 */}
             <div className="flex items-center gap-2 text-sm text-text-secondary sm:text-gray-200">
               <span className="material-symbols-outlined text-[18px]">location_on</span>
               <span>{merchant.address || "暂无地址信息"}</span>
@@ -78,7 +78,7 @@ export default function MerchantShopInfo() {
               value={merchant.address} 
             />
 
-            {/* DTO 包含 enableDynamicPricing */}
+            {/* DTO包含enableDynamicPricing */}
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 rounded-full bg-background-section flex items-center justify-center flex-shrink-0 text-text-secondary">
                 <span className="material-symbols-outlined">price_change</span>

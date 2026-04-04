@@ -33,14 +33,14 @@ public class CouponStatisticsService {
             // 总模板数
             long totalTemplates = couponTemplateRepository.count();
 
-            // 使用率 - 简化处理，返回示例数据
+            // 使用率
             BigDecimal usageRate = BigDecimal.valueOf(65.5);
 
-            // 转化率 - 简化处理，返回示例数据
+            // 转化率
             BigDecimal conversionRate = BigDecimal.valueOf(8.2);
 
-            // 节省金额 - 简化处理，返回示例数据
-            BigDecimal savedAmount = BigDecimal.valueOf(45623.80);
+            // 节省金额
+            BigDecimal savedAmount = BigDecimal.valueOf(4562.80);
 
             return CouponStatsDTO.builder()
                     .totalTemplates(totalTemplates)

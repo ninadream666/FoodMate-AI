@@ -5,18 +5,17 @@ import MerchantSidebar from '../../components/merchant/MerchantSidebar';
 import MerchantHeader from '../../components/merchant/MerchantHeader';
 
 /**
- * 商家端专用布局 (组件化重构版)
+ * 商家端专用布局
  */
 export default function MerchantLayout() {
   const navigate = useNavigate();
   const [merchant, setMerchant] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 从 localStorage 读取当前用户信息
+  // 从localStorage读取当前用户信息
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
-    // 简单的权限检查
     const userRole = user.role ? user.role.toUpperCase() : '';
     
     if (userRole !== 'MERCHANT' && userRole !== 'ADMIN') {
@@ -44,9 +43,8 @@ export default function MerchantLayout() {
         return;
       }
       
-      // 其他错误（如网络问题），也停止 Loading，以免白屏
+      // 其他错误（如网络问题），也停止Loading，以免白屏
       setLoading(false); 
-      // 可以选择在这里 alert 错误，或者显示错误 UI
       alert("无法加载店铺信息，请检查网络或重新登录。");
     }
   };
@@ -62,8 +60,8 @@ export default function MerchantLayout() {
     );
   }
 
-  // 如果加载完了但没有 merchant 信息（且不是因为要去 onboarding），
-  // 说明发生了其他错误，此时不应该渲染 Layout，以免子组件报错
+  // 如果加载完了但没有merchant信息，且不是因为要去 onboarding，
+  // 说明发生了其他错误，此时不应该渲染Layout，以免子组件报错
   if (!merchant) {
     return (
       <div className="flex h-screen items-center justify-center bg-nordic-gradient flex-col gap-4">

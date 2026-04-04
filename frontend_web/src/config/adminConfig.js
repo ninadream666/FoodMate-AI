@@ -1,6 +1,6 @@
 // 平台管理端配置文件
 const config = {
-    // API 服务端点配置
+    // API服务端点配置
     API_BASE_URLS: {
         USER_SERVICE: process.env.REACT_APP_USER_SERVICE_URL || 'http://localhost:8083',
         MERCHANT_SERVICE: process.env.REACT_APP_MERCHANT_SERVICE_URL || 'http://localhost:8081',

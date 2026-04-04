@@ -1,7 +1,7 @@
 // src/services/orderService.js
 import api from './apiClient';
 
-// 订单状态常量 (从 Web 端复用)
+// 订单状态常量
 export const ORDER_STATUS = {
     PENDING: { label: '待支付', color: '#e6a23c' },
     PAID: { label: '已支付', color: '#409eff' },
@@ -18,27 +18,27 @@ export const ORDER_STATUS = {
 };
 
 export const orderService = {
-    // 1. 创建订单
+    // 创建订单
     createOrder: async (orderData) => {
         return await api.post('orders', '', orderData);
     },
 
-    // 2. 支付订单
+    // 支付订单
     payOrder: async (orderId) => {
         return await api.post('orders', `/${orderId}/pay`);
     },
 
-    // 3. 获取我的订单列表
+    // 获取我的订单列表
     getMyOrders: async () => {
         return await api.get('orders', '/my-orders');
     },
 
-    // 4. 获取订单详情
+    // 获取订单详情
     getOrderDetail: async (orderId) => {
         return await api.get('orders', `/${orderId}/detail`);
     },
 
-    // 5. 取消订单 (新增)
+    // 取消订单
     cancelOrder: async (orderId, cancelReason) => {
         return await api.post('orders', `/${orderId}/cancel`, { cancelReason });
     },

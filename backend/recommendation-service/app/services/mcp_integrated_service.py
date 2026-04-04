@@ -1,7 +1,7 @@
 """
-MCP 集成版多智能体推荐服务
+MCP集成版多智能体推荐服务
 
-通过 Model Context Protocol (MCP) 协议调用工具，
+通过Model Context Protocol(MCP)协议调用工具，
 实现标准化、可扩展的智能推荐能力。
 
 架构:
@@ -51,9 +51,9 @@ logger = logging.getLogger(__name__)
 
 class MCPIntegratedRecommendationService:
     """
-    MCP 集成版多智能体推荐服务
+    MCP集成版多智能体推荐服务
     
-    通过 MCP 协议标准化调用各个智能体工具：
+    通过MCP协议标准化调用各个智能体工具：
     - analyze_environment: 环境感知（天气/交通/时间）
     - analyze_user_profile: 用户画像分析
     - get_smart_recommendations: 完整智能推荐编排
@@ -62,27 +62,27 @@ class MCPIntegratedRecommendationService:
     
     def __init__(self, use_mcp: bool = True, mab_strategy: str = "contextual"):
         """
-        初始化 MCP 集成推荐服务
+        初始化MCP集成推荐服务
         
         Args:
-            use_mcp: 是否使用 MCP 协议（默认 True）
-            mab_strategy: MAB 策略
+            use_mcp: 是否使用MCP协议，默认 True
+            mab_strategy: MAB策略
         """
         self.use_mcp = use_mcp and MCP_SDK_AVAILABLE
         self.mab_strategy = mab_strategy
         
-        # MCP 服务器路径
+        # MCP服务器路径
         self.mcp_server_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
             "enhanced_mcp_server.py"
         )
         
-        # MCP 会话
+        # MCP会话
         self._mcp_session: Optional[ClientSession] = None
         self._mcp_context = None
         self._available_tools: List[str] = []
         
-        # 备选服务（MCP 不可用时使用）
+        # 备选服务，在MCP不可用时使用
         self.poi_service = AmapPOIService()
         self.weather_service = WeatherAPIService()
         self.map_service = MapAPIService()
@@ -92,7 +92,7 @@ class MCPIntegratedRecommendationService:
     
     async def connect_mcp_server(self) -> bool:
         """
-        连接 MCP 服务器
+        连接MCP服务器
         
         Returns:
             是否连接成功
@@ -135,7 +135,7 @@ class MCPIntegratedRecommendationService:
             return False
     
     async def disconnect_mcp_server(self):
-        """断开 MCP 服务器连接"""
+        """断开MCP服务器连接"""
         try:
             if self._mcp_session:
                 await self._mcp_session.__aexit__(None, None, None)
@@ -149,7 +149,7 @@ class MCPIntegratedRecommendationService:
     
     async def call_mcp_tool(self, tool_name: str, **kwargs) -> Dict[str, Any]:
         """
-        调用 MCP 工具
+        调用MCP工具
         
         Args:
             tool_name: 工具名称
@@ -193,8 +193,7 @@ class MCPIntegratedRecommendationService:
         """
         获取智能推荐（MCP 版本）
         
-        通过 MCP 协议调用 get_smart_recommendations 工具，
-        该工具内部执行完整的多智能体编排流程。
+        通过MCP协议调用get_smart_recommendations工具，该工具内部执行完整的多智能体编排流程。
         
         Args:
             request: 推荐请求
@@ -213,11 +212,11 @@ class MCPIntegratedRecommendationService:
             logger.info(f"   位置: {location}")
             logger.info(f"   坐标: ({latitude}, {longitude})")
             
-            # 检查 MCP 连接
+            # 检查MCP连接
             if self.use_mcp and not self._mcp_session:
                 await self.connect_mcp_server()
             
-            # 使用 MCP 协议调用
+            # 使用MCP协议调用
             if self._mcp_session:
                 return await self._get_recommendations_via_mcp(
                     query=query,
@@ -245,14 +244,13 @@ class MCPIntegratedRecommendationService:
         max_results: int = 10
     ) -> RecommendationResponse:
         """
-        通过 MCP 协议获取推荐
+        通过MCP协议获取推荐
         
-        调用 MCP 服务器的 get_smart_recommendations 工具，
-        该工具内部会执行：
+        调用MCP服务器的get_smart_recommendations工具，该工具内部会执行：
         1. 搜索附近餐厅
-        2. ContextAgent 分析环境
-        3. ProfilerAgent 分析用户画像
-        4. DecisionAgent 使用 MAB 决策排序
+        2. ContextAgent分析环境
+        3. ProfilerAgent分析用户画像
+        4. DecisionAgent使用MAB决策排序
         """
         try:
             # 调用完整的智能推荐工具
@@ -290,17 +288,17 @@ class MCPIntegratedRecommendationService:
         max_results: int = 10
     ) -> RecommendationResponse:
         """
-        分步调用 MCP 工具获取推荐
+        分步调用MCP工具获取推荐
         
-        当 get_smart_recommendations 失败时，手动编排各个工具：
+        当get_smart_recommendations失败时，手动编排各个工具：
         1. search_restaurants → 获取餐厅列表
         2. analyze_environment → 分析环境
         3. analyze_user_profile → 分析用户
-        4. make_mab_decision → MAB 排序
+        4. make_mab_decision → MAB排序
         """
         logger.info("⚡ 使用分步 MCP 调用模式")
         
-        # 步骤 1: 搜索餐厅
+        # 步骤1: 搜索餐厅
         restaurants_result = await self.call_mcp_tool(
             "search_restaurants",
             location=location,
@@ -321,7 +319,7 @@ class MCPIntegratedRecommendationService:
                 message="未找到附近餐厅"
             )
         
-        # 步骤 2: 并行分析环境和用户
+        # 步骤2: 并行分析环境和用户
         env_task = self.call_mcp_tool(
             "analyze_environment",
             city=self._extract_city(location),
@@ -339,7 +337,7 @@ class MCPIntegratedRecommendationService:
         
         env_result, profile_result = await asyncio.gather(env_task, profile_task)
         
-        # 步骤 3: MAB 决策
+        # 步骤3: MAB决策
         context_for_mab = {
             "context_analysis": env_result,
             "profile_analysis": profile_result,
@@ -363,7 +361,7 @@ class MCPIntegratedRecommendationService:
         )
     
     def _build_mcp_response(self, result: Dict[str, Any]) -> RecommendationResponse:
-        """从 MCP 结果构建响应"""
+        """从MCP结果构建响应"""
         # 构建上下文
         context_analysis = result.get("context_analysis", {})
         weather = context_analysis.get("weather", {})
@@ -398,11 +396,11 @@ class MCPIntegratedRecommendationService:
                 estimated_delivery_time=features.get("delivery_time",
                     restaurant_info.get("estimated_delivery_time", 30)),
                 match_score=score,
-                final_score=score,  # 🆕 设置final_score
+                final_score=score,  # 设置final_score
                 is_hot_food=features.get("is_hot_food", True),
                 address=restaurant_info.get("address", ""),
                 match_reasons=[reason] if reason else [result.get("reasoning", "")],
-                recommendation_reason=reason if reason else "AI智能推荐"  # 🆕 设置推荐理由
+                recommendation_reason=reason if reason else "AI智能推荐"  # 设置推荐理由
             ))
         
         return RecommendationResponse(
@@ -455,11 +453,11 @@ class MCPIntegratedRecommendationService:
                 distance=int(original.get("distance_km", 2) * 1000) if original.get("distance_km") else 2000,
                 estimated_delivery_time=30,
                 match_score=score,
-                final_score=score,  # 🆕 设置final_score
+                final_score=score,  # 设置final_score
                 is_hot_food=True,
                 address=original.get("address", ""),
                 match_reasons=[reason] if reason else [],
-                recommendation_reason=reason if reason else "AI智能推荐"  # 🆕 设置推荐理由
+                recommendation_reason=reason if reason else "AI智能推荐"  # 设置推荐理由
             ))
         
         return RecommendationResponse(
@@ -473,7 +471,7 @@ class MCPIntegratedRecommendationService:
         self,
         request: RecommendationRequest
     ) -> RecommendationResponse:
-        """直接调用模式（不通过 MCP）"""
+        """直接调用，不通过MCP"""
         # 导入并使用原有的服务
         from .multi_agent_recommendation_service import multi_agent_recommendation_service
         return await multi_agent_recommendation_service.get_recommendations(request)
@@ -543,7 +541,7 @@ class MCPIntegratedRecommendationService:
                 return city
         return os.getenv("DEFAULT_CITY", "深圳")
     
-    # ============= MCP 工具直接暴露 =============
+    # ============= MCP工具直接暴露 =============
     
     async def analyze_environment(
         self,
@@ -554,7 +552,7 @@ class MCPIntegratedRecommendationService:
         """
         分析环境（天气/交通/时间）
         
-        通过 MCP 协议调用 analyze_environment 工具
+        通过MCP协议调用analyze_environment工具
         """
         if self._mcp_session:
             return await self.call_mcp_tool(
@@ -582,7 +580,7 @@ class MCPIntegratedRecommendationService:
         """
         分析用户画像
         
-        通过 MCP 协议调用 analyze_user_profile 工具
+        通过MCP协议调用analyze_user_profile工具
         """
         if self._mcp_session:
             return await self.call_mcp_tool(
@@ -609,7 +607,7 @@ class MCPIntegratedRecommendationService:
         """
         搜索附近餐厅
         
-        通过 MCP 协议调用 search_restaurants 工具
+        通过MCP协议调用search_restaurants工具
         """
         if self._mcp_session:
             result = await self.call_mcp_tool(
@@ -653,7 +651,7 @@ class MCPIntegratedRecommendationService:
         return status
     
     async def switch_mab_strategy(self, strategy: str) -> Dict[str, Any]:
-        """切换 MAB 策略"""
+        """切换MAB策略"""
         if self._mcp_session:
             result = await self.call_mcp_tool("switch_mab_strategy", strategy=strategy)
             if result.get("success"):
@@ -681,11 +679,11 @@ class MCPIntegratedRecommendationService:
             return {"success": True, "message": "feedback recorded (local)"}
 
 
-# 上下文管理器 - 自动管理 MCP 连接
+# 上下文管理器 - 自动管理MCP连接
 @asynccontextmanager
 async def create_mcp_recommendation_service(use_mcp: bool = True):
     """
-    创建 MCP 推荐服务（上下文管理器）
+    创建MCP推荐服务（上下文管理器）
     
     使用方式:
         async with create_mcp_recommendation_service() as service:

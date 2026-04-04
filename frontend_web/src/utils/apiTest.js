@@ -11,8 +11,8 @@ async function testCouponIssueAPI() {
 
     // 测试数据
     const testData = {
-        couponTemplateId: 1,  // 请根据实际的模板ID调整
-        userId: 1,            // 请根据实际的用户ID调整  
+        couponTemplateId: 1,
+        userId: 1,
         remark: '测试发放'
     };
 

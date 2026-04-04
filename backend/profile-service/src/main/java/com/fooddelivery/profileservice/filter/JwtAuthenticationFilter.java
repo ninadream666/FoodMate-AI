@@ -35,7 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // 只验证签名是否正确，不查数据库
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                // 如果 Token 没过期且签名正确
+                // 如果Token没过期且签名正确
                 if (jwtUtil.isTokenValid(jwt, username)) {
                     // 创建一个简单的认证对象
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
@@ -46,8 +46,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
-            // Token 过期、签名无效、格式错误等情况，不设置认证，后续由 SecurityConfig 拒绝
-            // 不抛出异常，避免 500 错误
+            // Token过期、签名无效、格式错误等情况，不设置认证，后续由SecurityConfig拒绝
+            // 不抛出异常，避免500错误
         }
         filterChain.doFilter(request, response);
     }

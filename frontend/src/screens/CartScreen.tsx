@@ -19,7 +19,7 @@ const CartScreen = ({ route, navigation }: any) => {
 
     // 计算总价
     const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    // 预估配送费（实际费用在 OrderConfirm 页根据距离计算）
+    // 预估配送费（实际费用在OrderConfirm页根据距离计算）
     const deliveryFee = 3;
     const total = subtotal + deliveryFee;
 
@@ -39,16 +39,15 @@ const CartScreen = ({ route, navigation }: any) => {
         }
     };
 
-    // --- 修改点：去结算 ---
+    // --- 去结算 ---
     const handleCheckout = () => {
         if (cartItems.length === 0) return;
 
-        // 跳转到【确认订单页】，并传递最新的购物车数据和金额
+        // 跳转到确认订单页，并传递最新的购物车数据和金额
         navigation.navigate('OrderConfirm', {
             cartItems,
             restaurant,
             subtotal,
-            // 如果你在购物车也做了优惠券功能，可以在这里传 discount
         });
     };
 
@@ -61,7 +60,6 @@ const CartScreen = ({ route, navigation }: any) => {
                     <CartItem item={item} onUpdate={handleUpdateQuantity} />
                 )}
                 ListHeaderComponent={
-                    // --- 修改点：移除了地址栏，只保留餐厅名 ---
                     <View style={styles.header}>
                         <Text style={styles.restaurantName}>{restaurant?.name || '购物车'}</Text>
                     </View>

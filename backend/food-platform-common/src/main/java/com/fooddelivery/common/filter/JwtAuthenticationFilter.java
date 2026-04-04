@@ -58,7 +58,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             username, null, authorities);
 
-                    // 在token中存储额外信息（userId等）
+                    // 在token中存储额外信息，如userId
                     authToken.setDetails(new JwtAuthenticationDetails(userId, role, username));
 
                     // 设置认证信息

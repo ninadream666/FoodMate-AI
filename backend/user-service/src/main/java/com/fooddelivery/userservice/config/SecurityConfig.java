@@ -32,25 +32,23 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. 放行 OPTIONS (CORS预检)
+                        // 放行OPTIONS（CORS预检）
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 2. ========== 关键修复 ==========
-                        // 放行 Spring Boot 的默认错误路径，防止 404 变成 403
+                        // 放行Spring Boot的默认错误路径，防止404变成403
                         .requestMatchers("/error").permitAll()
-                        // =================================
 
-                        // 3. 放行登录相关路径
+                        // 放行登录相关路径
                         .requestMatchers("/api/users/login", "/api/users/register").permitAll()
                         .requestMatchers("/api/users/auth/**").permitAll()
-                        .requestMatchers("/auth/**", "/api/auth/**").permitAll() // 匹配 /api/auth/login
+                        .requestMatchers("/auth/**", "/api/auth/**").permitAll()
                         .requestMatchers("/admin/**", "/api/admin/**").permitAll()
 
-                        // 4. 放行文档和监控
+                        // 放行文档和监控
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
 
-                        // 5. 头像静态资源公开访问
+                        // 头像静态资源公开访问
                         .requestMatchers("/users/avatars/**").permitAll()
 
                         .anyRequest().authenticated())

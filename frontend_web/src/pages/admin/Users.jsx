@@ -20,7 +20,7 @@ const getNormalizedStatus = (user) => {
     return 'ACTIVE'; // 兜底默认值：只要账号存在，默认当作正常
 };
 
-// 状态标签组件 (北欧风高级语义化配色)
+// 状态标签组件
 const StatusBadge = ({ status }) => {
     const getStatusInfo = (status) => {
         switch (status?.toUpperCase()) {
@@ -65,7 +65,7 @@ const CreditBadge = ({ creditLevel, creditScore }) => {
     );
 };
 
-// 用户行组件 (严格遵守：首列靠左，其余绝对居中)
+// 用户行组件
 const UserRow = ({ user, onEditUser, onViewCredit, onToggleStatus, currentTab }) => {
     const currentStatus = getNormalizedStatus(user);
     
@@ -211,7 +211,6 @@ function Users() {
                 size: pagination.size
             };
 
-            // 修复点：移除了 params.status = selectedStatus 因为后端不支持此参数过滤
             if (searchTerm) params.search = searchTerm;
 
             console.log('🔍 请求用户列表，参数:', params);
@@ -301,7 +300,6 @@ function Users() {
         showConfirm(`确定要${actionStr}用户 "${user.username || user.name}" 吗？`, async () => {
             setDialog(prev => ({ ...prev, isOpen: false }));
             try {
-                // 修复点：调用实际存在的 updateUserStatus，而非原版代码中不存在的 toggleUserStatus
                 await userService.updateUserStatus(user.id, isBanning ? 'BANNED' : 'ACTIVE', isBanning ? '管理员禁用' : '管理员解禁');
 
                 // 刷新用户列表
@@ -320,7 +318,6 @@ function Users() {
         setPagination(prev => ({ ...prev, page: newPage }));
     };
 
-    // 在前端根据后端传回的所有数据进行统一条件过滤
     const filteredUsers = users.filter(user => {
         const matchesSearch = (user.username || '').includes(searchTerm) ||
             (user.phone || '').includes(searchTerm) ||
@@ -373,7 +370,7 @@ function Users() {
                     </div>
                 </div>
 
-                {/* 统计卡片 (统一北欧风，无背景色块) */}
+                {/* 统计卡片 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
                     <div className="bg-surface p-5 rounded-2xl border border-border-light shadow-sm hover:shadow-card transition-shadow flex flex-col gap-1">
                         <div className="flex items-center justify-between">
@@ -488,7 +485,7 @@ function Users() {
                     </div>
                 </div>
 
-                {/* 用户表格 (严格遵守：首列靠左，其余列居中) */}
+                {/* 用户表格 */}
                 <div className="bg-surface rounded-2xl shadow-sm border border-border-light overflow-hidden">
                     <div className="px-6 py-5 border-b border-border-light bg-background-section flex justify-between items-center">
                         <h3 className="text-base font-extrabold text-text-primary tracking-tight">
@@ -577,7 +574,7 @@ function Users() {
                 </div>
             </div>
 
-            {/* 全局定制化 Modal 弹窗 (替代原生 Alert/Confirm) */}
+            {/* 全局定制化Modal弹窗 */}
             {dialog.isOpen && (
                 <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-overlay backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-surface rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-border-light">

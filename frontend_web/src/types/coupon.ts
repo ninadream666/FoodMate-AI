@@ -1,6 +1,6 @@
 /**
  * 优惠券相关的TypeScript类型定义
- * 基于后端接口文档 v1.0 (2026-01-03)
+ * 基于后端接口文档v1.0 (2026-01-03)
  */
 
 // ==================== 基础数据类型 ====================
@@ -18,14 +18,14 @@ export interface CouponTemplateDTO {
     maxDiscount?: number;             // 最高优惠金额
     totalQuantity: number;            // 发放总量
     issuedQuantity: number;           // 已发放数量
-    validFrom: string;                // 有效期开始时间 ISO8601
-    validUntil: string;               // 有效期结束时间 ISO8601
+    validFrom: string;                // 有效期开始时间ISO8601
+    validUntil: string;               // 有效期结束时间ISO8601
     enabled: boolean;                 // 是否启用
     stackable: boolean;               // 是否可叠加使用
     exclusiveIds?: string;            // 互斥优惠券IDs（逗号分隔）
     applicableMerchantIds?: string;   // 适用商户IDs（逗号分隔）
-    createdAt: string;                // 创建时间 ISO8601
-    updatedAt: string;                // 更新时间 ISO8601
+    createdAt: string;                // 创建时间ISO8601
+    updatedAt: string;                // 更新时间ISO8601
 }
 
 /**
@@ -37,11 +37,11 @@ export interface UserCouponDTO {
     couponTemplateId: number;         // 优惠券模板ID
     status: 'AVAILABLE' | 'USED' | 'EXPIRED';  // 状态：可用|已使用|已过期
     orderId?: number;                 // 关联订单ID（已使用时有值）
-    obtainedAt: string;               // 领取时间 ISO8601
-    usedAt?: string;                  // 使用时间 ISO8601
-    expiresAt: string;                // 过期时间 ISO8601
-    createdAt: string;                // 创建时间 ISO8601
-    updatedAt: string;                // 更新时间 ISO8601
+    obtainedAt: string;               // 领取时间ISO8601
+    usedAt?: string;                  // 使用时间ISO8601
+    expiresAt: string;                // 过期时间ISO8601
+    createdAt: string;                // 创建时间ISO8601
+    updatedAt: string;                // 更新时间ISO8601
     couponTemplate: CouponTemplateDTO; // 关联的优惠券模板信息
 }
 

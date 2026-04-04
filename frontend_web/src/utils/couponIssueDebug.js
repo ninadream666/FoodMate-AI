@@ -97,26 +97,26 @@ export const debugCouponIssue = {
         console.log('🚀 开始优惠券发放诊断...');
         console.log('==========================================');
 
-        // 1. 检查认证
+        // 检查认证
         if (!this.checkAuthHeaders()) {
             console.error('❌ 未找到认证token，请先登录');
             return false;
         }
 
-        // 2. 验证数据
+        // 验证数据
         if (!this.validateIssueData(issueData)) {
             console.error('❌ 数据验证失败');
             return false;
         }
 
-        // 3. 检查后端连接
+        // 检查后端连接
         const backendOk = await this.checkBackendConnection();
         if (!backendOk) {
             console.error('❌ 后端服务连接失败');
             return false;
         }
 
-        // 4. 测试API调用
+        // 测试API调用
         try {
             await this.testApiPath(issueData);
             console.log('🎉 诊断完成：所有检查都通过！');

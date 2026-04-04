@@ -8,7 +8,7 @@ let _connectionType = 'unknown';
 let _isWifi = false;
 let _listeners = [];
 
-// 订阅网络变化（应在 App 启动时调用一次）
+// 订阅网络变化（应在App启动时调用一次）
 let _unsubscribe = null;
 
 export const startNetworkMonitor = () => {
@@ -64,8 +64,6 @@ export const getNetworkStatus = () => ({
 export const canPerformLargeRequest = () => {
     return _isConnected;
 };
-
-// ============ 原有功能保留 ============
 
 // 异步检查网络连接状态（首次或需要精确结果时使用）
 export const checkNetworkConnection = async () => {

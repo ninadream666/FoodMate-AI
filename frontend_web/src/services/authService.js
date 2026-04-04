@@ -1,4 +1,4 @@
-// 基础 URL 使用在vite.config.js中配置的代理前缀
+// 基础URL使用在vite.config.js中配置的代理前缀
 const API_URL = '/api/auth';
 
 export const authService = {
@@ -14,7 +14,7 @@ export const authService = {
     });
 
     if (!response.ok) {
-      // 尝试读取后端返回的错误信息（例如 "Role mismatch..."）
+      // 尝试读取后端返回的错误信息
       let errorMessage = '登录失败，请检查用户名或密码';
       try {
         const errorText = await response.text();
@@ -33,7 +33,7 @@ export const authService = {
         username: data.username || username,
         role: data.role || role
       }));
-      // 单独保存 userId 方便推荐服务使用
+      // 单独保存userId方便推荐服务使用
       if (data.id) {
         localStorage.setItem('userId', data.id.toString());
       }
@@ -41,7 +41,7 @@ export const authService = {
     return data;
   },
 
-  // 注册 (保持不变，但为了代码完整性还是放这里)
+  // 注册
   register: async (username, email, password, role) => {
     const response = await fetch(`${API_URL}/register`, {
       method: 'POST',

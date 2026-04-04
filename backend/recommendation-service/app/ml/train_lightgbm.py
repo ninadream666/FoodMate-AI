@@ -1,12 +1,12 @@
 """
-LightGBM 排序模型训练脚本
+LightGBM排序模型训练脚本
 
 功能:
-- 从 training_samples.jsonl 加载数据
-- LambdaRank / Regression 训练
-- 支持增量训练 (init_model)
-- 输出 SHAP 特征重要性
-- 保存模型到 models/lightgbm_ranking.txt
+- 从training_samples.jsonl加载数据
+- LambdaRank/Regression训练
+- 支持增量训练(init_model)
+- 输出SHAP特征重要性
+- 保存模型到models/lightgbm_ranking.txt
 
 用法:
     python -m app.ml.train_lightgbm                       # 全量训练
@@ -66,7 +66,7 @@ def load_training_data(data_path: str) -> pd.DataFrame:
 
 def prepare_lgb_data(df: pd.DataFrame):
     """
-    准备 LightGBM 数据集
+    准备LightGBM数据集
 
     Returns: X, y, feature_names, categorical_feature_indices
     """
@@ -89,7 +89,7 @@ def prepare_lgb_data(df: pd.DataFrame):
     
     for cat_col in CATEGORICAL_FEATURES:
         vocab = cat_vocabs.get(cat_col, [])
-        # 将未知值归入 "unknown"
+        # 将未知值归入"unknown"
         df[cat_col] = df[cat_col].fillna("unknown").astype(str)
         if vocab:
             df[cat_col] = df[cat_col].apply(lambda x: x if x in vocab else "unknown")
@@ -111,7 +111,7 @@ def train_regression(
     n_rounds: int = 500,
     early_stopping: int = 50,
 ):
-    """训练 Regression 模型（预测点击/下单概率）"""
+    """训练Regression模型（预测点击/下单概率）"""
     import lightgbm as lgb
     from sklearn.model_selection import train_test_split
 
@@ -175,7 +175,7 @@ def train_lambdarank(
     save_path: Optional[str] = None,
     n_rounds: int = 500,
 ):
-    """训练 LambdaRank 模型（Learning-to-Rank）"""
+    """训练LambdaRank模型（Learning-to-Rank）"""
     import lightgbm as lgb
     from sklearn.model_selection import GroupShuffleSplit
 

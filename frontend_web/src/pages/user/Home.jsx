@@ -4,7 +4,7 @@ import { recommendationService } from '../../services/recommendationService';
 import { merchantService } from '../../services/merchantService';
 import { useNavigate } from 'react-router-dom';
 
-// 默认餐厅图片（当 API 没有返回图片时使用）
+// 默认餐厅图片
 const defaultImages = [
   'https://lh3.googleusercontent.com/aida-public/AB6AXuCGKHZQTlEYMaCX_XakByf8YPtBpJu1JbiVmEUPUCftM6tNzRyVbyE8f3B93zfHC9IU6yuQTSyRLBwyjZOCyKcwArw8BWvTd4ICz9hLoegZzezmIpMj--IQrqYL1y-5FBJynhYgrMIvAfx3LqT7MIWUdjd7Nu_4HG_yixaPWLbcv1JbV57XSLtFufazLCDmtIKU75l2djE7H-Nq9jmcWSE8nmdeV86n26tJOAArQksQID-q6YqfTF9XDOT1m_wGyrA7EwCx7fuiaXiY',
   'https://lh3.googleusercontent.com/aida-public/AB6AXuB5D4cVHmUDvJBFBae0uRhUP2dGh034P4yT1eXX7DXI4o99VrjQvf4MyLRT7aKUrxV54tTmh4MHx4I-X2mx6IEMJCfj1_NM79LlXeoR1Ee02k9qtFgtXO1cm08DggVsalQnB2CZqt-J4XXrJMmQ6pxAU5vP5aC6ex7wgrNJ8HvZ3KJUmpRzlteclmYitmPZbzJlaA4fMdJcy_dwxhnxl78edH5ei5fvuo9Z-pX4CemlX9S32hkNNtUv4BCGkEPSL35LhioStzX-N-wY',
@@ -16,7 +16,7 @@ const defaultImages = [
   'https://lh3.googleusercontent.com/aida-public/AB6AXuB5pWFJjVMA54KncLYN0DK2Av3grgpp5hqMaoU1PzLW5UfVTpZ-3-0RCuJvgNvP_NmXzZ9zAzhMVAxrdya5Ei3nwxIPJH7qL6SX4UNr5hmmTk5u1--GcU9FuJBgbfJ1vxquyzMpRdPw3LaVPfaSSmTtdrGJPkRu5a6zuMvWWpq7NYpeeFI8jMRUaQlSKOF4LVkwXtJxJFkn_2H4sEvYyffGZbQuBuGyq3Y-hcBpmBRLGWb6dL40VR_IAb5gEp4alYkj0DF8B5cvnjAu',
 ];
 
-// Logo SVG 组件
+// Logo SVG组件
 const LogoIcon = () => (
   <svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path d="M19.38 3.32a1 1 0 0 0-1.1.28L13.5 9H11a1 1 0 0 0-1 1v2.5L4.72 17.78a1 1 0 0 0 .28 1.1l5.58 5.58a1 1 0 0 0 1.42 0l8.7-8.7a1 1 0 0 0 0-1.42L15 8.5V6a1 1 0 0 0 1-1h2.5l5.28-4.78a1 1 0 0 0-.4-1.9zm-8.8 11.28L6.42 19.5l-2.1-2.1L8.5 13.24l.58.58c.38.38 1.04.38 1.42 0l2.4-2.4c.38-.38.38-1.04 0-1.42L10.32 7.42 12.5 5.24l4.88 4.88-3.58 3.58a2.5 2.5 0 0 1-3.54 0zM22 2a1 1 0 0 0-1 1v2h-2a1 1 0 1 0 0 2h2v2a1 1 0 1 0 2 0v-2h2a1 1 0 1 0 0-2h-2V3a1 1 0 0 0-1-1z" />
@@ -40,7 +40,7 @@ const getScoreColor = (score) => {
   return 'text-orange-600 bg-orange-100 dark:bg-orange-900/30';
 };
 
-// 根据餐厅数据生成推荐理由（当后端没有返回时）
+// 根据餐厅数据生成推荐理由
 const generateReason = (restaurant, rank) => {
   const reasons = [];
 
@@ -233,7 +233,7 @@ export default function Home() {
           });
         },
         {
-          enableHighAccuracy: false,  // 改为 false，提高成功率
+          enableHighAccuracy: false,  // 改为false，提高成功率
           timeout: 15000,  // 增加超时时间
           maximumAge: 300000, // 5分钟缓存
         }
@@ -417,8 +417,8 @@ export default function Home() {
 
   // 点击餐厅卡片跳转到详情页
   const handleRestaurantClick = (restaurant) => {
-    // 使用餐厅的 ID（可以是数字ID或外部ID如 B0LDM1F2K5）
-    // 后端会自动处理两种类型的 ID
+    // 使用餐厅的ID（可以是数字ID或外部ID）
+    // 后端会自动处理两种类型的ID
     const restaurantId = restaurant.id || restaurant.restaurant_id || restaurant.externalId || Date.now();
     navigate(`/restaurant/${restaurantId}`, { state: { restaurant } });
   };

@@ -57,7 +57,7 @@ export const cancelAllRequests = () => {
 // ============ 指数退避重试 ============
 const MAX_RETRIES = API_CONFIG.MAX_RETRIES || 2;
 
-// 可重试的 HTTP 状态码（服务端临时故障）
+// 可重试的HTTP状态码（服务端临时故障）
 const RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 
 // 不应重试的请求方法（非幂等操作）
@@ -76,7 +76,7 @@ const shouldRetry = (error, method) => {
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// ============ Axios 拦截器 ============
+// ============ Axios拦截器 ============
 axios.interceptors.request.use(request => {
     if (DEBUG_MODE) {
         console.log('[API] 发送请求:', request.method?.toUpperCase(), request.url);
@@ -174,7 +174,7 @@ export const request = async (urlKey, endpoint, options = {}) => {
 
     const headers = {
         'Content-Type': 'application/json',
-        // 告知后端客户端支持 gzip，配合 Spring Boot compression 使用
+        // 告知后端客户端支持gzip，配合Spring Boot compression使用
         'Accept-Encoding': 'gzip, deflate',
         ...options.headers,
     };
@@ -199,7 +199,7 @@ export const request = async (urlKey, endpoint, options = {}) => {
         data: options.body,
         timeout: timeout,
         signal: controller.signal,
-        // 大响应体自动解压（axios 默认支持）
+        // 大响应体自动解压，axios默认支持
         decompress: true,
     };
 
@@ -219,7 +219,7 @@ export const request = async (urlKey, endpoint, options = {}) => {
                 const response = await axios(config);
                 const data = response.data;
 
-                // 缓存成功的 GET 响应
+                // 缓存成功的GET响应
                 if (canCache && useCache) {
                     const cacheType = getCacheType(urlKey, endpoint);
                     await cacheService.set(cacheType, { urlKey, endpoint }, data);

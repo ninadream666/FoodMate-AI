@@ -41,7 +41,6 @@ public class OrderService {
     private final CancellationService cancellationService;
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
     private final UserServiceClient userServiceClient;
-    // 注入 RabbitTemplate 用于发送消息
     private final RabbitTemplate rabbitTemplate;
     private final PlatformServiceClient platformServiceClient;
 
@@ -66,7 +65,7 @@ public class OrderService {
                     .body(Map.of("error", "订单状态异常"));
         }
 
-        // PENDING 状态下可以取消，其他状态需要等待商家批准
+        // PENDING状态下可以取消，其他状态需要等待商家批准
         boolean isUnaccepted = OrderStatus.PENDING == order.getStatus();
 
         order.setCancelReason(cancelReason);
@@ -110,7 +109,7 @@ public class OrderService {
 
     /**
      * 内部方法：商家同意取消 - 仅供商家服务调用
-     * 注意：权限校验应在商家服务进行
+     * 权限校验应在商家服务进行
      */
     @Transactional
     public ResponseEntity<?> updateOrderCancelStatusToApproved(Long orderId, BigDecimal refundAmount) {
@@ -143,7 +142,7 @@ public class OrderService {
     }
 
     /**
-     * 内部方法：商家拒绝取消 - 仅供商家服务调用
+     * 商家拒绝取消 - 仅供商家服务调用
      */
     @Transactional
     public ResponseEntity<?> updateOrderCancelStatusToRejected(Long orderId) {
@@ -349,14 +348,12 @@ public class OrderService {
         log.info("订单支付成功: orderId={}, transactionId={}, paymentMethod={}",
                 orderId, paymentDto.getPaymentTransactionId(), paymentDto.getPaymentMethod());
 
-        // --- 新增: 发送 RabbitMQ 消息给 AI 定价服务 ---
         try {
             sendOrderPaidEvent(order);
         } catch (Exception e) {
             log.error("Failed to send order.paid event to RabbitMQ", e);
-            // 这里吞掉异常，不影响支付主流程
+            // 不影响支付主流程
         }
-        // ------------------------------------------
 
         // 触发分成计算（异步调用，失败不影响支付流程）
         try {
@@ -403,7 +400,7 @@ public class OrderService {
 
         event.put("items", items);
 
-        // 发送到 order.events 交换机，路由键 order.paid
+        // 发送到order.events交换机，路由键order.paid
         rabbitTemplate.convertAndSend("order.events", "order.paid", event);
         log.info("Sent RabbitMQ message: order.paid for order {}", order.getId());
     }
@@ -427,7 +424,7 @@ public class OrderService {
                     .body(Map.of("error", "无权操作该订单"));
         }
 
-        // 只有 PAID 状态的订单才可以接单
+        // 只有PAID状态的订单才可以接单
         if (order.getStatus() != OrderStatus.PAID) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", "订单状态不正确，无法接单", "currentStatus", order.getStatus().getCode()));
@@ -517,7 +514,7 @@ public class OrderService {
 
         log.info("订单状态更新: orderId={}, {} -> {}", orderId, currentStatus.getCode(), newStatus.getCode());
 
-        // 订单完成时，通知平台服务结算佣金（将佣金状态从 PENDING 变为 SETTLED）
+        // 订单完成时，通知平台服务结算佣金（将佣金状态从PENDING变为SETTLED）
         if (newStatus == OrderStatus.COMPLETED) {
             try {
                 Map<String, Object> settlementData = new HashMap<>();
@@ -541,7 +538,7 @@ public class OrderService {
 
     /**
      * 验证订单是否属于该商家
-     * merchantId 可能是数据库主键或外部ID，只要订单中存的值匹配其中一个即可
+     * merchantId可能是数据库主键或外部ID，只要订单中存的值匹配其中一个即可
      */
     private boolean isOrderOwnedByMerchant(Order order, String merchantId) {
         String orderMerchantId = String.valueOf(order.getMerchantId());

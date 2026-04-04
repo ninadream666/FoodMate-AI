@@ -42,7 +42,7 @@ public class CouponTypeStatsDTO {
     private Long usedCount;
 
     /**
-     * 使用率 (%)
+     * 使用率（%）
      */
     private BigDecimal usageRate;
 

@@ -1,13 +1,11 @@
 import axios from 'axios';
 
-// API 基础地址配置 - 根据后端实际服务端口
-// 开发环境使用Vite代理，生产环境使用实际端口
+// API基础地址配置 
 const isDev = import.meta.env.DEV;
 
 const API_BASE_URLS = {
-    // 开发环境使用代理路径，生产环境使用完整URL
-    // 各服务的 API 路径前缀，与 Vite 代理配置匹配
-    USER_SERVICE: isDev ? '/api' : 'http://localhost:8083', // [修改点]: 添加 /api 前缀以触发 Vite 代理
+    // 各服务的API路径前缀
+    USER_SERVICE: isDev ? '/api' : 'http://localhost:8083', 
     MERCHANT_SERVICE: isDev ? '' : 'http://localhost:8081',
     ORDER_SERVICE: isDev ? '' : 'http://localhost:8084',
     MARKETING_SERVICE: isDev ? '' : 'http://localhost:8082',
@@ -35,7 +33,7 @@ export const ERROR_MESSAGES = {
     REQUEST_TIMEOUT: '请求超时，请稍后重试'
 };
 
-// 创建不同服务的 axios 实例
+// 创建不同服务的axios实例
 const createApiInstance = (baseURL, serviceName = '') => {
     const instance = axios.create({
         baseURL,
@@ -45,7 +43,7 @@ const createApiInstance = (baseURL, serviceName = '') => {
         }
     });
 
-    // 请求拦截器 - 添加 token 和请求日志
+    // 请求拦截器 - 添加token和请求日志
     instance.interceptors.request.use(
         (config) => {
             const token = localStorage.getItem('adminToken');
@@ -82,7 +80,7 @@ const createApiInstance = (baseURL, serviceName = '') => {
                 });
             }
 
-            // 直接返回 response，让具体的 service 处理数据结构
+            // 直接返回response，让具体的service处理数据结构
             return response;
         },
         (error) => {
@@ -144,7 +142,7 @@ const createApiInstance = (baseURL, serviceName = '') => {
     return instance;
 };
 
-// 各服务的 API 实例
+// 各服务的API实例
 export const userApi = createApiInstance(API_BASE_URLS.USER_SERVICE, 'USER');
 export const merchantApi = createApiInstance(API_BASE_URLS.MERCHANT_SERVICE, 'MERCHANT');
 export const orderApi = createApiInstance(API_BASE_URLS.ORDER_SERVICE, 'ORDER');
@@ -153,7 +151,7 @@ export const platformApi = createApiInstance(API_BASE_URLS.PLATFORM_SERVICE, 'PL
 export const profileApi = createApiInstance(API_BASE_URLS.PROFILE_SERVICE, 'PROFILE');
 export const recommendationApi = createApiInstance(API_BASE_URLS.RECOMMENDATION_SERVICE, 'RECOMMENDATION');
 
-// API 端点常量 - 基于API测试文件的接口分析
+// API端点常量 - 基于API测试文件的接口分析
 export const API_ENDPOINTS = {
     // 平台服务端点 (端口: 8088)
     DASHBOARD: {
@@ -163,7 +161,7 @@ export const API_ENDPOINTS = {
         GROWTH: '/api/admin/dashboard/growth'             // 获取增长趋势
     },
 
-    // 订单服务端点 (端口: 8084)
+    // 订单服务端点
     ORDERS: {
         // 管理员订单管理
         ADMIN_ALL: '/api/admin/orders/all',              // 获取所有订单(分页)
@@ -183,7 +181,7 @@ export const API_ENDPOINTS = {
         INTERNAL_PAYMENT_MOCK: '/orders/internal'        // 模拟支付 /{orderId}/payment/mock
     },
 
-    // 用户服务端点 (端口: 8083)
+    // 用户服务端点
     USERS: {
         // 用户管理
         ADMIN_ALL: '/admin/users',                       // 获取所有用户(分页)
@@ -194,7 +192,7 @@ export const API_ENDPOINTS = {
         ADMIN_SEARCH: '/admin/users/search'              // 搜索用户
     },
 
-    // 商家服务端点 (端口: 8081)
+    // 商家服务端点
     MERCHANTS: {
         // 商家管理
         ADMIN_ALL: '/api/admin/merchants',               // 获取所有商家(分页)
@@ -205,7 +203,7 @@ export const API_ENDPOINTS = {
         ADMIN_REJECT: '/api/admin/merchants'             // 拒绝商家 /{merchantId}/reject
     },
 
-    // 平台服务端点 (端口: 8088)
+    // 平台服务端点
     COMMISSIONS: {
         // 分成数据查询
         ORDER_COMMISSION: '/api/internal/commissions/order',      // 获取订单分成详情 /{orderId}
@@ -215,7 +213,7 @@ export const API_ENDPOINTS = {
     }
 };
 
-// 导出 API 基础地址配置供其他模块使用
+// 导出API基础地址配置供其他模块使用
 export { API_BASE_URLS };
 
 // 默认导出所有API实例

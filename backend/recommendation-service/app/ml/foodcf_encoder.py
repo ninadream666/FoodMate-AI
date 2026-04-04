@@ -2,14 +2,14 @@
 FoodCF-Encoder — 面向外卖推荐协同过滤的领域专用嵌入模型
 
 技术架构:
-  基座: GTE-Qwen2-1.5B (阿里通义, Decoder-only LLM 嵌入模型)
+  基座: GTE-Qwen2-1.5B（阿里通义, Decoder-only LLM嵌入模型）
   训练: 三阶段渐进式 —
-    1) LLM 合成数据增强预热 (E5-Mistral 范式)
-    2) 指令感知对比学习 (NV-Embed: 双向注意力 + Latent Attention Pooling)
-    3) 多任务 + Matryoshka 表示学习联合微调
+    1) LLM合成数据增强预热（E5-Mistral范式）
+    2) 指令感知对比学习（NV-Embed: 双向注意力+Latent Attention Pooling）
+    3) 多任务+Matryoshka表示学习联合微调
 
   推理降级链:
-    FoodCF-Encoder 微调模型 → GTE-Qwen2 原始模型 → 简易 TF-IDF 哈希嵌入
+    FoodCF-Encoder微调模型 → GTE-Qwen2原始模型 → 简易TF-IDF哈希嵌入
 
 核心参考文献:
   [1] Wang et al., "Improving Text Embeddings with Large Language Models", NAACL 2024
@@ -30,10 +30,10 @@ logger = logging.getLogger(__name__)
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MODEL_DIR = os.path.join(ROOT_DIR, "models")
 
-# 默认嵌入维度 (Matryoshka: 支持 32/64/128 截断)
+# 默认嵌入维度，Matryoshka支持32/64/128截断
 DEFAULT_EMBED_DIM = 128
 
-# 指令前缀 (E5-Mistral 风格)
+# E5-Mistral风格指令前缀
 INSTRUCTION_USER = "判断该用户会在哪些外卖餐厅下单："
 INSTRUCTION_RESTAURANT = "描述这家外卖餐厅的特色："
 
@@ -46,7 +46,7 @@ class LatentAttentionPooling:
     比简单 mean pooling 提取更丰富的语义信息。
 
     注: 仅在 PyTorch 可用且模型已加载时使用;
-        降级模式下退化为 mean pooling。
+        降级模式下退化为mean pooling。
     """
 
     def __init__(self, hidden_dim: int, num_latent_tokens: int = 4, output_dim: int = DEFAULT_EMBED_DIM):
@@ -102,9 +102,9 @@ class FoodCFEncoder:
       - encode_restaurant(desc_text) -> np.ndarray 餐厅塔
 
     降级链:
-      1. 微调模型 (models/foodcf_encoder/) — 精度最高
-      2. GTE-Qwen2-1.5B 原始 HuggingFace 模型 — 需要下载
-      3. TF-IDF 哈希嵌入 — 纯本地、零依赖降级
+      1. 微调模型(models/foodcf_encoder/) — 精度最高
+      2. GTE-Qwen2-1.5B原始HuggingFace模型 — 需要下载
+      3. TF-IDF哈希嵌入 — 纯本地、零依赖降级
     """
 
     def __init__(
@@ -117,7 +117,7 @@ class FoodCFEncoder:
         self.embed_dim = embed_dim
         self.device = device
 
-        # 模型组件 (懒加载)
+        # 模型组件（懒加载）
         self._tokenizer = None
         self._base_model = None
         self._user_pooling: Optional[LatentAttentionPooling] = None
@@ -130,7 +130,7 @@ class FoodCFEncoder:
         if self._loaded:
             return
 
-        # 尝试 1: 加载微调模型
+        # 尝试1: 加载微调模型
         if os.path.isdir(self.model_path) and os.path.exists(
             os.path.join(self.model_path, "config.json")
         ):
@@ -143,7 +143,7 @@ class FoodCFEncoder:
             except Exception as e:
                 logger.warning(f"⚠️ 微调模型加载失败: {e}")
 
-        # 尝试 2: 加载 HuggingFace 预训练模型（通过挂载宿主机缓存，HF_HUB_OFFLINE=1）
+        # 尝试2: 加载HuggingFace预训练模型（通过挂载宿主机缓存，HF_HUB_OFFLINE=1）
         try:
             self._load_pretrained()
             self._mode = "pretrained"
@@ -153,13 +153,13 @@ class FoodCFEncoder:
         except Exception as e:
             logger.warning(f"⚠️ 预训练模型加载失败: {e}")
 
-        # 尝试 3: TF-IDF 哈希降级
+        # 尝试3: TF-IDF哈希降级
         self._mode = "fallback"
         self._loaded = True
         logger.info("ℹ️ FoodCF-Encoder 降级为 TF-IDF 哈希嵌入模式")
 
     def _load_finetuned(self):
-        """加载微调后的模型（支持 LoRA adapter）"""
+        """加载微调后的模型（支持LoRA adapter）"""
         import torch
         from transformers import AutoTokenizer, AutoModel
 
@@ -175,7 +175,7 @@ class FoodCFEncoder:
         self._tokenizer = AutoTokenizer.from_pretrained(self.model_path)
 
         if lora_applied:
-            # LoRA 模式: 先加载基座，再合并 adapter
+            # LoRA模式: 先加载基座，再合并adapter
             from peft import PeftModel
             base = AutoModel.from_pretrained(base_model_name)
             self._base_model = PeftModel.from_pretrained(base, self.model_path)
@@ -190,7 +190,7 @@ class FoodCFEncoder:
 
         hidden_dim = self._base_model.config.hidden_size
 
-        # 加载 Latent Attention Pooling 权重
+        # 加载Latent Attention Pooling权重
         user_pool_path = os.path.join(self.model_path, "user_pooling.pt")
         rest_pool_path = os.path.join(self.model_path, "restaurant_pooling.pt")
 
@@ -227,7 +227,7 @@ class FoodCFEncoder:
         ).to(self.device)
         self._base_model.eval()
 
-        # 预训练模式使用 mean pooling，不使用 Latent Attention Pooling
+        # 预训练模式使用mean pooling，不使用Latent Attention Pooling
         self._user_pooling = None
         self._restaurant_pooling = None
 
@@ -235,12 +235,12 @@ class FoodCFEncoder:
         """
         TF-IDF 哈希嵌入（零依赖降级方案）
 
-        使用特征哈希 (feature hashing) 将文本映射为固定维度的稠密向量。
-        虽然精度远低于神经模型，但保证系统在无 GPU / 无模型文件时仍能运行。
+        使用特征哈希将文本映射为固定维度的稠密向量。
+        虽然精度远低于神经模型，但保证系统在无GPU/无模型文件时仍能运行。
         """
         # 简单中文字/词分割
         tokens = list(text)
-        # 加入 bigram
+        # 加入bigram
         for i in range(len(text) - 1):
             tokens.append(text[i : i + 2])
 
@@ -251,7 +251,7 @@ class FoodCFEncoder:
             sign = 1.0 if (h // self.embed_dim) % 2 == 0 else -1.0
             vec[idx] += sign
 
-        # L2 归一化
+        # L2归一化
         norm = np.linalg.norm(vec)
         if norm > 0:
             vec /= norm
@@ -267,7 +267,7 @@ class FoodCFEncoder:
         ).to(self.device)
 
         with torch.no_grad():
-            # 双向注意力: 不使用 causal mask (NV-Embed 的核心创新)
+            # 双向注意力: 不使用causal mask
             outputs = self._base_model(**inputs)
             hidden_states = outputs.last_hidden_state  # (1, seq_len, hidden_dim)
 
@@ -275,14 +275,14 @@ class FoodCFEncoder:
                 # Latent Attention Pooling
                 embedding = pooling.module(hidden_states)  # (1, embed_dim)
             else:
-                # Mean Pooling 降级
+                # Mean Pooling降级
                 mask = inputs["attention_mask"].unsqueeze(-1).float()
                 embedding = (hidden_states * mask).sum(1) / mask.sum(1)
-                # 截断到目标维度 (Matryoshka)
+                # 截断到目标维度
                 embedding = embedding[:, : self.embed_dim]
 
         vec = embedding.squeeze(0).cpu().numpy().astype(np.float32)
-        # L2 归一化
+        # L2归一化
         norm = np.linalg.norm(vec)
         if norm > 0:
             vec /= norm
@@ -297,7 +297,7 @@ class FoodCFEncoder:
                 "近5次点了川菜3次、粤菜1次、日料1次; 偏好: 麻辣; 限制: 花生过敏"
 
         Returns:
-            (embed_dim,) 的 L2 归一化嵌入向量
+            (embed_dim,)的L2归一化嵌入向量
         """
         self._load_model()
 
@@ -315,7 +315,7 @@ class FoodCFEncoder:
                 "渝味老火锅·川渝菜·招牌毛肚火锅/麻辣牛肉; 人均55元; 评分4.6; 月销2300单"
 
         Returns:
-            (embed_dim,) 的 L2 归一化嵌入向量
+            (embed_dim,)的L2归一化嵌入向量
         """
         self._load_model()
 
@@ -328,10 +328,10 @@ class FoodCFEncoder:
 
     def encode_restaurants_batch(self, descriptions: List[str]) -> np.ndarray:
         """
-        批量编码餐厅 (离线预计算用)
+        批量编码餐厅，离线预计算用
 
         Returns:
-            (n, embed_dim) 的嵌入矩阵
+            (n, embed_dim)的嵌入矩阵
         """
         embeddings = []
         for desc in descriptions:
@@ -349,7 +349,7 @@ class FoodCFEncoder:
         return self._mode
 
     def is_available(self) -> bool:
-        """模型是否可用 (包括降级模式)"""
+        """模型是否可用，包括降级模式"""
         self._load_model()
         return True  # 始终可用（最差降级到 TF-IDF 哈希）
 

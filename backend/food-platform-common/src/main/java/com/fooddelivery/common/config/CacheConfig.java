@@ -50,7 +50,7 @@ public class CacheConfig {
         // 菜单缓存 - 30分钟过期
         cacheConfigurations.put("menu_items", defaultConfig.entryTtl(Duration.ofMinutes(30)));
 
-        // 订单缓存 - 10分钟过期（订单变化频繁）
+        // 订单缓存 - 10分钟过期
         cacheConfigurations.put("orders", defaultConfig.entryTtl(Duration.ofMinutes(10)));
 
         // 优惠券缓存 - 15分钟过期

@@ -1,7 +1,7 @@
 """
 多智能体推荐API路由
 
-基于 LangGraph 多智能体编排的推荐API:
+基于LangGraph多智能体编排的推荐API:
 - ContextAgent: 环境感知
 - ProfilerAgent: 用户画像
 - DecisionAgent: MAB决策
@@ -35,18 +35,18 @@ async def multi_agent_recommendation(
     authorization: Optional[str] = Header(None, description="JWT Token (Bearer xxx)")
 ):
     """
-    🤖 多智能体协作推荐
+    多智能体协作推荐
 
-    使用 LangGraph 编排三个协作智能体:
+    使用LangGraph编排三个协作智能体:
     1. ContextAgent - 感知环境（天气、交通、时间）
     2. ProfilerAgent - 分析用户画像（偏好、意图）
     3. DecisionAgent - MAB算法决策（UCB1/Thompson/ε-Greedy/上下文感知）
 
     完整的工作流: ContextAgent → ProfilerAgent → DecisionAgent
     
-    **传入 Authorization 头可获取真实用户画像**：
-    - 如果提供有效的 JWT Token，将从 profile-service 获取真实用户数据
-    - 如果未提供 Token，将使用默认画像进行推荐
+    **传入Authorization头可获取真实用户画像**：
+    - 如果提供有效的JWT Token，将从profile-service获取真实用户数据
+    - 如果未提供Token，将使用默认画像进行推荐
 
     **请求示例**:
     ```json
@@ -63,7 +63,7 @@ async def multi_agent_recommendation(
     try:
         logger.info(f"多智能体推荐请求，位置: {request.location.address}")
         
-        # 如果有 Token，设置到用户服务适配器
+        # 如果有Token，设置到用户服务适配器
         user_id = getattr(request, 'user_id', 'guest')
         if authorization and authorization.startswith("Bearer "):
             token = authorization[7:]  # 去掉 "Bearer " 前缀
@@ -96,20 +96,20 @@ async def edge_synergy_recommendation(
     request: EdgeSynergyRequest
 ):
     """
-    🛡️ 端云协同推荐 (隐私保护模式)
+    端云协同推荐：隐私保护模式
     
     专门处理带有端侧硬性脱敏约束的推荐请求。
-    此接口保证不查询用户的云端画像，所有敏感决策依赖于 Edge 传来的约束。
+    此接口保证不查询用户的云端画像，所有敏感决策依赖于Edge传来的约束。
     """
     try:
         logger.info(f"端云协同推荐请求，意图: {request.query}")
         
-        # 将端侧发送来的硬性约束放入 health_context 的扩展字段中，供后续智能体(DecisionAgent)拦截使用
+        # 将端侧发送来的硬性约束放入health_context的扩展字段中，供后续智能体DecisionAgent拦截使用
         health_dict = {"edge_constraints": request.constraints.dict()}
         health_context = HealthContext(**health_dict)
         
         # 将脱敏请求转化为内部使用的通用请求格式
-        # 强制使用虚拟 user_id 确保 ProfilerAgent 不去调用真实的 profile-service
+        # 强制使用虚拟user_id确保ProfilerAgent不去调用真实的profile-service
         internal_request = RecommendationRequest(
             location=request.location,
             query=request.query,
@@ -126,7 +126,7 @@ async def edge_synergy_recommendation(
 
         result = await multi_agent_recommendation_service.get_recommendations(internal_request)
         
-        # 降级容错设计：如果端侧传来的约束过严（如：禁止冰饮但周边全是冷饮店），结果为空
+        # 降级容错设计：如果端侧传来的约束过严，如禁止冰饮但周边全是冷饮店，结果为空
         if result.total_count == 0 or not result.restaurants:
             logger.warning("端侧约束过于严格，云端无符合条件的餐品，返回降级标识")
             return RecommendationResponse(
@@ -156,12 +156,12 @@ async def update_recommendation_feedback(
     feedback_type: str = Query(default="order", description="反馈类型: order/click/rating")
 ):
     """
-    📊 更新推荐反馈
+    更新推荐反馈
     
     记录用户对推荐的反馈，用于MAB算法的在线学习。
     
     - **restaurant_id**: 餐厅ID
-    - **reward**: 奖励值 (0表示负面，1表示正面)
+    - **reward**: 奖励值（0表示负面，1表示正面）
     - **feedback_type**: 反馈类型
         - order: 用户下单（权重1.0）
         - click: 用户点击（权重0.3）
@@ -200,14 +200,14 @@ async def switch_mab_strategy(
     )
 ):
     """
-    🔄 切换MAB策略
+    切换MAB策略
     
     动态切换推荐决策使用的多臂老虎机算法:
     
-    - **ucb1**: Upper Confidence Bound - 探索与利用平衡
-    - **thompson**: Thompson Sampling - 贝叶斯方法
-    - **epsilon**: ε-Greedy - 简单探索策略
-    - **contextual**: 上下文感知MAB（默认，综合多因素）
+    - ucb1: Upper Confidence Bound - 探索与利用平衡
+    - thompson: Thompson Sampling - 贝叶斯方法
+    - epsilon: ε-Greedy - 简单探索策略
+    - contextual: 上下文感知MAB（默认，综合多因素）
     """
     valid_strategies = ["ucb1", "thompson", "epsilon", "contextual"]
     if strategy not in valid_strategies:
@@ -236,7 +236,7 @@ async def switch_mab_strategy(
 @router.get("/status")
 async def get_agent_system_status():
     """
-    ⚙️ 获取多智能体系统状态
+    获取多智能体系统状态
     
     返回系统当前状态，包括:
     - 智能体可用性
@@ -285,9 +285,9 @@ async def get_agent_system_status():
 @router.get("/explain")
 async def explain_agent_workflow():
     """
-    📖 解释多智能体工作流程
+    解释多智能体工作流程
     
-    详细说明 LangGraph 编排的多智能体协作流程。
+    详细说明LangGraph编排的多智能体协作流程。
     """
     return {
         "title": "🤖 多智能体协作推荐系统",

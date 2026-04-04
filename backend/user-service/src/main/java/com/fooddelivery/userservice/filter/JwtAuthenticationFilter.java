@@ -47,12 +47,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 从Token中提取用户名
         username = jwtUtil.extractUsername(jwt);
 
-        // 如果用户名存在，且当前上下文没有认证信息 (避免重复认证)
+        // 如果用户名存在，且当前上下文没有认证信息，避免重复认证
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             // 从数据库加载用户信息
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
-            // 验证 Token 是否有效
+            // 验证Token是否有效
             if (jwtUtil.isTokenValid(jwt, userDetails.getUsername())) {
                 // 生成认证令牌
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
@@ -62,7 +62,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 
-                // 将认证信息放入 Spring Security 上下文
+                // 将认证信息放入Spring Security上下文
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }

@@ -1,8 +1,7 @@
 """
 多智能体推荐服务集成
 
-将 LangGraph 多智能体系统与现有的推荐API集成，
-提供统一的推荐服务接口。
+将LangGraph多智能体系统与现有的推荐API集成，提供统一的推荐服务接口。
 """
 
 import os
@@ -51,7 +50,7 @@ class MultiAgentRecommendationService:
     """
     多智能体推荐服务
     
-    整合 LangGraph 编排器提供完整的智能推荐能力：
+    整合LangGraph编排器提供完整的智能推荐能力：
     - 环境感知（天气、交通、时间）
     - 用户画像（偏好、意图）
     - MAB决策（UCB1、Thompson、ε-Greedy、上下文感知）
@@ -62,7 +61,7 @@ class MultiAgentRecommendationService:
         初始化多智能体推荐服务
         
         Args:
-            mab_strategy: MAB策略 (ucb1, thompson, epsilon, contextual, ml_ensemble)
+            mab_strategy：MAB策略（ucb1, thompson, epsilon, contextual, ml_ensemble）
         """
         self.mab_strategy = mab_strategy
         
@@ -72,7 +71,7 @@ class MultiAgentRecommendationService:
         self.calendar_service = CalendarAPIService()
         self.poi_service = AmapPOIService()
         
-        # 用户画像服务（真实调用 profile-service）
+        # 用户画像服务
         self.user_service = profile_service_adapter
         
         # 智能体编排器
@@ -119,14 +118,14 @@ class MultiAgentRecommendationService:
             
             logger.info(f"开始多智能体推荐，位置: {location}")
             
-            # 搜索附近餐厅 (传入真正的用户原始 query 供双重召回使用)
+            # 搜索附近餐厅，传入真正的用户原始query供双重召回使用
             restaurants = await self._search_restaurants(
                 location=location,
                 latitude=latitude,
                 longitude=longitude,
                 radius=getattr(request, 'search_radius', 20000),
                 limit=50,
-                user_query=getattr(request, 'query', "")  # 🆕 传入真实查询词
+                user_query=getattr(request, 'query', "")  # 传入真实查询词
             )
             
             if not restaurants:
@@ -134,7 +133,7 @@ class MultiAgentRecommendationService:
                 return await self._fallback_recommendation(request)
             
             # 执行智能体编排
-            # 🆕 传入前端的健康/天气上下文，供决策引擎排序使用
+            # 传入前端的健康/天气上下文，供决策引擎排序使用
             health_ctx = {}
             weather_ctx = None
             if hasattr(request, 'health_context') and request.health_context:
@@ -155,7 +154,7 @@ class MultiAgentRecommendationService:
                     "delivery_impact": request.weather_context.delivery_impact,
                 }
             
-            # 💡 巧妙利用 health_ctx 将纯净的原始意图传递给下游的 DecisionAgent
+            # 利用health_ctx将纯净的原始意图传递给下游的DecisionAgent
             health_ctx["pure_query"] = getattr(request, 'query', "")
 
             # 传递忌口/过敏原到决策引擎，用于硬过滤
@@ -179,7 +178,7 @@ class MultiAgentRecommendationService:
                 logger.warning(f"编排失败: {result.get('error')}")
                 return await self._fallback_recommendation(request)
             
-            # 🆕 将前端传入的健康/天气上下文注入 context_analysis，供决策引擎使用
+            # 将前端传入的健康/天气上下文注入context_analysis，供决策引擎使用
             if "context_analysis" not in result:
                 result["context_analysis"] = {}
             if health_ctx:
@@ -187,7 +186,7 @@ class MultiAgentRecommendationService:
             
             if hasattr(request, 'weather_context') and request.weather_context:
                 wc = request.weather_context
-                # 合并前端天气数据到 context_analysis.weather，确保决策引擎可以用
+                # 合并前端天气数据到context_analysis.weather，确保决策引擎可以用
                 ca_weather = result["context_analysis"].get("weather", {})
                 # 始终用前端温度覆盖后端天气API的默认值
                 if wc.temperature is not None:
@@ -212,7 +211,7 @@ class MultiAgentRecommendationService:
         """构建用户查询，整合健康上下文和天气上下文"""
         parts = []
         
-        # 1. 整合天气上下文（最高优先级 - 影响配送）
+        # 整合天气上下文（最高优先级 - 影响配送）
         if hasattr(request, 'weather_context') and request.weather_context:
             weather = request.weather_context
             if weather.is_heavy_rain:
@@ -228,7 +227,7 @@ class MultiAgentRecommendationService:
                 parts.append("天气寒冷，推荐热乎乎的暖身美食，如火锅、热汤、麻辣烫")
                 logger.info(f"检测到低温天气: {weather.temperature}°C")
         
-        # 2. 整合健康上下文
+        # 整合健康上下文
         if hasattr(request, 'health_context') and request.health_context:
             health = request.health_context
             if health.is_post_workout:
@@ -240,11 +239,11 @@ class MultiAgentRecommendationService:
             elif health.heart_rate and health.heart_rate > 100:
                 parts.append("心率较高，推荐清淡舒缓的食物")
         
-        # 3. 用户原始查询
+        # 用户原始查询
         if hasattr(request, 'query') and request.query:
             parts.append(request.query)
         
-        # 4. 用户偏好设置
+        # 用户偏好设置
         if hasattr(request, 'preferences'):
             prefs = request.preferences
             if hasattr(prefs, 'cuisine_types') and prefs.cuisine_types:
@@ -261,7 +260,7 @@ class MultiAgentRecommendationService:
         longitude: float = None,
         radius: int = 20000,
         limit: int = 50,
-        user_query: str = ""  # 🆕 接收原始查询
+        user_query: str = ""  # 接收原始查询
     ) -> List[Dict[str, Any]]:
         """搜索附近餐厅"""
         try:
@@ -346,7 +345,7 @@ class MultiAgentRecommendationService:
                           restaurant.get("estimated_delivery_time", 30))
         cuisine_str = str(cuisine).lower()
         
-        # ========== 1. 天气相关（最高优先级）==========
+        # ========== 天气相关（最高优先级）==========
         if hasattr(request, 'weather_context') and request.weather_context:
             weather = request.weather_context
             temp = weather.temperature
@@ -391,7 +390,7 @@ class MultiAgentRecommendationService:
                     ]
                     reasons.append(random.choice(cold_templates))
         
-        # ========== 2. 运动健康相关 ==========
+        # ========== 运动健康相关 ==========
         if hasattr(request, 'health_context') and request.health_context:
             health = request.health_context
             if health.is_post_workout:
@@ -416,7 +415,7 @@ class MultiAgentRecommendationService:
             elif health.activity_status in ["running", "walking"] and health.recent_steps_30min and health.recent_steps_30min > 500:
                 reasons.append(f"🚶 今日已走{health.daily_steps}步，{name}的{cuisine}犒劳一下自己")
         
-        # ========== 3. 节日/周末 ==========
+        # ========== 节日/周末 ==========
         temporal = context_analysis.get("temporal", {})
         if temporal:
             festival = temporal.get("festival", "")
@@ -436,7 +435,7 @@ class MultiAgentRecommendationService:
                     ]
                     reasons.append(random.choice(weekend_templates))
         
-        # ========== 4. 交通拥堵 ==========
+        # ========== 交通拥堵 ==========
         traffic = context_analysis.get("traffic", {})
         if traffic:
             congestion = traffic.get("congestion_level", "畅通")
@@ -449,7 +448,7 @@ class MultiAgentRecommendationService:
                 elif not reasons:
                     reasons.append(f"🚗 虽然路况{congestion}，{name}约{delivery_time}分钟仍可送达")
         
-        # ========== 5. 默认理由（结合餐厅自身亮点）==========
+        # ========== 默认理由，结合餐厅自身亮点 ==========
         if not reasons:
             if rating and rating >= 4.5:
                 default_templates = [
@@ -529,9 +528,9 @@ class MultiAgentRecommendationService:
             score = rec.get("score", 80.0)
             original_reason = rec.get("reason", "")
             
-            # 🆕 生成个性化推荐理由（基于健康/天气/时间/交通等上下文）
+            # 生成个性化推荐理由：基于健康/天气/时间/交通等上下文
             personalized_reason = self._generate_personalized_reason(rec, request, context_analysis)
-            # 🆕 个性化理由始终优先：只要有上下文（天气/运动/节日/交通）就用个性化理由
+            # 个性化理由始终优先：只要有上下文，包括天气/运动/节日/交通，就用个性化理由
             has_special_context = (
                 (hasattr(request, 'weather_context') and request.weather_context and
                  (request.weather_context.is_raining or request.weather_context.is_heavy_rain or
@@ -543,7 +542,7 @@ class MultiAgentRecommendationService:
             )
             reason = personalized_reason if has_special_context else (original_reason or personalized_reason)
             
-            # 🆕 提取各维度评分（从智能体结果中获取或计算）
+            # 提取各维度评分（从智能体结果中获取或计算）
             mab_stats = rec.get("mab_stats", {})
             context_score = self._calculate_context_scores(features, context_analysis)
             
@@ -558,7 +557,7 @@ class MultiAgentRecommendationService:
                     restaurant_info.get("estimated_delivery_time", 30)),
                 match_score=score,
                 final_score=score,
-                # 🆕 各维度评分
+                # 各维度评分
                 weather_score=context_score["weather_score"],
                 seasonal_score=context_score["seasonal_score"], 
                 time_score=context_score["time_score"],
@@ -680,7 +679,7 @@ class MultiAgentRecommendationService:
                 limit=request.max_results
             )
             
-            # 构建简单的上下文分析（用于生成推荐理由）
+            # 构建上下文分析，用于生成推荐理由
             context_analysis = {
                 "weather": {},
                 "traffic": {},
@@ -691,12 +690,12 @@ class MultiAgentRecommendationService:
                 }
             }
             
-            # 生成主消息（基于上下文）
+            # 基于上下文，生成主消息
             main_message = self._generate_main_message(request)
             
             restaurants = []
             for i, poi in enumerate(poi_results):
-                # 将 POI 转换为类似智能体输出的格式
+                # 将POI转换为类似智能体输出的格式
                 rec = {
                     "name": poi.get("name", ""),
                     "features": {
@@ -745,11 +744,11 @@ class MultiAgentRecommendationService:
     
     def update_feedback(self, restaurant_id: str, reward: float):
         """
-        更新用户反馈（用于MAB在线学习）
+        更新用户反馈，用于MAB在线学习
         
         Args:
             restaurant_id: 餐厅ID
-            reward: 奖励值 (0-1)
+            reward: 奖励值(0-1)
         """
         if self.orchestrator:
             self.orchestrator.update_reward(restaurant_id, reward)

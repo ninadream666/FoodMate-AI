@@ -9,7 +9,7 @@ if (typeof window !== 'undefined') {
     import('../../utils/fieldMapper.js');
 }
 
-// 统计指标卡片组件 (北欧风重构版)
+// 统计指标卡片组件
 const KpiCard = ({ title, value, icon, trend, isUp = true, colorClass, onClick }) => (
     <div
         className="bg-surface rounded-2xl p-6 border border-border-light shadow-sm hover:shadow-card transition-all cursor-pointer group"
@@ -39,10 +39,10 @@ const KpiCard = ({ title, value, icon, trend, isUp = true, colorClass, onClick }
     </div>
 );
 
-// 商家行组件 (北欧风重构版)
+// 商家行组件
 const MerchantRow = ({ id, name, category, date, status, statusClass, avatar, onViewDetails }) => (
     <tr className="hover:bg-surface-hover transition-colors border-b border-divider last:border-b-0">
-        {/* 修复：第一列贴合左侧 */}
+        {/* 第一列贴合左侧 */}
         <td className="px-6 py-4 font-bold text-text-primary text-left">
             <div className="flex items-center gap-3">
                 <div className="size-10 rounded-xl bg-background-section border border-border-light overflow-hidden flex-shrink-0">
@@ -93,7 +93,7 @@ const Dashboard = () => {
 
     // 获取数据
     useEffect(() => {
-        // 检查是否有 token，没有则不发起请求
+        // 检查是否有token，没有则不发起请求
         const token = localStorage.getItem('adminToken');
         console.log('🔐 Dashboard认证检查:', {
             hasToken: !!token,
@@ -130,7 +130,7 @@ const Dashboard = () => {
                 });
                 setDashboardData(overview);
 
-                // 从概览数据中提取 KPI
+                // 从概览数据中提取KPI
                 const newKpiData = {
                     totalSales: {
                         amount: overview.totalRevenue || overview.totalSales || overview.revenue || 0,
@@ -250,7 +250,7 @@ const Dashboard = () => {
         return '¥' + amount.toLocaleString();
     };
 
-    // 获取状态显示信息 (语义化颜色)
+    // 获取状态显示信息（语义化颜色）
     const getStatusInfo = (status) => {
         switch (status) {
             case 'PENDING':
@@ -366,7 +366,7 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* KPI 卡片组 */}
+                {/* KPI卡片组 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <KpiCard
                         title="总销售额"
