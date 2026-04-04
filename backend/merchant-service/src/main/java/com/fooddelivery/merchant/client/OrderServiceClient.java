@@ -8,8 +8,8 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * 订单服务 Feign 客户端
- * 用于 merchant-service 调用 order-service 的内部 API
+ * 订单服务Feign客户端
+ * 用于merchant-service调用order-service 的内部API
  */
 @FeignClient(name = "order-service", path = "/orders/internal")
 public interface OrderServiceClient {

@@ -14,14 +14,14 @@ scheduler = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 1. 初始化 DB
+    # 初始化 DB
     await init_db()
     
-    # 2. 启动 MQ 连接和消费者
+    # 启动MQ连接和消费者
     global mq_connection, mq_channel
     mq_connection, mq_channel = await start_consumers()
     
-    # 3. 启动定时器 (每周执行一次全量分析)
+    # 启动定时器：每周执行一次全量分析
     global scheduler
     scheduler = AsyncIOScheduler()
     if mq_channel:
@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
     
     yield
     
-    # 4. 清理资源
+    # 清理资源
     if scheduler:
         scheduler.shutdown()
     if mq_connection:
@@ -55,7 +55,7 @@ async def health():
 @app.post("/trigger-cycle")
 async def manual_trigger(bg_tasks: BackgroundTasks):
     """
-    手动触发一次分析周期 (便于测试和演示)
+    手动触发一次分析周期
     """
     if mq_channel:
         bg_tasks.add_task(run_pricing_cycle, mq_channel)

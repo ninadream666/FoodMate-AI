@@ -45,27 +45,27 @@ public class CouponIssueService {
         Long couponTemplateId = request.getCouponTemplateId();
         Long userId = request.getUserId();
 
-        // 1. 验证优惠券模板是否存在且有效
+        // 验证优惠券模板是否存在且有效
         CouponTemplate template = couponTemplateRepository.findById(couponTemplateId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "优惠券不存在，ID: " + couponTemplateId));
 
-        // 2. 检查优惠券是否启用
+        // 检查优惠券是否启用
         if (!template.getEnabled()) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "优惠券已被禁用");
         }
 
-        // 3. 检查优惠券是否仍在有效期内
+        // 检查优惠券是否仍在有效期内
         if (!template.isValid()) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "优惠券已过期或未生效");
         }
 
-        // 4. 检查发放额度
+        // 检查发放额度
         if (!template.hasAvailableQuantity()) {
             throw new BusinessException(HttpStatus.CONFLICT, String.format("优惠券已达到发放上限（模板ID: %d，总量: %d，已发: %d）",
                     couponTemplateId, template.getTotalQuantity(), template.getIssuedQuantity()));
         }
 
-        // 5. 检查用户是否已经领取过（可选的重复检查）
+        // 检查用户是否已经领取过（可选的重复检查）
         Optional<UserCoupon> existingCoupon = userCouponRepository
                 .findByUserIdAndCouponTemplateId(userId, couponTemplateId);
 
@@ -77,28 +77,26 @@ public class CouponIssueService {
                     "已发放过优惠券");
         }
 
-        // 6. 创建用户优惠券记录
+        // 创建用户优惠券记录
         UserCoupon userCoupon = new UserCoupon();
         userCoupon.setUserId(userId);
         userCoupon.setCouponTemplateId(couponTemplateId);
         userCoupon.setStatus(CouponStatus.AVAILABLE);
         userCoupon.setExpiresAt(template.getValidUntil());
-        UserCoupon savedCoupon; // 1. 先在外部声明变量
+        UserCoupon savedCoupon;
         try {
-            // 2. 在 try 内部赋值
             savedCoupon = userCouponRepository.save(userCoupon);
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            // 3. 捕获异常
             throw new BusinessException(HttpStatus.CONFLICT, "优惠券已发放过，不可以再次发放");
         }
 
-        // 7. 更新模板的发放数量
+        // 更新模板的发放数量
         template.setIssuedQuantity(template.getIssuedQuantity() + 1);
         couponTemplateRepository.save(template);
 
         log.info("成功为用户 {} 发放优惠券，模板ID: {}", userId, couponTemplateId);
 
-        // 8. 返回DTO
+        // 返回DTO
         return convertToDTO(savedCoupon, template);
     }
 
@@ -183,7 +181,7 @@ public class CouponIssueService {
     }
 
     /**
-     * 获取用户的所有优惠券（包括已使用等）
+     * 获取用户的所有优惠券，包括已使用
      */
     public List<UserCouponDTO> getUserAllCoupons(Long userId) {
         List<UserCoupon> coupons = userCouponRepository.findByUserId(userId);
@@ -312,7 +310,7 @@ public class CouponIssueService {
         // 逐个发放给用户
         for (Long userId : userIds) {
             try {
-                // 检查发放额度（注意：template 可能来自本地缓存，需要在 issueCoupon 中再次检查最新值）
+                // 检查发放额度
                 if (!template.hasAvailableQuantity()) {
                     // 已无库存，后续用户都会失败，记录并停止以减少重复请求
                     int remaining = userIds.size() - (successCount + failureCount);
@@ -364,7 +362,7 @@ public class CouponIssueService {
     }
 
     /**
-     * 将用户优惠券转换为DTO（包含模板信息）
+     * 将用户优惠券转换为DTO，包含模板信息
      */
     private UserCouponDTO convertToDTO(UserCoupon coupon, CouponTemplate template) {
         return UserCouponDTO.builder()
@@ -392,21 +390,21 @@ public class CouponIssueService {
      */
     @Transactional
     public UserCouponDTO useCoupon(Long couponId, Long orderId) {
-        // 1. 查找优惠券
+        // 查找优惠券
         UserCoupon userCoupon = userCouponRepository.findById(couponId)
                 .orElseThrow(() -> new IllegalArgumentException("优惠券不存在，ID: " + couponId));
 
-        // 2. 检查优惠券状态
+        // 检查优惠券状态
         if (!userCoupon.getStatus().equals(CouponStatus.AVAILABLE)) {
             throw new IllegalArgumentException("优惠券不可用，当前状态: " + userCoupon.getStatus());
         }
 
-        // 3. 检查优惠券是否过期
+        // 检查优惠券是否过期
         if (userCoupon.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("优惠券已过期");
         }
 
-        // 4. 标记为已使用
+        // 标记为已使用
         userCoupon.setStatus(CouponStatus.USED);
         userCoupon.setUsedAt(LocalDateTime.now());
         userCoupon.setOrderId(orderId);
@@ -428,16 +426,16 @@ public class CouponIssueService {
      */
     @Transactional
     public UserCouponDTO rollbackCoupon(Long couponId) {
-        // 1. 查找优惠券
+        // 查找优惠券
         UserCoupon userCoupon = userCouponRepository.findById(couponId)
                 .orElseThrow(() -> new IllegalArgumentException("优惠券不存在，ID: " + couponId));
 
-        // 2. 检查优惠券是否已使用
+        // 检查优惠券是否已使用
         if (!userCoupon.getStatus().equals(CouponStatus.USED)) {
             throw new IllegalArgumentException("优惠券未被使用，无法回滚，当前状态: " + userCoupon.getStatus());
         }
 
-        // 3. 恢复为可用状态
+        // 恢复为可用状态
         userCoupon.setStatus(CouponStatus.AVAILABLE);
         userCoupon.setUsedAt(null);
         userCoupon.setOrderId(null);

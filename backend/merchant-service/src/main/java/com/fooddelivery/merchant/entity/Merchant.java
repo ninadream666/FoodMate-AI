@@ -17,7 +17,7 @@ public class Merchant {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 外部 ID，来自智能体/地图 API（如 B0LDM1F2K5）
+    // 外部ID，来自智能体/地图API
     @Column(name = "external_id", unique = true, length = 50)
     private String externalId;
 
@@ -37,7 +37,7 @@ public class Merchant {
     @Column(name = "longitude")
     private Double longitude;
 
-    // 餐厅图片 URL
+    // 餐厅图片URL
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 

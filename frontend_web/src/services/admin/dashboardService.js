@@ -72,7 +72,7 @@ class DashboardService {
         return results;
     }
 
-    // 获取仪表盘概览数据（使用新的统一接口）
+    // 获取仪表盘概览数据
     async getDashboardOverview() {
         console.log('[Dashboard] 开始获取仪表盘概览数据...');
 
@@ -91,7 +91,7 @@ class DashboardService {
                 statusText: error.originalError?.response?.statusText
             });
 
-            // 如果 Platform Service 返回 500 错误或连接失败，尝试从各微服务聚合数据
+            // 如果Platform Service返回500错误或连接失败，尝试从各微服务聚合数据
             console.log('[Dashboard] 平台服务不可用，启用备用方案...');
             try {
                 const result = await this._aggregateFromMicroservices();
@@ -168,7 +168,7 @@ class DashboardService {
         }
     }
 
-    // 获取订单趋势数据 (从仪表盘概览获取)
+    // 获取订单趋势数据（从仪表盘概览获取）
     async getOrderTrends(days = 7) {
         try {
             // 使用仪表盘概览接口获取订单趋势
@@ -180,7 +180,7 @@ class DashboardService {
         }
     }
 
-    // 获取营销活动统计 (从Marketing Service获取)
+    // 获取营销活动统计（从Marketing Service获取）
     async getMarketingStats() {
         try {
             const response = await marketingApi.get('/coupons/stats');
@@ -221,7 +221,7 @@ class DashboardService {
 
     // ============== 独立统计接口（直接调用各微服务） ==============
 
-    // 获取商家统计数据 (直接调用 merchant-service)
+    // 获取商家统计数据 - 直接调用merchant-service
     async getMerchantStats() {
         try {
             const response = await merchantApi.get('/api/admin/merchants/stats');
@@ -233,7 +233,7 @@ class DashboardService {
         }
     }
 
-    // 获取订单统计数据 (直接调用 order-service)
+    // 获取订单统计数据 - 直接调用order-service
     async getOrderStats() {
         try {
             const response = await orderApi.get('/api/admin/orders/stats');

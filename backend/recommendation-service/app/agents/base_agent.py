@@ -17,7 +17,7 @@ class AgentMessage:
     sender: str  # 发送者智能体名称
     receiver: str  # 接收者智能体名称
     content: Dict[str, Any]  # 消息内容
-    message_type: str = "data"  # 消息类型: data, query, response, error
+    message_type: str = "data"  # 消息类型：data, query, response, error
     timestamp: datetime = field(default_factory=datetime.now)
     
     def to_dict(self) -> Dict[str, Any]:
@@ -55,7 +55,7 @@ class BaseAgent(ABC):
     """
     基础智能体抽象类
     
-    所有智能体必须实现:
+    所有智能体必须实现：
     - name: 智能体名称
     - description: 智能体描述
     - process(): 核心处理逻辑
@@ -138,7 +138,7 @@ class Tool:
     智能体工具定义
     
     用于定义智能体可调用的工具/能力，
-    符合 MCP 协议的工具规范
+    符合MCP协议的工具规范
     """
     
     def __init__(self, name: str, description: str, 
@@ -159,7 +159,7 @@ class Tool:
             return {"success": False, "error": str(e)}
     
     def to_mcp_format(self) -> Dict[str, Any]:
-        """转换为 MCP 协议格式"""
+        """转换为MCP协议格式"""
         return {
             "name": self.name,
             "description": self.description,

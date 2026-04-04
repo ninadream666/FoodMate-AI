@@ -7,13 +7,13 @@ const memoryCache = new Map();
 
 // 缓存配置：不同类型数据的过期时间（毫秒）
 const CACHE_TTL = {
-    merchants: 2 * 60 * 1000,        // 商家数据 2 分钟
-    recommendations: 5 * 60 * 1000,  // 推荐数据 5 分钟
-    weather: 10 * 60 * 1000,         // 天气 10 分钟
-    orders: 1 * 60 * 1000,           // 订单 1 分钟（变化频繁）
-    menu: 5 * 60 * 1000,             // 菜单 5 分钟
-    user: 30 * 60 * 1000,            // 用户信息 30 分钟
-    default: 3 * 60 * 1000,          // 默认 3 分钟
+    merchants: 2 * 60 * 1000,        // 商家数据2分钟
+    recommendations: 5 * 60 * 1000,  // 推荐数据5分钟
+    weather: 10 * 60 * 1000,         // 天气10分钟
+    orders: 1 * 60 * 1000,           // 订单1分钟（变化频繁）
+    menu: 5 * 60 * 1000,             // 菜单5分钟
+    user: 30 * 60 * 1000,            // 用户信息30分钟
+    default: 3 * 60 * 1000,          // 默认3分钟
 };
 
 // 缓存数据结构
@@ -45,20 +45,20 @@ export const cacheService = {
     /**
      * 获取缓存数据
      * @param {string} type - 缓存类型（merchants, recommendations, weather 等）
-     * @param {object} params - 请求参数（用于生成唯一缓存键）
-     * @returns {Promise<any|null>} - 缓存数据或 null
+     * @param {object} params - 请求参数，用于生成唯一缓存键）
+     * @returns {Promise<any|null>} - 缓存数据或null
      */
     async get(type, params = {}) {
         const cacheKey = generateCacheKey(type, params);
 
-        // 1. 先检查内存缓存
+        // 先检查内存缓存
         const memEntry = memoryCache.get(cacheKey);
         if (memEntry && !isExpired(memEntry)) {
             console.log(`[Cache] 内存缓存命中: ${type}`);
             return memEntry.data;
         }
 
-        // 2. 检查持久化缓存
+        // 检查持久化缓存
         try {
             const stored = await AsyncStorage.getItem(cacheKey);
             if (stored) {
@@ -90,10 +90,10 @@ export const cacheService = {
         const ttl = customTTL || CACHE_TTL[type] || CACHE_TTL.default;
         const entry = createCacheEntry(data, ttl);
 
-        // 1. 更新内存缓存
+        // 更新内存缓存
         memoryCache.set(cacheKey, entry);
 
-        // 2. 持久化存储
+        // 持久化存储
         try {
             await AsyncStorage.setItem(cacheKey, JSON.stringify(entry));
             console.log(`[Cache] 已缓存: ${type}, TTL: ${ttl / 1000}s`);
@@ -161,7 +161,7 @@ export const cacheService = {
     },
 
     /**
-     * 获取缓存统计信息（调试用）
+     * 获取缓存统计信息
      */
     getStats() {
         return {
@@ -227,15 +227,15 @@ export const throttle = (func, limit) => {
 };
 
 /**
- * 图片 URL 优化工具
+ * 图片URL优化工具
  */
 export const imageUtils = {
     /**
-     * 优化 Google 图片 URL，添加尺寸参数
-     * @param {string} url - 原始图片 URL
+     * 优化图片URL，添加尺寸参数
+     * @param {string} url - 原始图片URL
      * @param {number} width - 目标宽度
      * @param {number} height - 目标高度（可选）
-     * @returns {string} - 优化后的 URL
+     * @returns {string} - 优化后的URL
      */
     getOptimizedUrl(url, width = 300, height = null) {
         if (!url) return url;
@@ -256,11 +256,9 @@ export const imageUtils = {
 
     /**
      * 预加载图片列表
-     * @param {string[]} urls - 图片 URL 列表
+     * @param {string[]} urls - 图片URL列表
      */
     preloadImages(urls) {
-        // 如果使用 FastImage，可以调用 FastImage.preload
-        // 这里提供一个基础实现
         const validUrls = urls.filter(url => url && typeof url === 'string');
         console.log(`[Image] 预加载 ${validUrls.length} 张图片`);
         return validUrls;

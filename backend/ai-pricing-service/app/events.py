@@ -10,7 +10,7 @@ from datetime import datetime
 from .config import settings
 from .models import SalesHistory, PricingProposal, Base
 from .deepseek_agent import deepseek_client
-from .clients import service_client # 引入新写的 HTTP 客户端
+from .clients import service_client
 
 engine = create_async_engine(settings.DATABASE_URL, echo=False)
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -28,11 +28,11 @@ async def init_db():
             logger.warning(f"DB init failed, retrying... {e}")
             await asyncio.sleep(2)
 
-# --- 消费者逻辑 (保持不变，用于收集数据做冗余备份) ---
+# --- 消费者逻辑 ---
 async def process_order_event(message: aio_pika.IncomingMessage):
     """
-    监听 order.events -> order.paid
-    将数据写入 SalesHistory 作为物化视图 (Backup)
+    监听order.events->order.paid
+    将数据写入SalesHistory作为物化视图 (Backup)
     """
     async with message.process():
         try:
@@ -52,21 +52,21 @@ async def process_order_event(message: aio_pika.IncomingMessage):
         except Exception as e:
             logger.error(f"Error consuming event: {e}")
 
-# --- 核心：混合驱动定价周期 (Hybrid Pricing Cycle) ---
+# --- 混合驱动定价周期 ---
 async def run_pricing_cycle(rabbitmq_channel):
     """
     定时任务：
-    1. 扫描活跃商家 (为了演示，写死 ID=1,2，实际可从 Merchant Service 拉取)
-    2. HTTP 拉取最新菜单 (解决价格失忆)
-    3. HTTP 拉取聚合销量 (解决计算压力)
-    4. AI 分析
-    5. MQ 发布提案
+    1. 扫描活跃商家
+    2. HTTP拉取最新菜单(解决价格失忆)
+    3. HTTP拉取聚合销量(解决计算压力)
+    4. AI分析
+    5. MQ发布提案
     """
     logger.info("Starting Hybrid Pricing Analysis Cycle...")
     
     async with AsyncSessionLocal() as session:
         try:
-            # 调用 Merchant Service 获取所有 active 的 merchant IDs
+            # 调用Merchant Service获取所有active的merchant IDs
             active_merchants = await service_client.get_active_merchants()
             
             if not active_merchants:
@@ -77,7 +77,7 @@ async def run_pricing_cycle(rabbitmq_channel):
             
             for merchant in active_merchants:
                 merchant_id = merchant.get('id')
-                # 获取商家配置的自动审批参数，默认为 False 和 0.05
+                # 获取商家配置的自动审批参数，默认为False和0.05
                 auto_approval_enabled = merchant.get('enableAutoApproval', False)
                 auto_approval_threshold = merchant.get('autoApprovalThreshold', 0.05)
                 
@@ -90,7 +90,7 @@ async def run_pricing_cycle(rabbitmq_channel):
 async def analyze_merchant(session, rabbitmq_channel, merchant_id, auto_approval_enabled, auto_approval_threshold):
     logger.info(f"Analyzing Merchant {merchant_id}...")
     
-    # 并行获取【菜单】和【销量】(混合架构核心 - Async IO)
+    # 并行获取菜单和销量
     menu_items, sales_stats = await asyncio.gather(
         service_client.get_merchant_menu(merchant_id),
         service_client.get_sales_stats(merchant_id, days=7)
@@ -106,11 +106,10 @@ async def analyze_merchant(session, rabbitmq_channel, merchant_id, auto_approval
             item_name = item['name']
             current_price = float(item['price']) # 这里的价格是【实时】的
             
-            # 3. 匹配销量数据
-            # 如果没有销量，stats 为 None, default to 0
+            # 匹配销量数据，如果没有销量，stats为None, default to 0
             stats = sales_stats.get(item_id, {"totalQuantity": 0, "totalRevenue": 0})
             
-            # 4. 检查是否有未处理提案 (避免重复生成 Pending 提案)
+            # 检查是否有未处理提案，避免重复生成Pending提案
             result = await session.execute(
                 select(PricingProposal).where(
                     PricingProposal.menu_item_id == item_id,
@@ -121,23 +120,19 @@ async def analyze_merchant(session, rabbitmq_channel, merchant_id, auto_approval
                 # logger.info(f"Skipping item {item_id}: Pending proposal exists.")
                 continue
 
-            # 调用 AI 分析
+            # 调用AI分析
             analysis = await deepseek_client.analyze_price(item_name, current_price, stats)
             
             suggested = float(analysis.get("suggested_price", current_price))
             strategy = analysis.get("strategy_type", "MAINTAIN")
             reason = analysis.get("reasoning", "")
-
-            # 过滤：如果价格没变且策略是维持，则不生成提案
-            # if abs(suggested - current_price) < 0.01:
-            #     continue
             
-            # 强制生成提案 (调试模式)
+            # 强制生成提案
             if abs(suggested - current_price) < 0.01:
                 logger.info(f"Price unchanged for {item_name}, but forcing proposal for testing.")
-                status = "AUTO_APPROVED" # 价格未变，自动通过（仅作记录）
+                status = "AUTO_APPROVED" # 价格未变，自动通过，仅作记录
             else:
-                # 6. 自动审批逻辑
+                # 自动审批逻辑
                 status = "PENDING"
                 
                 # 只有当商家开启了自动审批，且变动幅度在阈值内时，才自动通过
@@ -145,8 +140,6 @@ async def analyze_merchant(session, rabbitmq_channel, merchant_id, auto_approval
                     diff_percent = abs(suggested - current_price) / current_price if current_price > 0 else 0
                     if diff_percent <= auto_approval_threshold:
                         status = "AUTO_APPROVED"
-                
-            # 保存提案到本地 DB
                 
             # 保存提案到本地 DB
             proposal = PricingProposal(
@@ -171,14 +164,13 @@ async def analyze_merchant(session, rabbitmq_channel, merchant_id, auto_approval
                 "merchantId": merchant_id,
                 "menuItemId": item_id,
                 "currentPrice": current_price,
-                "newPrice": suggested, # 统一字段名，适配 Java 端
+                "newPrice": suggested,
                 "reason": reason,
                 "status": status,
                 "timestamp": datetime.utcnow().isoformat()
             }
             
-            # 声明 Exchange (确保存在)
-            # 注意：Java 端创建的 Exchange 是 durable=True 的，这里必须匹配
+            # 声明Exchange。Java端创建的Exchange是durable=True的，这里同样匹配
             exchange = await rabbitmq_channel.declare_exchange(
                 "pricing.events", 
                 aio_pika.ExchangeType.TOPIC,
@@ -194,7 +186,7 @@ async def analyze_merchant(session, rabbitmq_channel, merchant_id, auto_approval
         except Exception as e:
             logger.error(f"Error processing item {item.get('id')}: {e}")
 
-# --- 启动消费者 (保持不变) ---
+# --- 启动消费者 ---
 async def start_consumers():
     max_retries = 5
     for attempt in range(max_retries):
@@ -202,10 +194,10 @@ async def start_consumers():
             connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
             channel = await connection.channel()
             
-            # 声明必要的 Exchange
+            # 声明必要的Exchange
             await channel.declare_exchange("order.events", aio_pika.ExchangeType.TOPIC, durable=True)
             
-            # 声明 Queue 并绑定 (用于监听订单完成，更新本地历史)
+            # 声明Queue并绑定，用于监听订单完成，更新本地历史
             queue = await channel.declare_queue("ai_pricing.order_queue", durable=True)
             await queue.bind("order.events", routing_key="order.paid")
             

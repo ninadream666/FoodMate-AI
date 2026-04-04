@@ -10,7 +10,7 @@ const getHeaders = () => {
 };
 
 export const platformService = {
-  // 获取所有可用服务 (含订阅状态)
+  // 获取所有可用服务
   // 对应后端: GET /api/merchant/platform-services
   getAvailableServices: async () => {
     try {
@@ -53,7 +53,7 @@ export const platformService = {
     }
   },
 
-  // 获取全部订阅历史 (包含已取消、已过期)
+  // 获取全部订阅历史，包含已取消、已过期
   // 对应后端: GET /api/merchant/platform-services/subscriptions/all
   getAllSubscriptions: async () => {
     try {

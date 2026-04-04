@@ -21,10 +21,10 @@ app = FastAPI(title=settings.PROJECT_NAME)
 
 # ============ 网络性能优化中间件 ============
 
-# GZip 压缩：响应体 > 500 字节时自动压缩，减少 50-80% 的传输体积
+# GZip压缩：响应体>500字节时自动压缩，减少50-80%的传输体积
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
-# 请求体大小限制：最大 10MB (Base64 图片 + JSON 开销)
+# 请求体大小限制：最大10MB (Base64图片+JSON开销)
 MAX_REQUEST_BODY_SIZE = 10 * 1024 * 1024
 
 @app.middleware("http")
@@ -39,7 +39,7 @@ async def limit_request_body(request: Request, call_next):
         )
     return await call_next(request)
 
-# 并发限制：最多同时处理 5 个图片分析请求，防止大流量时 GPU/API 过载
+# 并发限制：最多同时处理5个图片分析请求，防止大流量时GPU/API过载
 VISION_SEMAPHORE = asyncio.Semaphore(5)
 
 async def acquire_semaphore(timeout: float = 30.0):
@@ -55,14 +55,14 @@ async def acquire_semaphore(timeout: float = 30.0):
 async def health():
     return {"status": "ok", "service": "nutrivision-service"}
 
-# ================= 原有接口：拍菜单模式 (强依赖 LLM 识图) =================
+# ================= 拍菜单模式 =================
 @app.post("/api/v1/vision/analyze", response_model=VisionAnalysisResponse)
 async def analyze_menu(request: VisionAnalysisRequest):
-    # 记录请求信息，包括 Base64 长度以便排查 Payload 问题
+    # 记录请求信息，包括Base64长度以便排查Payload问题
     img_len = len(request.image_base64)
     logger.info(f"[菜单模式] 收到分析请求. 标签: {request.health_tags}, 图片Base64长度: {img_len}")
 
-    # 硬性拒绝超大图片，保护下游 API
+    # 硬性拒绝超大图片，保护下游API
     if img_len > 5 * 1024 * 1024:
         logger.warning(f"图片过大被拒绝 ({img_len} 字符)")
         raise HTTPException(status_code=413, detail="图片过大，请压缩后重试（建议 < 3MB）")
@@ -74,7 +74,7 @@ async def analyze_menu(request: VisionAnalysisRequest):
         raise HTTPException(status_code=429, detail="当前分析请求较多，请稍后重试")
 
     try:
-        # 调用 AI 客户端
+        # 调用AI客户端
         result = await vision_client.analyze_menu(request.image_base64, request.health_tags)
 
         # 构造响应体
@@ -83,7 +83,7 @@ async def analyze_menu(request: VisionAnalysisRequest):
             **result
         }
 
-        # 检查是否是返回了错误信息包
+        # 检查是否返回了错误信息包
         if "分析暂不可用" in result.get("health_summary", ""):
             logger.error(f"AI 分析返回了错误占位符: {result.get('health_summary')}")
 
@@ -95,7 +95,7 @@ async def analyze_menu(request: VisionAnalysisRequest):
         raise HTTPException(status_code=500, detail="AI 返回数据格式不符合规范")
 
     except Exception as e:
-        # 打印详细堆栈，解决 str(e) 为空看不到错误的问题
+        # 打印详细堆栈，解决str(e)为空看不到错误的问题
         logger.error(f"处理请求时发生未预期异常: {str(e)}")
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"服务器内部错误: {type(e).__name__}")
@@ -103,7 +103,7 @@ async def analyze_menu(request: VisionAnalysisRequest):
         VISION_SEMAPHORE.release()
 
 
-# ================= 新增接口：拍菜品模式 (CV本地识别 + LLM知识图谱) =================
+# ================= 拍菜品模式 =================
 @app.post("/api/v1/vision/analyze-food", response_model=VisionAnalysisResponse)
 async def analyze_single_food(request: SingleFoodAnalysisRequest):
     img_len = len(request.image_base64)
@@ -121,18 +121,17 @@ async def analyze_single_food(request: SingleFoodAnalysisRequest):
     try:
         start_time = time.time()
 
-        # 第一阶段：调用本地自研 CV 模型进行极致精度的毫秒级分类
-        # 这里解包返回值，获取分类名和置信度
+        # 调用本地自研 CV 模型进行极致精度的毫秒级分类
+        # 解包返回值，获取分类名和置信度
         food_name, confidence = food_classifier.predict(request.image_base64)
         cv_time = time.time()
         logger.info(f"[CV 阶段] 本地模型识别完成: {food_name}, 置信度: {confidence:.4f}, 耗时: {cv_time - start_time:.4f}s")
 
-        # 阈值判定：如果置信度低于 60% 或者完全未识别，则启动大模型兜底
+        # 阈值判定：如果置信度低于60%或者完全未识别，则启动大模型兜底
         CONFIDENCE_THRESHOLD = 0.60
         if food_name == "Unknown Food" or confidence < CONFIDENCE_THRESHOLD:
             logger.warning(f"[兜底触发] CV识别置信度过低 ({confidence:.4f} < {CONFIDENCE_THRESHOLD}) 或未识别，转交云端大模型兜底...")
 
-            # 分支 B：直接传原图给 Gemini 的兜底接口
             result = await vision_client.analyze_image_fallback(request.image_base64, request.health_tags)
             llm_time = time.time()
             logger.info(f"[LLM 阶段] 云端视觉大模型兜底分析完成, 耗时: {llm_time - cv_time:.4f}s")
@@ -143,7 +142,7 @@ async def analyze_single_food(request: SingleFoodAnalysisRequest):
                 result["health_summary"] = enhanced_summary
 
         else:
-            # 分支 A：置信度很高，直接将纯文本发给大模型做知识扩展（极速模式）
+            # 置信度很高，直接将纯文本发给大模型做知识扩展
             result = await vision_client.analyze_single_food(food_name, request.health_tags)
             llm_time = time.time()
             logger.info(f"[LLM 阶段] 云端知识图谱扩展完成, 耗时: {llm_time - cv_time:.4f}s")

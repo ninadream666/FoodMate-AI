@@ -92,7 +92,7 @@ const ProfileScreen = ({ navigation }: any) => {
             const thisYear = now.getFullYear();
             let spending = 0;
             for (const order of orderList) {
-                // 兼容 status 为对象 {code:'PAID'} 或字符串 'PAID'
+                // 兼容status为对象 {code:'PAID'} 或字符串 'PAID'
                 const rawStatus = order.status;
                 const status = (typeof rawStatus === 'object' && rawStatus !== null ? rawStatus.code : rawStatus || '').toUpperCase();
                 if (['PAID', 'CONFIRMED', 'COMPLETED', 'DELIVERED', 'ACCEPTED', 'PREPARING', 'READY', 'DELIVERING'].includes(status)) {
@@ -123,9 +123,9 @@ const ProfileScreen = ({ navigation }: any) => {
             if (!uri) return;
 
             try {
-                setAvatarUrl(uri); // 先预览
+                setAvatarUrl(uri); // 预览
                 const result = await userService.uploadAvatar(uri);
-                setAvatarUrl(result.avatarUrl); // 替换为服务器 URL
+                setAvatarUrl(result.avatarUrl); // 替换为服务器URL
                 setUser((prev: any) => ({ ...prev, avatarUrl: result.avatarUrl }));
                 Alert.alert('成功', '头像已更新');
             } catch (e) {

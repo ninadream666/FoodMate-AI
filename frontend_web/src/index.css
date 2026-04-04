@@ -5,7 +5,6 @@ body {
   padding: 0;
   width: 100vw;
   height: 100vh;
-  /* 补充基础底色与文本颜色，确保全局统一 */
   background-color: var(--color-background);
   color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
@@ -70,21 +69,20 @@ body {
 }
 
 /* =========================================
-   全局重置与自定义工具类 (Utilities)
+   全局重置与自定义工具类
    ========================================= */
 @layer utilities {
-  /* 暖灰背景渐变 (Image2) */
+  /* 暖灰背景渐变 */
   .bg-nordic-gradient {
     background-image: linear-gradient(to bottom, var(--color-background-start), var(--color-background-end));
   }
 
-  /* 磨砂卡片基础样式 (Image3) */
+  /* 磨砂卡片基础样式 */
   .glass-card {
     background-color: var(--color-card-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--color-card-border);
-    /* 采用原生相对单位以保证兼容 */
     border-radius: 1rem; 
     box-shadow: var(--shadow-frosted);
   }
@@ -97,7 +95,7 @@ body {
     border-bottom: 1px solid var(--color-border-light);
   }
 
-  /* 隐藏滚动条但保留滚动功能 (北欧风极简必需) */
+  /* 隐藏滚动条但保留滚动功能 */
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }

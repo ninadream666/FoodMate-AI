@@ -1,5 +1,5 @@
 """
-认证 API - 简化版本
+认证 API
 
 提供基本的注册和登录功能，用于前端开发测试。
 使用内存存储，重启后数据会丢失。
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["认证"])
 
-# 内存存储（仅用于开发测试）
+# 内存存储
 users_db = {}
 tokens_db = {}
 
@@ -43,12 +43,12 @@ class AuthResponse(BaseModel):
 
 
 def hash_password(password: str) -> str:
-    """简单的密码哈希"""
+    """密码哈希"""
     return hashlib.sha256(password.encode()).hexdigest()
 
 
 def generate_token() -> str:
-    """生成简单的 token"""
+    """生成token"""
     return secrets.token_urlsafe(32)
 
 
@@ -76,7 +76,7 @@ async def register(request: RegisterRequest):
         "created_at": datetime.now().isoformat()
     }
     
-    # 生成 token
+    # 生成token
     token = generate_token()
     tokens_db[token] = {
         "user_id": user_id,
@@ -100,7 +100,7 @@ async def login(request: LoginRequest):
     """
     用户登录
     
-    验证用户凭据并返回 token
+    验证用户凭据并返回token
     """
     logger.info(f"登录请求: {request.username}")
     
@@ -114,7 +114,7 @@ async def login(request: LoginRequest):
     if user["password_hash"] != hash_password(request.password):
         raise HTTPException(status_code=401, detail="用户名或密码错误")
     
-    # 生成新 token
+    # 生成新token
     token = generate_token()
     tokens_db[token] = {
         "user_id": user["user_id"],
@@ -138,7 +138,7 @@ async def get_current_user(token: str):
     """
     获取当前用户信息
     
-    根据 token 返回用户信息
+    根据token返回用户信息
     """
     if token not in tokens_db:
         raise HTTPException(status_code=401, detail="无效的 token")
@@ -165,7 +165,7 @@ async def logout(token: str):
     """
     用户登出
     
-    使 token 失效
+    使token失效
     """
     if token in tokens_db:
         del tokens_db[token]

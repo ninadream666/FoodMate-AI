@@ -94,8 +94,8 @@ class ParallelOrchestrator:
     并行智能体编排器
     
     特点:
-    1. 并行执行 ContextAgent + RetrievalAgent + ProfilerAgent + CollaborativeAgent
-    2. 数据汇聚后由 ReasoningAgent 统一处理
+    1. 并行执行ContextAgent + RetrievalAgent + ProfilerAgent + CollaborativeAgent
+    2. 数据汇聚后由ReasoningAgent统一处理
     3. 生成推荐列表和暖心文案
     """
     
@@ -116,7 +116,7 @@ class ParallelOrchestrator:
         self.collaborative_agent = create_collaborative_agent()
         self.reasoning_agent = create_reasoning_agent()
         
-        # POI 服务 (用于 RetrievalAgent)
+        # POI服务，用于RetrievalAgent
         self.poi_service = poi_service
         
         # 构建图
@@ -137,7 +137,7 @@ class ParallelOrchestrator:
         workflow.add_node("parallel_fetch", self._parallel_fetch_node)
         workflow.add_node("reasoning", self._reasoning_node)
         
-        # 设置流程: START → parallel_fetch → reasoning → END
+        # 设置流程：START → parallel_fetch → reasoning → END
         workflow.set_entry_point("parallel_fetch")
         workflow.add_edge("parallel_fetch", "reasoning")
         workflow.add_edge("reasoning", END)
@@ -161,7 +161,7 @@ class ParallelOrchestrator:
         tasks = []
         task_names = []
         
-        # 任务A: ContextAgent - 环境信息
+        # 任务A：ContextAgent - 环境信息
         async def fetch_context():
             t0 = datetime.now()
             result = await self.context_agent.process({
@@ -176,7 +176,7 @@ class ParallelOrchestrator:
         tasks.append(fetch_context())
         task_names.append("context")
         
-        # 任务B: RetrievalAgent - 获取餐厅
+        # 任务B：RetrievalAgent - 获取餐厅
         async def fetch_restaurants():
             t0 = datetime.now()
             restaurants = []
@@ -191,7 +191,7 @@ class ParallelOrchestrator:
                         radius=3000,
                         page_size=30
                     )
-                    # 转换 POI 结果
+                    # 转换POI结果
                     for poi in poi_results:
                         restaurants.append({
                             "id": poi.id,
@@ -212,7 +212,7 @@ class ParallelOrchestrator:
         tasks.append(fetch_restaurants())
         task_names.append("retrieval")
         
-        # 任务C: ProfilerAgent - 用户画像
+        # 任务C：ProfilerAgent - 用户画像
         async def fetch_profile():
             t0 = datetime.now()
             result = await self.profiler_agent.process({
@@ -227,12 +227,12 @@ class ParallelOrchestrator:
         tasks.append(fetch_profile())
         task_names.append("profile")
         
-        # 任务D: CollaborativeAgent - 协同过滤
+        # 任务D：CollaborativeAgent - 协同过滤
         async def fetch_collaborative():
             t0 = datetime.now()
             result = await self.collaborative_agent.process({
                 "restaurants": state.get("restaurants", []),
-                "profile_analysis": {},  # 并行模式下画像可能尚未完成，CF 独立运行
+                "profile_analysis": {},  # 并行模式下画像可能尚未完成，CF独立运行
                 "user_id": state.get("user_id", "anonymous"),
             })
             timing["collaborative_ms"] = (datetime.now() - t0).total_seconds() * 1000
@@ -283,14 +283,14 @@ class ParallelOrchestrator:
     
     async def _reasoning_node(self, state: ParallelWorkflowState) -> Dict[str, Any]:
         """
-        推理节点 (核心大脑)
+        推理节点
         
         汇聚所有并行结果，进行深度思考和决策
         """
         logger.info("✨ 执行推理节点 (ReasoningAgent)")
         t0 = datetime.now()
         
-        # 调用 ReasoningAgent (注入协同过滤分数)
+        # 调用ReasoningAgent，注入协同过滤分数
         result = await self.reasoning_agent.process({
             "context_analysis": state.get("context_result", {}),
             "profile_analysis": state.get("profile_result", {}),
@@ -303,7 +303,7 @@ class ParallelOrchestrator:
         reasoning_ms = (datetime.now() - t0).total_seconds() * 1000
         logger.info(f"  🧠 ReasoningAgent 完成 ({reasoning_ms:.0f}ms)")
         
-        # 更新 timing
+        # 更新timing
         timing = state.get("timing", {})
         timing["reasoning_ms"] = reasoning_ms
         
@@ -327,7 +327,7 @@ class ParallelOrchestrator:
         """
         执行并行编排
         
-        Returns:
+        Returns：
             包含推荐结果、暖心文案、性能数据的字典
         """
         start_time = datetime.now()
@@ -347,11 +347,11 @@ class ParallelOrchestrator:
         
         try:
             if self.app:
-                # 使用 LangGraph 执行
+                # 使用LangGraph执行
                 config = {"configurable": {"thread_id": f"parallel_{datetime.now().timestamp()}"}}
                 final_state = await self.app.ainvoke(initial_state, config)
             else:
-                # 降级模式: 手动并行执行
+                # 降级模式：手动并行执行
                 final_state = await self._fallback_orchestrate(initial_state)
             
             total_ms = (datetime.now() - start_time).total_seconds() * 1000
@@ -381,7 +381,7 @@ class ParallelOrchestrator:
             }
     
     async def _fallback_orchestrate(self, state: ParallelWorkflowState) -> ParallelWorkflowState:
-        """降级模式: 手动并行执行"""
+        """降级模式：手动并行执行"""
         # 执行并行获取
         parallel_result = await self._parallel_fetch_node(state)
         state.update(parallel_result)

@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 /**
- * 用户服务 Feign 客户端
- * 用于 order-service 调用 user-service 的 API
+ * 用户服务Feign客户端
+ * 用于order-service调用user-service的API
  */
 @FeignClient(name = "user-service", path = "/users")
 public interface UserServiceClient {

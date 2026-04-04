@@ -2,7 +2,7 @@
 import api from './apiClient';
 import { merchantService } from './merchantService';
 
-// 模拟数据 (兜底用)
+// 模拟数据
 const MOCK_RECOMMENDATIONS = {
     restaurants: [
         { id: 1, name: '川味观', image: 'https://loremflickr.com/400/300/chinese,food', rating: 4.8, deliveryTime: '30-40分钟', tags: ['川菜', '辣味'] },
@@ -12,7 +12,7 @@ const MOCK_RECOMMENDATIONS = {
 };
 
 export const recommendationService = {
-    // 1. 获取智能推荐 (V2)
+    // 获取智能推荐
     getV2Recommendations: async (params = {}) => {
         try {
             const body = {
@@ -26,7 +26,7 @@ export const recommendationService = {
                 max_results: Number(params.maxResults) || 10,
             };
 
-            // 添加健康上下文（如果提供）
+            // 添加健康上下文
             if (params.healthContext) {
                 const hc = params.healthContext;
                 body.health_context = {
@@ -38,7 +38,7 @@ export const recommendationService = {
                 };
             }
 
-            // 添加天气上下文（如果提供）
+            // 添加天气上下文
             if (params.weatherContext) {
                 body.weather_context = {
                     condition: params.weatherContext.condition || '晴',
@@ -51,7 +51,7 @@ export const recommendationService = {
                 };
             }
 
-            // 添加忌口/过敏原（如果提供）
+            // 添加忌口/过敏原
             if (params.allergies && params.allergies.length > 0) {
                 body.allergies = params.allergies;
             }
@@ -62,7 +62,7 @@ export const recommendationService = {
 
             if (__DEV__) console.log('✅ 推荐响应:', (data.recommendations || data.restaurants || []).length, '条');
 
-            // 自动导入逻辑（异步，不阻塞返回）
+            // 自动导入逻辑：异步，不阻塞返回
             const list = data.recommendations || data.restaurants || [];
             if (list.length > 0 && merchantService.importRealRestaurant) {
                 importAgentRestaurants(list);
@@ -75,7 +75,7 @@ export const recommendationService = {
         }
     },
 
-    // 2. 获取工作流说明 (可选)
+    // 获取工作流说明（可选）
     getWorkflowExplanation: async () => {
         try {
             return await api.get('recommendation', '/agents/explain');
@@ -84,7 +84,7 @@ export const recommendationService = {
         }
     },
 
-    // 3. 🛡️ 获取端云协同智能推荐 (隐私保护版)
+    // 获取端云协同智能推荐
     getEdgeSynergyRecommendations: async (params = {}) => {
         try {
             const body = {
@@ -130,7 +130,7 @@ export const recommendationService = {
 const importAgentRestaurants = async (restaurants) => {
     try {
         const validItems = restaurants.filter(r => r.id && typeof r.id === 'string' && r.id.length > 5);
-        // 并行导入所有餐厅，每个独立 catch 防止单个失败影响其他
+        // 并行导入所有餐厅，每个独立catch防止单个失败影响其他
         await Promise.all(
             validItems.map(r =>
                 merchantService.importRealRestaurant({

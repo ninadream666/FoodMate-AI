@@ -1,5 +1,5 @@
 /**
- * usePedometer.tsx - 步数传感器 Hook
+ * usePedometer.tsx - 步数传感器Hook
  * 
  * 功能：
  * 1. 读取手机硬件步数传感器
@@ -51,14 +51,14 @@ export const usePedometer = () => {
     const historyRef = useRef<StepHistoryRecord[]>([]);
     const subscriptionRef = useRef<any>(null);
 
-    // 请求活动识别权限 (Android 10+)
+    // 请求活动识别权限(Android 10+)
     const requestPermission = useCallback(async (): Promise<boolean> => {
         if (Platform.OS !== 'android') {
-            return true; // iOS 权限通过 Info.plist 配置
+            return true; // iOS权限通过Info.plist配置
         }
 
         try {
-            // 检查是否需要运行时权限 (Android 10+)
+            // 检查是否需要运行时权限(Android 10+)
             if (Platform.Version >= 29) {
                 const granted = await PermissionsAndroid.request(
                     PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION,
@@ -71,7 +71,7 @@ export const usePedometer = () => {
                 );
                 return granted === PermissionsAndroid.RESULTS.GRANTED;
             }
-            return true; // Android 9 及以下不需要运行时权限
+            return true; // Android 9及以下不需要运行时权限
         } catch (err) {
             console.warn('请求运动权限失败:', err);
             return false;
@@ -205,7 +205,7 @@ export const usePedometer = () => {
         ...state,
         // 便捷方法
         refresh: () => {
-            // 手动刷新（如果需要）
+            // 手动刷新
         },
     };
 };

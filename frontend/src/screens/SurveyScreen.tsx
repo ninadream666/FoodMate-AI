@@ -88,7 +88,7 @@ const SurveyScreen = ({ navigation }: any) => {
                 </View>
             </View>
 
-            {/* Q1: 口味 (单选) */}
+            {/* Q1: 口味（单选） */}
             <View style={styles.section}>
                 <Text style={styles.question}>1. 您平时喜欢的口味倾向？(单选)</Text>
                 <View style={styles.grid}>
@@ -106,7 +106,7 @@ const SurveyScreen = ({ navigation }: any) => {
                 </View>
             </View>
 
-            {/* Q2: 菜系 (多选) */}
+            {/* Q2: 菜系（多选） */}
             <View style={styles.section}>
                 <Text style={styles.question}>2. 您偏好的菜系？(多选)</Text>
                 <View style={styles.grid}>
@@ -125,7 +125,7 @@ const SurveyScreen = ({ navigation }: any) => {
                 </View>
             </View>
 
-            {/* Q3: 忌口 (多选) */}
+            {/* Q3: 忌口（多选） */}
             <View style={styles.section}>
                 <Text style={styles.question}>3. 有什么忌口吗？</Text>
                 <View style={styles.tagContainer}>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import platformService from '../../services/admin/platformService';
 
-// 服务分类标签颜色配置 (北欧语义化 - 解决中文类别无法匹配颜色的问题)
+// 服务分类标签颜色配置
 const CATEGORY_COLORS = {
     '基础服务': 'bg-primary-bg text-primary border border-primary/20',        // 品牌橙
     'PAYMENT': 'bg-primary-bg text-primary border border-primary/20',         
@@ -14,7 +14,7 @@ const CATEGORY_COLORS = {
     'DEFAULT': 'bg-background-section text-text-secondary border border-border-light'
 };
 
-// 服务状态标签组件 (北欧语义化)
+// 服务状态标签组件
 const StatusBadge = ({ status }) => {
     const statusConfig = {
         ACTIVE: { text: '已启用', class: 'bg-success-bg text-success border border-success/20', icon: 'check_circle' },
@@ -32,9 +32,8 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-// 计费类型标签组件 (极致克制 - 统一所有计费方式的视觉样式)
+// 计费类型标签组件
 const FeeTypeBadge = ({ feeType, feeDisplay }) => {
-    // 统一使用干净的白底+边框+微阴影，不再用五颜六色区分
     const unifiedClass = 'bg-surface text-text-secondary border border-border-light shadow-sm';
     
     const typeConfig = {
@@ -56,7 +55,7 @@ const FeeTypeBadge = ({ feeType, feeDisplay }) => {
     );
 };
 
-// 服务表单对话框组件 (全面升级为毛玻璃拟态弹窗)
+// 服务表单对话框组件
 const ServiceFormModal = ({ isOpen, onClose, service = null, onSave, showAlert }) => {
     const [formData, setFormData] = useState({
         serviceName: '',
@@ -655,7 +654,7 @@ const Services = () => {
                     showAlert={showAlert}
                 />
 
-                {/* 全局基础定制化 Modal 弹窗 */}
+                {/* 全局基础定制化Modal弹窗 */}
                 {dialog.isOpen && (
                     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-overlay backdrop-blur-sm animate-in fade-in duration-200">
                         <div className="bg-surface rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-border-light">

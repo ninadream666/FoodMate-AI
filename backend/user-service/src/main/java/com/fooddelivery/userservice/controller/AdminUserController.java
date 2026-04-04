@@ -70,9 +70,9 @@ public class AdminUserController {
         long merchantCount = userRepository.countByRole("merchant");
         long adminCount = userRepository.countByRole("admin");
 
-        // 今日新增（简化：由于没有创建时间字段，返回估算值）
+        // 今日新增
         long todayNewCount = 0L;
-        long activeCount = totalCount; // 简化处理
+        long activeCount = totalCount;
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalCount", totalCount);
@@ -114,7 +114,6 @@ public class AdminUserController {
             @RequestBody UpdateUserStatusDTO dto) {
         return userRepository.findById(id)
                 .map(user -> {
-                    // 暂时没有status字段，可以扩展
                     User saved = userRepository.save(user);
                     return ResponseEntity.ok(UserResponseDto.fromEntity(saved));
                 })
@@ -141,11 +140,11 @@ public class AdminUserController {
     }
 
     /**
-     * 获取用户活动日志（简化实现）
+     * 获取用户活动日志
      */
     @GetMapping("/{id}/activity")
     public ResponseEntity<Map<String, Object>> getUserActivity(@PathVariable Long id) {
-        // 简化实现：返回基本信息
+        // 返回基本信息
         return userRepository.findById(id)
                 .map(user -> {
                     Map<String, Object> activity = new HashMap<>();

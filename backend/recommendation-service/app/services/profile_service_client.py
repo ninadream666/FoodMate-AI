@@ -1,6 +1,6 @@
 """
 用户画像服务客户端
-调用 profile-service 获取真实用户画像数据
+调用profile-service获取真实用户画像数据
 """
 
 import os
@@ -39,7 +39,7 @@ class OrderInfo:
 
 @dataclass
 class UserContext:
-    """用户完整上下文（画像 + 订单历史）"""
+    """用户完整上下文（画像+订单历史）"""
     profile: UserProfile
     recent_orders: List[OrderInfo]
 
@@ -47,7 +47,7 @@ class UserContext:
 class ProfileServiceClient:
     """
     用户画像服务HTTP客户端
-    用于调用 profile-service 获取用户数据
+    用于调用profile-service获取用户数据
     """
     
     def __init__(self, base_url: str = None, timeout: int = 10):
@@ -55,7 +55,7 @@ class ProfileServiceClient:
         初始化客户端
         
         Args:
-            base_url: profile-service 的基础URL
+            base_url: profile-service的基础URL
             timeout: 请求超时时间（秒）
         """
         # 支持多种环境配置
@@ -73,10 +73,10 @@ class ProfileServiceClient:
         获取用户画像
         
         Args:
-            token: JWT认证令牌（不含Bearer前缀）
+            token: JWT认证令牌，不含Bearer前缀
             
         Returns:
-            UserProfile 对象，失败返回 None
+            UserProfile对象，失败返回None
         """
         url = f"{self.base_url}/profile"
         headers = {"Authorization": f"Bearer {token}"}
@@ -106,10 +106,10 @@ class ProfileServiceClient:
         这是供AI Agent调用的聚合接口
         
         Args:
-            token: JWT认证令牌（不含Bearer前缀）
+            token: JWT认证令牌，不含Bearer前缀
             
         Returns:
-            UserContext 对象，失败返回 None
+            UserContext对象，失败返回None
         """
         url = f"{self.base_url}/profile/context"
         headers = {"Authorization": f"Bearer {token}"}
@@ -245,7 +245,7 @@ class ProfileServiceClient:
     
     async def check_health(self) -> bool:
         """
-        检查 profile-service 健康状态
+        检查profile-service健康状态
         
         Returns:
             服务是否健康
@@ -267,7 +267,7 @@ class ProfileServiceClient:
 class ProfileServiceAdapter:
     """
     用户画像服务适配器
-    提供与 ProfilerAgent 兼容的接口
+    提供与ProfilerAgent兼容的接口
     """
     
     def __init__(self, client: ProfileServiceClient = None):
@@ -284,8 +284,8 @@ class ProfileServiceAdapter:
     
     async def get_user_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
         """
-        获取用户画像（供 ProfilerAgent 调用）
-        【修复版】支持冷启动：当无Token或无数据时返回默认空画像，防止NoneType报错
+        获取用户画像，供ProfilerAgent调用
+        支持冷启动：当无Token或无数据时返回默认空画像，防止NoneType报错
         """
         token = self.get_token(user_id)
         
@@ -299,7 +299,7 @@ class ProfileServiceAdapter:
             except Exception as e:
                 logger.warning(f"调用用户画像服务异常: {e}")
         
-        # === 核心修复：如果没有拿到 context（新用户/无Token/服务挂了），使用默认空数据 ===
+        # === 如果没有拿到context（新用户/无Token/服务挂了），使用默认空数据 ===
         if not context:
             logger.info(f"用户 {user_id} 处于冷启动状态(无Token或无历史)，返回默认画像")
             return {
@@ -384,12 +384,12 @@ class ProfileServiceAdapter:
         order_items = []
         
         for order in orders:
-            # 1. 统计菜系频率（从商家名称推断）
+            # 统计菜系频率
             cuisine_type = self._infer_cuisine_from_merchant(order.merchant_name)
             if cuisine_type:
                 cuisine_frequency[cuisine_type] = cuisine_frequency.get(cuisine_type, 0) + 1
             
-            # 2. 时段分析
+            # 时段分析
             if order.created_at:
                 try:
                     order_time = datetime.fromisoformat(order.created_at.replace('Z', '+00:00'))
@@ -415,11 +415,11 @@ class ProfileServiceAdapter:
                 except (ValueError, AttributeError):
                     pass
             
-            # 3. 统计商家复购
+            # 统计商家复购
             merchant_key = str(order.merchant_id)
             merchant_order_count[merchant_key] = merchant_order_count.get(merchant_key, 0) + 1
             
-            # 4. 构建订单项详情（用于智能评分）
+            # 构建订单项详情，用于智能评分
             order_items.append({
                 "order_id": str(order.order_id),
                 "merchant_id": str(order.merchant_id),
@@ -431,7 +431,7 @@ class ProfileServiceAdapter:
                 "is_reorder": merchant_order_count[merchant_key] > 1
             })
         
-        # 5. 找出复购餐厅（订单>=2次）
+        # 找出复购餐厅（订单>=2次）
         reorder_merchants = {k: v for k, v in merchant_order_count.items() if v >= 2}
         
         return {

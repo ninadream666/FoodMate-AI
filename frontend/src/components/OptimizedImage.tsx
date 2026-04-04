@@ -1,5 +1,5 @@
 // src/components/OptimizedImage.tsx
-// 优化的图片组件 - 使用 FastImage 实现缓存、预加载、渐进式加载
+// 优化的图片组件 - 使用FastImage实现缓存、预加载、渐进式加载
 import React, { useState, memo } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import FastImage, { FastImageProps, Priority, ResizeMode } from 'react-native-fast-image';
@@ -17,11 +17,11 @@ interface OptimizedImageProps extends Omit<FastImageProps, 'source'> {
 // 默认占位图
 const DEFAULT_PLACEHOLDER = 'https://loremflickr.com/300/200/food,meal';
 
-// 优化 Google 图片 URL
+// 优化图片URL
 const getOptimizedGoogleUrl = (url: string, width: number = 300): string => {
     if (!url) return DEFAULT_PLACEHOLDER;
 
-    // 对 Google 图片添加尺寸参数以减少下载大小
+    // 对 图片添加尺寸参数以减少下载大小
     if (url.includes('googleusercontent.com') || url.includes('lh3.google')) {
         // 移除已有的尺寸参数
         let cleanUrl = url.replace(/=w\d+(-h\d+)?(-[a-z]+)?$/i, '');
@@ -44,7 +44,7 @@ const priorityMap: Record<string, Priority> = {
  * 优化的图片组件
  * - 自动缓存图片
  * - 支持渐进式加载
- * - 自动压缩 Google 图片
+ * - 自动压缩图片
  * - 加载失败自动重试
  */
 const OptimizedImage: React.FC<OptimizedImageProps> = memo(({
@@ -61,7 +61,7 @@ const OptimizedImage: React.FC<OptimizedImageProps> = memo(({
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
 
-    // 优化 URL
+    // 优化URL
     const optimizedUri = getOptimizedGoogleUrl(uri, width);
     const finalUri = hasError && fallbackUri ? fallbackUri : optimizedUri;
 
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
 
 /**
  * 预加载图片列表
- * @param urls 图片 URL 列表
+ * @param urls 图片URL列表
  */
 export const preloadImages = (urls: string[]) => {
     const validUrls = urls

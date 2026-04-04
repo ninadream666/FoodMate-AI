@@ -56,10 +56,10 @@ class Config:
     DISTANCE_WEIGHT: float = float(os.getenv("DISTANCE_WEIGHT", "0.10"))
     RATING_WEIGHT: float = float(os.getenv("RATING_WEIGHT", "0.10"))
     
-    # 数据库配置（预留）
+    # 数据库配置
     DATABASE_URL: Optional[str] = os.getenv("DATABASE_URL")
     
-    # Redis配置（预留）
+    # Redis配置
     REDIS_URL: Optional[str] = os.getenv("REDIS_URL")
     
     # 日志配置

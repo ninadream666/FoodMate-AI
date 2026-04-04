@@ -45,7 +45,7 @@ public class CouponCombinationService {
                 return new HashSet<>();
             }
             try {
-                // 简单的JSON解析（假设格式为 [1,2,3]）
+                // 简单的JSON解析
                 String cleaned = exclusiveIdsJson.replaceAll("[\\[\\]]", "");
                 if (cleaned.isEmpty()) {
                     return new HashSet<>();
@@ -72,7 +72,7 @@ public class CouponCombinationService {
             List<UserCoupon> availableCoupons,
             Map<Long, CouponTemplate> templateMap) {
 
-        // 第一步：筛选符合门槛的优惠券
+        // 筛选符合门槛的优惠券
         List<CouponOption> eligibleCoupons = filterEligibleCoupons(
                 orderAmount,
                 availableCoupons,
@@ -82,7 +82,7 @@ public class CouponCombinationService {
             return new CombinationResult(Collections.emptyList(), BigDecimal.ZERO);
         }
 
-        // 第二步：分类优惠券（可叠加 vs 互斥）
+        // 分类优惠券（可叠加vs互斥）
         List<CouponOption> stackableCoupons = eligibleCoupons.stream()
                 .filter(c -> c.stackable)
                 .collect(Collectors.toList());
@@ -114,7 +114,7 @@ public class CouponCombinationService {
                     CouponTemplate template = templateMap.get(uc.getCouponTemplateId());
                     BigDecimal discount = calculateDiscount(orderAmount, template);
 
-                    // 只有当优惠金额 > 0 时才认为符合条件
+                    // 只有当优惠金额>0时才认为符合条件
                     if (discount.compareTo(BigDecimal.ZERO) > 0) {
                         return new CouponOption(uc, template, discount);
                     }
@@ -130,8 +130,8 @@ public class CouponCombinationService {
     private BigDecimal calculateDiscount(BigDecimal orderAmount, CouponTemplate template) {
         switch (template.getType()) {
             case DISCOUNT:
-                // 折扣券：discountValue 为 0-10 的数字，表示 X 折
-                // 例如：9 表示 90 折，优惠金额 = 原价 * (1 - 0.9) = 原价 * 0.1
+                // 折扣券：discountValue为0-10的数字，表示X折
+                // 例如：9表示九折，优惠金额=原价*(1-0.9)=原价*0.1
                 BigDecimal discountRate = BigDecimal.ONE.subtract(
                         template.getDiscountValue().divide(BigDecimal.TEN, 2, java.math.RoundingMode.HALF_UP));
                 BigDecimal discount = orderAmount.multiply(discountRate);
@@ -159,7 +159,7 @@ public class CouponCombinationService {
                 return noThresholdDiscount;
 
             case FREE_SHIPPING:
-                // 免运费券：假设运费为 5 元
+                // 免运费券：假设运费为5元
                 return BigDecimal.valueOf(5);
 
             default:
@@ -168,7 +168,7 @@ public class CouponCombinationService {
     }
 
     /**
-     * 核心算法：找到最优的优惠券组合
+     * 找到最优的优惠券组合
      * 
      * 策略：
      * 1. 在互斥券中找出最优的一张（贪心）
@@ -185,7 +185,7 @@ public class CouponCombinationService {
                 Collections.emptyList(),
                 BigDecimal.ZERO);
 
-        // 方案 1：只使用可叠加券
+        // 方案1：只使用可叠加券
         CombinationResult stackableOnlyResult = findBestStackableCombination(
                 orderAmount,
                 stackableCoupons);
@@ -194,7 +194,7 @@ public class CouponCombinationService {
             bestResult = stackableOnlyResult;
         }
 
-        // 方案 2：选择一张互斥券，再加上可叠加券
+        // 方案2：选择一张互斥券，再加上可叠加券
         for (CouponOption mutualExclusive : mutualExclusiveCoupons) {
             // 获取与当前互斥券不冲突的可叠加券
             List<CouponOption> compatibleStackable = stackableCoupons.stream()
@@ -223,7 +223,7 @@ public class CouponCombinationService {
 
     /**
      * 贪心算法：在可叠加的优惠券中找到最优组合
-     * 使用动态规划的思想（类似 0/1 背包）
+     * 使用动态规划的思想（类似0/1背包）
      */
     private CombinationResult findBestStackableCombination(
             BigDecimal remainingAmount,

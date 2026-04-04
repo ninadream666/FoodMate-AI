@@ -18,7 +18,6 @@ import java.util.List;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
-    // 这个方法其实在 Spring Security 启用后作用不大了，主要靠下面的 Bean
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/users/avatars/**")
@@ -39,7 +38,6 @@ public class CorsConfig implements WebMvcConfigurer {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 【关键修改】为了支持 Android 模拟器 (10.0.2.2) 和局域网真机调试
         // 开发环境建议直接允许所有 (*)，或者显式添加 http://10.0.2.2:*
         configuration.setAllowedOriginPatterns(List.of("*"));
 

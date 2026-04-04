@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 
-// Logo SVG 组件
+// Logo SVG组件
 const LogoIcon = () => (
     <svg fill="currentColor" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
         <path clipRule="evenodd" d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z" fillRule="evenodd"></path>
@@ -60,7 +60,7 @@ export default function OrderTracking() {
 
     // 模拟订单状态更新
     useEffect(() => {
-        // 实际项目中应该通过 WebSocket 或轮询获取订单状态
+        // 实际项目中应该通过WebSocket或轮询获取订单状态
         const timer = setInterval(() => {
             // 模拟状态更新逻辑
         }, 30000);
@@ -70,7 +70,7 @@ export default function OrderTracking() {
 
     // 联系骑手
     const handleContactRider = () => {
-        // 实际项目中应该调用电话 API 或打开聊天窗口
+        // 实际项目中应该调用电话API或打开聊天窗口
         alert(`正在联系骑手: ${order.rider.phone}`);
     };
 

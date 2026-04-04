@@ -24,22 +24,22 @@ jwt:
   expiration: 86400000 # 1 day
 
 # ============ 数据库连接池 ============
-# 高并发下 20 个连接远远不够，调整到 50
+# 考虑高并发情况，设置50个最大连接
 spring.datasource:
   hikari:
     maximum-pool-size: 50
     minimum-idle: 10
     idle-timeout: 300000
     connection-timeout: 20000
-    # 泄露检测：连接借出超过 60s 未归还则打印警告
+    # 泄露检测：连接借出超过60s未归还则打印警告
     leak-detection-threshold: 60000
 
-# ============ Redis 分布式缓存 ============
-# 激活 Redis 作为缓存后端 (之前只配置了连接但未启用)
+# ============ Redis分布式缓存 ============
+# 激活Redis作为缓存后端
 spring.cache:
   type: redis
 
-# ============ HTTP 性能 ============
+# ============ HTTP性能 ============
 server:
   # 响应压缩
   compression:
@@ -51,17 +51,17 @@ server:
   tomcat:
     max-http-form-post-size: 10MB
     max-swallow-size: 10MB
-    # Tomcat 线程池：高并发下限制最大线程，防止线程爆炸
+    # Tomcat线程池：高并发下限制最大线程，防止线程爆炸
     threads:
       max: 200
       min-spare: 20
     # 连接队列：等待处理的最大连接数
     accept-count: 100
 
-  # 优雅停机：收到 SIGTERM 后等待当前请求处理完再关闭
+  # 优雅停机：收到SIGTERM后等待当前请求处理完再关闭
   shutdown: graceful
 
-# 优雅停机超时：最多等 30s，超时强制关闭
+# 优雅停机超时：最多等30s，超时强制关闭
 spring.lifecycle:
   timeout-per-shutdown-phase: 30s
 
@@ -70,16 +70,16 @@ spring.servlet.multipart:
   max-request-size: 10MB
 
 # ============ 全局限流过滤器 ============
-# 在无 API Gateway 的架构下，每个服务实例自行限流
+# 在无API Gateway的架构下，每个服务实例自行限流
 rate-limit:
   enabled: true
 
 # ============ Resilience4j 弹性保护 ============
-# 激活 ResilienceConfig 中定义的断路器、限流、隔板等
+# 激活ResilienceConfig中定义的断路器、限流、隔板等
 resilience:
   enabled: true
 
-# Resilience4j YAML 级别配置（覆盖 Java Config Bean 的默认值，按实例名区分）
+# Resilience4j YAML级别配置（覆盖Java Config Bean的默认值，按实例名区分）
 resilience4j:
   circuitbreaker:
     configs:
@@ -92,7 +92,7 @@ resilience4j:
         minimum-number-of-calls: 10
         automatic-transition-from-open-to-half-open-enabled: true
     instances:
-      # 订单服务：更保守（涉及支付）
+      # 订单服务：更保守，快速失败保护用户体验
       orderService:
         base-config: default
         failure-rate-threshold: 30
@@ -109,12 +109,12 @@ resilience4j:
         limit-refresh-period: 1s
         timeout-duration: 500ms
     instances:
-      # 下单接口：单实例每秒最多 50 次（防止刷单）
+      # 下单接口：单实例每秒最多50次，防止刷单
       createOrder:
         limit-for-period: 50
         limit-refresh-period: 1s
         timeout-duration: 200ms
-      # 图片分析类接口（如果走 gateway 代理）
+      # 图片分析类接口（如果走gateway代理）
       visionAnalyze:
         limit-for-period: 20
         limit-refresh-period: 1s
@@ -151,7 +151,7 @@ logging:
     root: INFO
     com.fooddelivery: DEBUG
     org.springframework.security: DEBUG
-    # Resilience4j 事件日志（熔断、限流触发时可见）
+    # Resilience4j事件日志：熔断、限流触发时可见
     io.github.resilience4j: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

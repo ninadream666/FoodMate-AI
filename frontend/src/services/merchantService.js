@@ -1,8 +1,8 @@
 // src/services/merchantService.js
 import api from './apiClient';
 
-// --- 模拟菜单数据生成器 (使用优化的图片 URL) ---
-// 使用 Unsplash 作为备用图片源，加载更快且 URL 更短
+// --- 模拟菜单数据生成器 ---
+// 使用Unsplash作为备用图片源，加载更快且URL更短
 const CUISINE_MENUS = {
     '火锅': [
         { id: 1, name: '麻辣锅底', description: '经典川味麻辣锅底', price: 68.0, category: 'mainCourses', imageUrl: 'https://loremflickr.com/200/200/hotpot,spicy' },
@@ -18,10 +18,10 @@ const CUISINE_MENUS = {
 
 export const merchantService = {
     // ==============================
-    // 顾客端接口 (Customer Side)
+    // 顾客端接口（Customer Side）
     // ==============================
 
-    // 1. 获取商铺列表 (首页推荐用)
+    // 获取商铺列表（首页推荐用）
     getRecommendedMerchants: async () => {
         try {
             const data = await api.get('merchants', '');
@@ -38,15 +38,15 @@ export const merchantService = {
         }
     },
 
-    // 2. 获取商铺详情 (顾客端详情页用)
+    // 获取商铺详情（顾客端详情页用）
     getMerchantById: async (id) => {
         return await api.get('merchants', `/${id}`);
     },
 
-    // 3. 获取公开菜单 (顾客端用，含模拟数据兜底)
+    // 获取公开菜单（顾客端用，含模拟数据兜底）
     getPublicMenu: async (merchantId) => {
         try {
-            // 使用 /public 端点获取公开菜单
+            // 使用/public端点获取公开菜单
             const list = await api.get('merchants', `/${merchantId}/menu-items/public`);
             if (!list || list.length === 0) throw new Error('Empty menu');
             return list;
@@ -58,15 +58,15 @@ export const merchantService = {
     },
 
     // ==============================
-    // 商家端管理接口 (Merchant Side)
+    // 商家端管理接口（Merchant Side）
     // ==============================
 
-    // 4. 获取商家详情 (商家端管理页用)
+    // 获取商家详情（商家端管理页用）
     getMerchantDetail: async (id) => {
         return await api.get('merchants', `/${id}`);
     },
 
-    // 5. 获取菜单列表 (商家管理用)
+    // 获取菜单列表（商家管理用）
     getMenu: async (merchantId) => {
         try {
             return await api.get('merchants', `/${merchantId}/menu-items`);
@@ -75,48 +75,48 @@ export const merchantService = {
         }
     },
 
-    // 6. 新增菜品
+    // 新增菜品
     addMenuItem: async (merchantId, itemData) => {
         return await api.post('merchants', `/${merchantId}/menu-items`, itemData);
     },
 
-    // 7. 更新菜品 (上下架、改价)
+    // 更新菜品（上下架、改价）
     updateMenuItem: async (merchantId, itemId, itemData) => {
         return await api.put('merchants', `/${merchantId}/menu-items/${itemId}`, itemData);
     },
 
-    // 8. 删除菜品
+    // 删除菜品
     deleteMenuItem: async (merchantId, itemId) => {
         return await api.del('merchants', `/${merchantId}/menu-items/${itemId}`);
     },
 
-    // 9. 获取当前用户的商铺 (商家端用)
+    // 获取当前用户的商铺（商家端用）
     getMyMerchant: async () => {
         return await api.get('merchants', '/my');
     },
 
-    // 9.1 获取当前用户的所有商铺
+    // 获取当前用户的所有商铺
     getAllMyMerchants: async () => {
         return await api.get('merchants', '/my/all');
     },
 
-    // 10. 导入真实餐厅 (AI 推荐服务用)
+    // 导入真实餐厅（AI推荐服务用）
     importRealRestaurant: async (data) => {
         return await api.post('merchants', '/import', data);
     },
 
-    // 11. 创建商铺 (入驻用)
+    // 创建商铺（入驻用）
     createMerchant: async (merchantData) => {
         return await api.post('merchants', '', merchantData);
     },
 
-    // 12. 获取未被认领的商家列表
+    // 获取未被认领的商家列表
     getUnclaimedMerchants: async (keyword = '') => {
         const params = keyword ? `?keyword=${encodeURIComponent(keyword)}` : '';
         return await api.get('merchants', `/unclaimed${params}`);
     },
 
-    // 13. 认领商家（关联外部导入的商家到当前用户）
+    // 认领商家（关联外部导入的商家到当前用户）
     claimMerchant: async (merchantId) => {
         return await api.post('merchants', `/${merchantId}/claim`);
     }

@@ -5,7 +5,7 @@ import lombok.Data;
 
 /**
  * 商家实体（只读，仅用于查询merchantId）
- * 映射到已存在的 merchants 表
+ * 映射到已存在的merchants表
  */
 @Entity
 @Table(name = "merchants")

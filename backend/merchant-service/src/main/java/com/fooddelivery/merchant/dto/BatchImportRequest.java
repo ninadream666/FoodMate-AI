@@ -4,7 +4,7 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * 批量导入请求 DTO
+ * 批量导入请求DTO
  */
 @Data
 public class BatchImportRequest {

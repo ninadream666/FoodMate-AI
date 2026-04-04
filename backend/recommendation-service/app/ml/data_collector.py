@@ -1,8 +1,8 @@
 """
 训练数据收集器
 
-在每次推荐 + 用户反馈时，将 <特征, 标签> 异步落盘为 CSV / JSON Lines，
-供后续 LightGBM / DeepFM 离线训练使用。
+在每次推荐+用户反馈时，将<特征, 标签>异步落盘为CSV / JSON Lines，
+供后续LightGBM/DeepFM离线训练使用。
 
 写入路径：  {DATA_DIR}/training_samples.jsonl
 每行一条 JSON，格式:
@@ -27,7 +27,7 @@ from .feature_engineering import extract_features
 
 logger = logging.getLogger(__name__)
 
-# 数据目录（容器内持久卷 / 本地开发目录）
+# 数据目录：容器内持久卷/本地开发目录
 DATA_DIR = os.getenv("ML_DATA_DIR", os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     "ml_data"
@@ -55,7 +55,7 @@ class TrainingDataCollector:
         self._ensure_dir()
         self._file_path = os.path.join(self.data_dir, "training_samples.jsonl")
         self._lock = asyncio.Lock()
-        # 内存缓存：记录最近的 impression，便于后续用反馈覆盖
+        # 内存缓存：记录最近的impression，便于后续用反馈覆盖
         self._recent_impressions: Dict[str, Dict[str, Any]] = {}
         logger.info(f"📦 TrainingDataCollector 初始化，数据目录: {self.data_dir}")
 
@@ -71,7 +71,7 @@ class TrainingDataCollector:
         mab_avg_reward: float = 0.0,
         rank: int = 0,
     ):
-        """记录一次推荐曝光（默认 label=0.0，后续反馈会追加新行）"""
+        """记录一次推荐曝光，默认label=0.0，后续反馈会追加新行"""
         features = extract_features(arm_features, context, mab_pulls, mab_avg_reward)
         record = {
             "timestamp": datetime.now().isoformat(),
@@ -96,9 +96,9 @@ class TrainingDataCollector:
         reward_value: Optional[float] = None,
     ):
         """
-        记录用户反馈（click / order / rating）
+        记录用户反馈（click/order/rating）
 
-        如果 arm_features/context 未传，会尝试从最近的 impression 缓存中复用。
+        如果arm_features/context未传，会尝试从最近的impression缓存中复用。
         """
         label = reward_value if reward_value is not None else FEEDBACK_LABEL_MAP.get(feedback_type, 0.0)
 
@@ -127,7 +127,7 @@ class TrainingDataCollector:
         context: Dict[str, Any],
     ):
         """
-        批量记录推荐结果（一次推荐请求的所有候选）
+        批量记录推荐结果：一次推荐请求的所有候选
 
         arms_with_context: [{"restaurant_id": ..., "features": ..., "pulls": ..., "avg_reward": ..., "rank": ...}]
         """
@@ -142,7 +142,7 @@ class TrainingDataCollector:
             )
 
     async def _append(self, record: Dict[str, Any]):
-        """异步追加写入 JSONL 文件"""
+        """异步追加写入JSONL文件"""
         async with self._lock:
             try:
                 with open(self._file_path, "a", encoding="utf-8") as f:

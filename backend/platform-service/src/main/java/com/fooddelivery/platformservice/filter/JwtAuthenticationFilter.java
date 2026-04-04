@@ -39,7 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     Long userId = jwtUtil.getUserId(token);
                     String role = jwtUtil.getRole(token);
 
-                    // 如果是商家角色，根据 userId 查询 merchantId
+                    // 如果是商家角色，根据userId查询merchantId
                     Long merchantId = null;
                     if ("merchant".equalsIgnoreCase(role)) {
                         merchantId = merchantQueryService.getMerchantIdByUserId(userId);

@@ -1,11 +1,11 @@
 """
-NCF (Neural Collaborative Filtering) 训练脚本
+NCF(Neural Collaborative Filtering)训练脚本
 
-训练 FoodCF-Encoder + NCF 双塔交互模型:
-1. 从 training_samples.jsonl 提取 (user_profile, restaurant_desc, label) 三元组
-2. 使用 FoodCF-Encoder 生成用户和餐厅语义嵌入
-3. 训练 GMF + MLP 融合网络 (NCF)
-4. 保存模型到 models/ncf_model.pth
+训练FoodCF-Encoder + NCF双塔交互模型:
+1. 从training_samples.jsonl提取(user_profile, restaurant_desc, label) 三元组
+2. 使用FoodCF-Encoder生成用户和餐厅语义嵌入
+3. 训练GMF + MLP融合网络(NCF)
+4. 保存模型到models/ncf_model.pth
 
 用法:
     python -m app.ml.train_ncf
@@ -51,7 +51,7 @@ def generate_ncf_mock_data(n_users: int = 50, n_restaurants: int = 200,
                            interactions_per_user: int = 30,
                            output_path: Optional[str] = None) -> str:
     """
-    生成 NCF 训练用的模拟三元组数据
+    生成NCF训练用的模拟三元组数据
 
     每条记录:
     {
@@ -195,7 +195,7 @@ def generate_ncf_mock_data(n_users: int = 50, n_restaurants: int = 200,
 
 def load_ncf_data(data_path: str) -> Tuple[List[str], List[str], np.ndarray]:
     """
-    加载 NCF 训练数据
+    加载NCF训练数据
 
     Returns:
         user_texts: 用户画像文本列表
@@ -247,12 +247,12 @@ def train_ncf(
     device: str = "cpu",
 ):
     """
-    训练 NCF 模型
+    训练NCF模型
 
     流程:
     1. 加载文本数据
-    2. FoodCF-Encoder 编码用户/餐厅 → dense embeddings
-    3. 训练 GMF+MLP 网络
+    2. FoodCF-Encoder编码用户/餐厅 → dense embeddings
+    3. 训练GMF+MLP网络
     4. 保存模型
     """
     import torch
@@ -260,13 +260,13 @@ def train_ncf(
     import torch.optim as optim
     from torch.utils.data import DataLoader, TensorDataset
 
-    # 1. 加载数据
+    # 加载数据
     user_texts, rest_texts, labels = load_ncf_data(data_path)
     if len(labels) == 0:
         logger.error("❌ 无训练数据")
         return None, None
 
-    # 2. 编码嵌入
+    # 编码嵌入
     logger.info("🔄 使用 FoodCF-Encoder 编码嵌入...")
     from app.ml.foodcf_encoder import get_foodcf_encoder
     encoder = get_foodcf_encoder()
@@ -278,7 +278,7 @@ def train_ncf(
     actual_dim = user_embeds.shape[1]
     logger.info(f"  嵌入维度: {actual_dim}")
 
-    # 3. 准备 PyTorch 数据
+    # 准备PyTorch数据
     user_tensor = torch.from_numpy(user_embeds.astype(np.float32))
     rest_tensor = torch.from_numpy(rest_embeds.astype(np.float32))
     label_tensor = torch.from_numpy(labels)
@@ -293,7 +293,7 @@ def train_ncf(
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_ds, batch_size=batch_size)
 
-    # 4. 构建 NCF 模型
+    # 构建NCF模型
     from app.ml.ncf_model import _build_ncf_model
     model = _build_ncf_model(embed_dim=actual_dim).to(device)
 
@@ -342,7 +342,7 @@ def train_ncf(
             best_val_loss = val_loss
             best_state = {k: v.clone() for k, v in model.state_dict().items()}
 
-    # 5. 保存模型
+    # 保存模型
     if save_path is None:
         save_path = os.path.join(MODEL_DIR, "ncf_model.pth")
     Path(os.path.dirname(save_path)).mkdir(parents=True, exist_ok=True)

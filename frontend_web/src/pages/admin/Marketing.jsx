@@ -4,28 +4,28 @@ import { runMarketingTests } from '../../utils/testMarketingFeatures';
 import { testMarketingApiDirectly, checkBackendApiImplementation } from '../../utils/debugMarketingApi';
 import { debugCouponIssue } from '../../utils/couponIssueDebug';
 
-// 优惠券类型标签 (北欧语义化配色 - 解决中英混合与颜色区分问题)
+// 优惠券类型标签
 const TypeBadge = ({ type }) => {
     // 统一映射表：支持后端返回的各种英文常量和中文名称
     const typeMap = {
-        // 满减类 - 使用主色调 (Coral/Primary)
+        // 满减类
         'DISCOUNT': { text: '满减优惠', class: 'bg-primary-soft text-primary border border-primary/20', icon: 'payments' },
         'THRESHOLD_REDUCTION': { text: '满减优惠', class: 'bg-primary-soft text-primary border border-primary/20', icon: 'payments' },
         '满减优惠': { text: '满减优惠', class: 'bg-primary-soft text-primary border border-primary/20', icon: 'payments' },
         
-        // 折扣类 - 使用蓝色调 (Info/Blue)
+        // 折扣类
         'PERCENTAGE': { text: '折扣优惠', class: 'bg-info-bg text-info border border-info/20', icon: 'percent' },
         '折扣优惠': { text: '折扣优惠', class: 'bg-info-bg text-info border border-info/20', icon: 'percent' },
         
-        // 配送类 - 使用绿色调 (Success/Green)
+        // 配送类
         'FREE_DELIVERY': { text: '免配送费', class: 'bg-success-bg text-success border border-success/20', icon: 'local_shipping' },
         'FREE_SHIPPING': { text: '免配送费', class: 'bg-success-bg text-success border border-success/20', icon: 'local_shipping' },
         '免运费券': { text: '免配送费', class: 'bg-success-bg text-success border border-success/20', icon: 'local_shipping' },
 
-        // 无门槛类 - 北欧紫 (补全映射)
+        // 无门槛类
         'NO_THRESHOLD': { text: '无门槛券', class: 'bg-purple-100 text-purple-600 border border-purple-200', icon: 'confirmation_number' },
 
-        // 代金券/其他 - 使用黄色调 (Warning/Yellow)
+        // 代金券/其他
         'CASH': { text: '代金券', class: 'bg-warning-bg text-warning border border-warning/20', icon: 'toll' }
     };
 
@@ -44,9 +44,9 @@ const TypeBadge = ({ type }) => {
     );
 };
 
-// 状态标签 (北欧语义化配色 - 优化显示优先级)
+// 状态标签
 const StatusBadge = ({ enabled, isExpired }) => {
-    // 逻辑：如果管理员禁用了，优先显示已禁用。如果启用了但时间过了，显示已过期。
+    // 如果管理员禁用了，优先显示已禁用。如果启用了但时间过了，显示已过期。
     if (!enabled) {
         return (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-error-bg text-error border border-error/20">
@@ -107,7 +107,7 @@ const Marketing = () => {
     });
     const [issueLoading, setIssueLoading] = useState(false);
 
-    // ================= 全局定制化弹窗状态 (对齐 Users.jsx) =================
+    // ================= 全局定制化弹窗状态 =================
     const [dialog, setDialog] = useState({ 
         isOpen: false, 
         type: 'alert', // 'alert' or 'confirm'
@@ -140,7 +140,6 @@ const Marketing = () => {
     };
 
     const closeDialog = () => setDialog(prev => ({ ...prev, isOpen: false }));
-    // ======================================================================
 
     // 数据获取函数
     const fetchMarketingData = async () => {
@@ -155,14 +154,12 @@ const Marketing = () => {
                 console.log('📋 请求优惠券模板列表...');
                 let templatesData = null;
 
-                // 首先尝试标准的管理员API路径
                 try {
                     templatesData = await marketingService.getCouponTemplates();
                     console.log('✅ 标准API路径成功');
                 } catch (apiError) {
                     console.warn('⚠️ 标准API路径失败，尝试直接API调用...', apiError.message);
 
-                    // 如果标准路径失败，尝试直接调用不同的API路径
                     const { testMarketingApiDirectly } = await import('../../utils/debugMarketingApi');
                     const result = await testMarketingApiDirectly();
 
@@ -170,7 +167,7 @@ const Marketing = () => {
                         console.log('✅ 找到可用的API路径:', result.path);
                         templatesData = result.data;
                     } else {
-                        throw apiError; // 如果所有路径都失败，抛出原始错误
+                        throw apiError;
                     }
                 }
 
@@ -272,7 +269,7 @@ const Marketing = () => {
                 return;
             }
 
-            // 构建请求数据（按后端API规范）
+            // 构建请求数据
             const templateData = {
                 name: formData.name.trim(),
                 type: formData.type,
@@ -349,7 +346,7 @@ const Marketing = () => {
                     remark: issueFormData.remark.trim() || '管理员发放'
                 };
 
-                // 在发放前进行诊断（开发环境）
+                // 在发放前进行诊断
                 if (process.env.NODE_ENV === 'development') {
                     console.log('🔧 开发环境：执行发放前诊断...');
                     await debugCouponIssue.fullDiagnosis(issueData);
@@ -365,7 +362,7 @@ const Marketing = () => {
                     return;
                 }
 
-                // 解析用户ID列表（支持逗号、换行分隔）
+                // 解析用户ID列表，支持逗号、换行分隔
                 const userIds = issueFormData.userIds
                     .split(/[,\n\r\s]+/)
                     .map(id => id.trim())
@@ -550,7 +547,7 @@ const Marketing = () => {
                     </div>
                 </div>
 
-                {/* 统计卡片 (还原所有统计项) */}
+                {/* 统计卡片 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                     {[
                         { label: '总模板数', value: loading ? '...' : (statistics.totalCampaigns || 0), icon: 'confirmation_number', color: 'text-info', bg: 'bg-info-bg' },
@@ -612,7 +609,7 @@ const Marketing = () => {
                     </div>
                 </div>
 
-                {/* 优惠券表格 (严格对齐 Nordic 表格规范：首列靠左，其余居中) */}
+                {/* 优惠券表格 */}
                 <div className="bg-surface rounded-2xl shadow-sm border border-border-light overflow-hidden">
                     <div className="px-6 py-5 border-b border-border-light bg-background-section flex justify-between items-center">
                         <h3 className="text-base font-extrabold text-text-primary tracking-tight">
@@ -648,7 +645,7 @@ const Marketing = () => {
                                     filteredCouponTemplates.map((template) => {
                                         const templateEnabled = template?.enabled !== undefined ? template.enabled : (template?.status === 'active');
                                         const validUntil = template?.validUntil || template?.endTime || template?.expiryDate;
-                                        // 更加稳健的日期判断：设置到当天 23:59:59 避免当天误判
+                                        // 更加稳健的日期判断：设置到当天23:59:59避免当天误判
                                         const isExpired = validUntil ? new Date(validUntil).setHours(23, 59, 59) < new Date().getTime() : false;
 
                                         return (
@@ -745,7 +742,7 @@ const Marketing = () => {
                 </div>
             </div>
 
-            {/* ================= 全局定制化 Modal 弹窗 (对齐 Users.jsx) ================= */}
+            {/* ================= 全局定制化Modal弹窗 ================= */}
             {dialog.isOpen && (
                 <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-overlay backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-surface rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-border-light">
@@ -784,7 +781,7 @@ const Marketing = () => {
                 </div>
             )}
 
-            {/* 创建优惠券模态框 (还原所有表单字段) */}
+            {/* 创建优惠券模态框 */}
             {showCreateModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-surface rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 border border-border-light">
@@ -851,7 +848,7 @@ const Marketing = () => {
                 </div>
             )}
 
-            {/* 发放优惠券模态框 (还原完整逻辑) */}
+            {/* 发放优惠券模态框 */}
             {showIssueModal && selectedTemplate && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-border-light">

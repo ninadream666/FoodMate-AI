@@ -1,8 +1,8 @@
 """
-Neural Collaborative Filtering (NCF) 交互层模型
+Neural Collaborative Filtering(NCF)交互层模型
 
-架构: GMF + MLP 双路径融合 (He et al., WWW 2017)
-创新: 使用 FoodCF-Encoder 语义嵌入替代传统 ID Embedding
+架构: GMF+MLP双路径融合(He et al., WWW 2017)
+创新: 使用FoodCF-Encoder语义嵌入替代传统ID Embedding
 
     ┌─────────────┐    ┌──────────────────┐
     │ User Embed   │    │ Restaurant Embed │
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MODEL_DIR = os.path.join(ROOT_DIR, "models")
 
-# 默认 NCF 模型路径
+# 默认NCF模型路径
 NCF_MODEL_PATH = os.path.join(MODEL_DIR, "ncf_model.pth")
 
 
@@ -53,15 +53,15 @@ def _build_ncf_model(embed_dim: int = 128):
         Neural Collaborative Filtering
 
         双路径:
-          - GMF (Generalized Matrix Factorization): element-wise product
-          - MLP: 拼接后多层全连接
+          - GMF(Generalized Matrix Factorization)：element-wise product
+          - MLP：拼接后多层全连接
         """
 
         def __init__(self, embed_dim: int = 128, mlp_hidden: Tuple[int, ...] = (512, 256, 128)):
             super().__init__()
             self.embed_dim = embed_dim
 
-            # MLP 路径
+            # MLP路径
             mlp_layers = []
             prev_dim = embed_dim * 2  # user + restaurant concat
             for hidden in mlp_hidden:
@@ -72,7 +72,7 @@ def _build_ncf_model(embed_dim: int = 128):
                 prev_dim = hidden
             self.mlp = nn.Sequential(*mlp_layers)
 
-            # 最终融合层: GMF output (embed_dim) + MLP output (last hidden)
+            # 最终融合层：GMF output(embed_dim) + MLP output(last hidden)
             self.final = nn.Sequential(
                 nn.Linear(embed_dim + mlp_hidden[-1], 64),
                 nn.ReLU(),
@@ -91,10 +91,10 @@ def _build_ncf_model(embed_dim: int = 128):
             Returns:
                 scores: (batch,)  交互概率
             """
-            # GMF 路径: element-wise product
+            # GMF路径：element-wise product
             gmf_out = user_embed * restaurant_embed  # (batch, embed_dim)
 
-            # MLP 路径: 拼接后多层全连接
+            # MLP路径：拼接后多层全连接
             mlp_input = torch.cat([user_embed, restaurant_embed], dim=1)  # (batch, embed_dim*2)
             mlp_out = self.mlp(mlp_input)  # (batch, last_hidden)
 
@@ -110,7 +110,7 @@ class NCFInferenceEngine:
     """
     NCF 推理引擎
 
-    加载训练好的 NCF 模型，提供用户-餐厅交互分数预测。
+    加载训练好的NCF模型，提供用户-餐厅交互分数预测。
     如果模型不存在，降级为余弦相似度计算。
     """
 
@@ -122,7 +122,7 @@ class NCFInferenceEngine:
         self._mode = "unknown"  # "ncf" | "cosine_fallback"
 
     def _load_model(self):
-        """懒加载 NCF 模型"""
+        """懒加载NCF模型"""
         if self._loaded:
             return
 
@@ -174,7 +174,7 @@ class NCFInferenceEngine:
     def _predict_ncf(
         self, user_embedding: np.ndarray, restaurant_embeddings: np.ndarray
     ) -> np.ndarray:
-        """使用 NCF 模型预测"""
+        """使用NCF模型预测"""
         import torch
 
         n = restaurant_embeddings.shape[0]
@@ -191,15 +191,15 @@ class NCFInferenceEngine:
     def _predict_cosine(
         self, user_embedding: np.ndarray, restaurant_embeddings: np.ndarray
     ) -> np.ndarray:
-        """余弦相似度降级 (L2 归一化后的点积)"""
-        # 假设嵌入已 L2 归一化
+        """余弦相似度降级，即L2归一化后的点积"""
+        # 假设嵌入已L2归一化
         scores = restaurant_embeddings @ user_embedding
-        # 映射 [-1, 1] → [0, 1]
+        # 映射[-1, 1] → [0, 1]
         scores = (scores + 1.0) / 2.0
         return scores.astype(np.float32)
 
     def is_available(self) -> bool:
-        """引擎是否可用 (包括降级模式)"""
+        """引擎是否可用，包括降级模式"""
         self._load_model()
         return True
 
@@ -219,7 +219,7 @@ _ncf_engine: Optional[NCFInferenceEngine] = None
 def get_ncf_engine(
     model_path: Optional[str] = None, embed_dim: int = 128
 ) -> NCFInferenceEngine:
-    """获取 NCF 推理引擎单例"""
+    """获取NCF推理引擎单例"""
     global _ncf_engine
     if _ncf_engine is None:
         _ncf_engine = NCFInferenceEngine(model_path=model_path, embed_dim=embed_dim)

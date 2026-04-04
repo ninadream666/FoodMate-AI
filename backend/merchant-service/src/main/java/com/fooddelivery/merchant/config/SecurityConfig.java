@@ -29,40 +29,38 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. 禁用 CSRF (移动端必须)
+                // 禁用CSRF(移动端必须)
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // 2. 启用 CORS
+                // 启用CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 3. 设置无状态 Session
+                // 设置无状态Session
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 4. 权限规则配置 (注意顺序：越具体的越靠前)
+                // 权限规则配置
                 .authorizeHttpRequests(auth -> auth
-                        // ========== [关键修复] 必须认证的接口 (放在通配符之前) ==========
                         // "我的店铺"信息必须登录才能看，防止被误判为公开接口
                         .requestMatchers("/api/merchants/my/**", "/merchants/my/**").authenticated()
                         .requestMatchers("/api/merchants/my", "/merchants/my").authenticated()
 
-                        // 商家入驻/创建店铺 (POST) 必须登录
+                        // 商家入驻/创建店铺(POST)必须登录
                         .requestMatchers(HttpMethod.POST, "/api/merchants", "/merchants").authenticated()
 
-                        // ========== 公开接口 (白名单) ==========
-                        // 导入数据 (允许智能体/脚本调用)
+                        // ========== 公开接口 ==========
+                        // 导入数据(允许智能体/脚本调用)
                         .requestMatchers("/api/merchants/import/**", "/merchants/import/**").permitAll()
 
                         // 内部服务调用
                         .requestMatchers("/merchants/internal/**", "/api/merchants/internal/**").permitAll()
 
-                        // 商家详情/列表/菜单 (GET) - 允许公开查看
-                        // 注意：这里放在 /my 之后，确保 /my 不会被这个通配符“吃掉”
+                        // 商家详情/列表/菜单(GET) - 允许公开查看
                         .requestMatchers(HttpMethod.GET, "/merchants/**", "/api/merchants/**").permitAll()
 
                         // 管理员接口
                         .requestMatchers("/admin/**", "/api/admin/**").permitAll()
 
-                        // Swagger 文档
+                        // Swagger文档
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**").permitAll()
 
                         // 图片请求代理
@@ -71,13 +69,13 @@ public class SecurityConfig {
                         // ========== 其他所有请求必须认证 ==========
                         .anyRequest().authenticated())
 
-                // 5. 添加 JWT 过滤器
+                // 添加 JWT 过滤器
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // CORS 配置 Bean
+    // CORS配置Bean
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();

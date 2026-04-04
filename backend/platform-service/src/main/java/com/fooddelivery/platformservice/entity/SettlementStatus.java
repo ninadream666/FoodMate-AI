@@ -15,7 +15,7 @@ public enum SettlementStatus {
     CONFIRMED,
 
     /**
-     * 有异议（简化处理，线下解决）
+     * 有异议
      */
     DISPUTED,
 

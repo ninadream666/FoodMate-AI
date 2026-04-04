@@ -27,13 +27,9 @@ import java.lang.annotation.*;
 @Bulkhead(name = "default")
 @TimeLimiter(name = "default")
 public @interface ResilientService {
-    /**
-     * 服务名称
-     */
+    // 服务名称
     String name() default "default";
 
-    /**
-     * 降级方法名
-     */
+    // 降级方法名
     String fallbackMethod() default "";
 }

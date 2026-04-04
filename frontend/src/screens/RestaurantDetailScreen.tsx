@@ -17,7 +17,7 @@ import { merchantService } from '../services/merchantService';
 import { profileService } from '../services/profileService';
 import MenuListItem from '../components/MenuListItem';
 import CartBar from '../components/CartBar';
-import { hashId } from '../config/imageDictionary'; // 【新增引入】利用图库字典的 hash 算法
+import { hashId } from '../config/imageDictionary';
 
 // 北欧风主题
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
@@ -129,7 +129,6 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
         });
     };
 
-    // 【核心修复3】提前计算好商家主图，彻底屏蔽外网，强制走后端代理！
     const bannerImageUrl = (() => {
         const url = restaurant?.image || restaurant?.imageUrl || restaurant?.features?.image || '';
         
@@ -146,7 +145,7 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
         }
 
         const safeId = id || 'default_merchant';
-        const hash = hashId(safeId); // 使用相同的 hash 函数锁定图片
+        const hash = hashId(safeId); // 使用相同的hash函数锁定图片
         
         // 动态拼装走后端代理的 URL
         return `http://127.0.0.1:8081/api/images/proxy?tag=restaurant,interior&width=800&height=400&hash=${hash}`;

@@ -124,7 +124,7 @@ const LoginScreen = ({ navigation }: any) => {
                             />
                             <View style={styles.glassCardInner}>
 
-                                {/* 登录/注册 切换 Tab */}
+                                {/* 登录/注册，切换Tab */}
                                 <View style={styles.tabBar}>
                                     <TouchableOpacity
                                         activeOpacity={0.7}

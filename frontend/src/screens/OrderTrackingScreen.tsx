@@ -30,7 +30,7 @@ const OrderTrackingScreen = ({ route, navigation }: any) => {
     const [merchantName, setMerchantName] = useState('');
     const [loading, setLoading] = useState(true);
 
-    // 始终调用详情 API 获取完整数据（含菜品名），同时获取商家名
+    // 始终调用详情API获取完整数据（含菜品名），同时获取商家名
     useEffect(() => {
         loadDetail();
     }, []);
@@ -90,7 +90,7 @@ const OrderTrackingScreen = ({ route, navigation }: any) => {
 
     return (
         <ScrollView style={styles.container}>
-            {/* 1. 顶部状态区域 */}
+            {/* 顶部状态区域 */}
             {isCancelled ? (
                 <View style={[styles.mapContainer, { backgroundColor: '#F5F0EB' }]}>
                     <View style={styles.mapPlaceholder}>
@@ -132,7 +132,7 @@ const OrderTrackingScreen = ({ route, navigation }: any) => {
                 </View>
             )}
 
-            {/* 2. 进度条区域 - 基于真实订单状态 */}
+            {/* 进度条区域 - 基于真实订单状态 */}
             <View style={styles.card}>
                 <Text style={styles.sectionTitle}>订单状态</Text>
                 {isCancelled ? (
@@ -155,7 +155,7 @@ const OrderTrackingScreen = ({ route, navigation }: any) => {
                 )}
             </View>
 
-            {/* 3. 骑手信息 - 已取消的订单不显示 */}
+            {/* 骑手信息 - 已取消的订单不显示 */}
             {!isCancelled && (
                 <View style={styles.card}>
                     <View style={styles.riderRow}>
@@ -171,7 +171,7 @@ const OrderTrackingScreen = ({ route, navigation }: any) => {
                 </View>
             )}
 
-            {/* 4. 订单详情 */}
+            {/* 订单详情 */}
             <View style={[styles.card, { marginBottom: 40 }]}>
                 <Text style={styles.sectionTitle}>订单详情</Text>
                 {merchantName ? (
@@ -179,7 +179,7 @@ const OrderTrackingScreen = ({ route, navigation }: any) => {
                         {merchantName}
                     </Text>
                 ) : null}
-                {/* 优先用 orderItems（详情API返回，含菜品名），fallback 到 items */}
+                {/* 优先用orderItems（详情API返回，含菜品名），fallback到items */}
                 {(order.orderItems || order.items)?.map((item: any, index: number) => (
                     <View key={index} style={styles.orderItem}>
                         <Text style={styles.itemName}>

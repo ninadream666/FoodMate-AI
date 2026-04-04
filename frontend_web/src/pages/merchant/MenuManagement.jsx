@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { merchantService } from '../../services/merchantService';
 
 /**
- * 菜单管理页面 (北欧主题重构版，注入定制弹窗 Modal)
+ * 菜单管理页面
  */
 export default function MenuManagement() {
   const { merchant } = useOutletContext();
@@ -15,7 +15,7 @@ export default function MenuManagement() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
 
-  // --- 全局定制化 UI 弹窗状态 ---
+  // --- 全局定制化UI弹窗状态 ---
   const [dialog, setDialog] = useState({
     isOpen: false,
     type: 'alert', // 'alert' | 'confirm'
@@ -23,7 +23,7 @@ export default function MenuManagement() {
     onConfirm: null
   });
 
-  // 分类筛选状态 (前端筛选)
+  // 分类筛选状态
   const [activeCategory, setActiveCategory] = useState('全部');
   const [categories, setCategories] = useState(['全部']);
 
@@ -49,7 +49,7 @@ export default function MenuManagement() {
       // 安全提取数组
       const data = Array.isArray(response) ? response : (response?.data || []);
       
-      // 修复核心：在前端强制按 ID 排序，保证状态切换时顺序绝对不变
+      // 在前端强制按ID排序，保证状态切换时顺序绝对不变
       const sortedData = [...data].sort((a, b) => a.id - b.id);
       setMenuItems(sortedData);
       
@@ -126,7 +126,6 @@ export default function MenuManagement() {
 
   // --- 交互逻辑 ---
   const handleDelete = (itemId) => {
-    // 替换原生的 confirm
     showConfirm("确定要删除这个菜品吗？", async () => {
       setDialog(prev => ({ ...prev, isOpen: false })); // 关闭确认框
       try {
@@ -149,7 +148,6 @@ export default function MenuManagement() {
         category: item.category,
         isAvailable: !item.isAvailable
       };
-      // 乐观 UI 更新
       setMenuItems(prev => prev.map(p => p.id === item.id ? { ...p, isAvailable: !p.isAvailable } : p));
       
       await merchantService.updateMenuItem(merchant.id, item.id, payload);
@@ -203,10 +201,10 @@ export default function MenuManagement() {
         ))}
       </div>
 
-      {/* Grid Layout (Nordic Card Style) */}
+      {/* Grid Layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredItems.map((item) => {
-          // 处理空字符串或 null 字符串引起的图片显示问题
+          // 处理空字符串或null字符串引起的图片显示问题
           const safeImgUrl = (item.imageUrl && item.imageUrl !== 'null') ? item.imageUrl : 'https://placehold.co/600x400?text=No+Image';
           
           return (
@@ -295,7 +293,7 @@ export default function MenuManagement() {
         })}
       </div>
 
-      {/* --- Add/Edit Modal (Tailwind Style) --- */}
+      {/* --- Add/Edit Modal --- */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay backdrop-blur-sm transition-all">
           <div className="bg-surface rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
@@ -405,7 +403,7 @@ export default function MenuManagement() {
         </div>
       )}
 
-      {/* --- 全局定制化 Modal 弹窗 --- */}
+      {/* --- 全局定制化Modal弹窗 --- */}
       {dialog.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-surface rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-border-light">

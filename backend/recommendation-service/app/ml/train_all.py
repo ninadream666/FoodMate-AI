@@ -1,14 +1,14 @@
 """
-一键训练脚本 — 同时训练 LightGBM + DeepFM + NCF + FoodCF-Encoder
+一键训练脚本 — 同时训练LightGBM + DeepFM + NCF + FoodCF-Encoder
 
 用法:
     cd backend/recommendation-service
     python -m app.ml.train_all                          # 全量训练
-    python -m app.ml.train_all --incremental             # LightGBM 增量训练
-    python -m app.ml.train_all --lgb-only                # 仅训练 LightGBM
-    python -m app.ml.train_all --deepfm-only             # 仅训练 DeepFM
-    python -m app.ml.train_all --ncf-only                # 仅训练 NCF (协同过滤)
-    python -m app.ml.train_all --encoder-only             # 仅训练 FoodCF-Encoder
+    python -m app.ml.train_all --incremental             # LightGBM增量训练
+    python -m app.ml.train_all --lgb-only                # 仅训练LightGBM
+    python -m app.ml.train_all --deepfm-only             # 仅训练DeepFM
+    python -m app.ml.train_all --ncf-only                # 仅训练NCF（协同过滤）
+    python -m app.ml.train_all --encoder-only             # 仅训练FoodCF-Encoder
     python -m app.ml.train_all --generate-mock 2000      # 先生成模拟数据再训练
 """
 
@@ -63,15 +63,15 @@ def generate_mock_data(n_samples: int = 2000, output_path: str = None):
         # 随机生成上下文特征
         temperature = random.randint(-5, 42)
         congestion_index = round(random.uniform(0.8, 2.5), 2)
-        is_bad_weather = random.choice([0, 0, 0, 1])  # 25% 概率恶劣天气
+        is_bad_weather = random.choice([0, 0, 0, 1])  # 25%概率恶劣天气
         is_peak_hour = random.choice([0, 0, 1])
-        is_post_workout = random.choice([0, 0, 0, 0, 1])  # 20% 概率
+        is_post_workout = random.choice([0, 0, 0, 0, 1])  # 20%概率
         is_weekend = random.choice([0, 0, 0, 0, 0, 1, 1])  # ~28%
         is_holiday = random.choice([0] * 9 + [1])
         cuisine_match = random.choice([0, 0, 1, 1, 1])  # 60%
         intent_match = random.choice([0, 0, 0, 1])
         weather_condition = random.choice(WEATHER_VOCAB)
-        meal_period = random.choice(MEAL_PERIOD_VOCAB[:-1])  # 排除 unknown
+        meal_period = random.choice(MEAL_PERIOD_VOCAB[:-1])  # 排除unknown
         user_segment = random.choice(USER_SEGMENT_VOCAB[:-1])
         
         # 归一化分
@@ -81,7 +81,7 @@ def generate_mock_data(n_samples: int = 2000, output_path: str = None):
         price_score = 1.0 if 15 <= price <= 80 else max(0.0, 1 - abs(price - 50) / 80)
         time_score = max(0.0, min(1.0, 1 - (delivery_time - 15) / 45))
         
-        # === 生成 label（模拟真实用户行为）===
+        # === 生成label，模拟真实用户行为 ===
         # 基础分：距离、评分、配送时间的综合
         base_prob = 0.25 * distance_score + 0.30 * rating_score + 0.15 * price_score + 0.15 * time_score + 0.15 * (order_count / 5000)
         
@@ -196,7 +196,7 @@ def main():
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-    # Step 0: 生成模拟数据（可选）
+    # Step0：生成模拟数据（可选）
     if args.generate_mock > 0:
         generate_mock_data(args.generate_mock, args.data)
 
@@ -205,7 +205,7 @@ def main():
         logger.info("💡 使用 --generate-mock 2000 可先生成模拟数据")
         return
 
-    # Step 1: 训练 LightGBM
+    # Step1：训练LightGBM
     if not args.deepfm_only and not args.ncf_only and not args.encoder_only:
         logger.info("=" * 60)
         logger.info("🌲 开始训练 LightGBM ...")
@@ -225,7 +225,7 @@ def main():
             import traceback
             traceback.print_exc()
 
-    # Step 2: 训练 DeepFM
+    # Step2：训练DeepFM
     if not args.lgb_only and not args.ncf_only and not args.encoder_only:
         logger.info("=" * 60)
         logger.info("🧠 开始训练 DeepFM ...")
@@ -243,7 +243,7 @@ def main():
             import traceback
             traceback.print_exc()
 
-    # Step 3: 训练 NCF (协同过滤)
+    # Step3：训练NCF，协同过滤
     if not args.lgb_only and not args.deepfm_only and not args.encoder_only:
         logger.info("=" * 60)
         logger.info("🤝 开始训练 NCF (协同过滤) ...")
@@ -251,7 +251,7 @@ def main():
         try:
             from app.ml.train_ncf import train_ncf, generate_ncf_mock_data
             ncf_data_path = os.path.join(DATA_DIR, "ncf_training_data.jsonl")
-            # 可选: 生成 NCF 模拟数据
+            # 可选: 生成NCF模拟数据
             if args.ncf_generate_mock > 0:
                 generate_ncf_mock_data(
                     n_users=max(20, args.ncf_generate_mock // 30),
@@ -272,7 +272,7 @@ def main():
             import traceback
             traceback.print_exc()
 
-    # Step 4: 训练 FoodCF-Encoder (GTE-Qwen2-1.5B 微调)
+    # Step4：训练FoodCF-Encoder（GTE-Qwen2-1.5B微调）
     if not args.lgb_only and not args.deepfm_only and not args.ncf_only:
         logger.info("=" * 60)
         logger.info("🧠 开始训练 FoodCF-Encoder (GTE-Qwen2-1.5B + NV-Embed + Matryoshka) ...")
@@ -280,7 +280,7 @@ def main():
         try:
             from app.ml.train_foodcf_encoder import train_foodcf_encoder, generate_synthetic_data
             encoder_data_path = os.path.join(DATA_DIR, "encoder_train.jsonl")
-            # 可选: 生成合成训练数据 (E5-Mistral 范式)
+            # 可选：生成合成训练数据（E5-Mistral范式）
             if args.encoder_generate_synthetic > 0:
                 generate_synthetic_data(
                     n_samples=args.encoder_generate_synthetic,

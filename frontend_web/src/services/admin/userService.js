@@ -12,7 +12,7 @@ class UserService {
         }
     }
 
-    // 获取用户列表（别名，兼容旧代码）
+    // 获取用户列表
     async getAllUsers(params = {}) {
         return this.getUsers(params);
     }

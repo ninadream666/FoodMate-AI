@@ -15,7 +15,7 @@ const RestaurantCard = memo(({ restaurant, onPress }: Props) => {
     // 数据处理
     const name = restaurant.name || '未知餐厅';
 
-    // AI推荐理由：后端返回的是 reason 字段（在 recommendations 数组每个item里）
+    // AI推荐理由：后端返回的是reason字段，在recommendations数组每个item里
     // 优先级: reason > recommendation_reason > match_reasons[0] > description
     const recommendationReason = restaurant.reason
         || restaurant.recommendation_reason
@@ -23,20 +23,20 @@ const RestaurantCard = memo(({ restaurant, onPress }: Props) => {
         || restaurant.description
         || null;
 
-    // 图片处理：使用 useMemo 避免每次渲染都计算图片，并接入智能图库字典
+    // 图片处理：使用useMemo避免每次渲染都计算图片，并接入智能图库字典
     const imageUrl = useMemo(() => {
         const url = restaurant.image || restaurant.imageUrl || restaurant.features?.image || '';
-        // 拦截无效图片 URL，交给独立字典库处理
+        // 拦截无效图片URL，交给独立字典库处理
         if (!url || url.includes('unsplash.com') || url.includes('example.com')) {
             return getMerchantImageByReason(recommendationReason || '', restaurant.id || Math.random());
         }
         return url;
     }, [restaurant.image, restaurant.imageUrl, restaurant.features?.image, recommendationReason, restaurant.id]);
 
-    // AI评分：优先使用后端返回的 score（60-100），final_score，最后默认85
-    // 后端 DecisionAgent 返回的 score 已经是 60-100 范围
+    // AI评分：优先使用后端返回的score（60-100），final_score，最后默认85
+    // 后端DecisionAgent返回的score已经是60-100范围
     let rawScore = restaurant.score || restaurant.final_score || 85;
-    // 如果 score 是 0-1 范围的小数，转换为 60-100 范围
+    // 如果score是0-1范围的小数，转换为60-100范围
     const score = rawScore <= 1 ? Math.round(rawScore * 100) : Math.round(rawScore);
 
     const rating = restaurant.rating || (restaurant.features?.rating) || 4.5;
@@ -125,7 +125,7 @@ const RestaurantCard = memo(({ restaurant, onPress }: Props) => {
 });
 
 const styles = StyleSheet.create({
-    // 磨砂卡片（Image3 风格）- 可点击元素带阴影（Image2 原则）
+    // 磨砂卡片（Image3风格）- 可点击元素带阴影（Image2原则）
     card: {
         backgroundColor: colors.cardBgSolid,
         borderRadius: borderRadius.xxl,

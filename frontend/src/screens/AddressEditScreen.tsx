@@ -30,7 +30,6 @@ const AddressEditScreen = ({ navigation }: any) => {
                 city,
                 street,
                 detail,
-                // Web端逻辑：联系人和电话暂不传，由后端直接取当前用户
             };
 
             await addressService.addAddress(payload);

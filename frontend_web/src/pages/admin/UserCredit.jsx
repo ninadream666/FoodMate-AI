@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import userService from '../../services/admin/userService';
 
-// ==========================================
-// 补充您遗漏的顶部组件定义，确保文件能够正常运行
-// ==========================================
-
 // 状态标签组件
 const StatusBadge = ({ status }) => {
     const getStatusInfo = (status) => {
@@ -34,7 +30,7 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-// 信用等级标签组件 (已严格按要求去除分数，仅显示文字与图标)
+// 信用等级标签组件
 const CreditBadge = ({ creditLevel, creditScore }) => {
     const getCreditInfo = (score, level) => {
         let levelNum = 3;
@@ -70,7 +66,7 @@ const CreditBadge = ({ creditLevel, creditScore }) => {
     );
 };
 
-// 用户行组件 (完整保留您原先所有的 UI 设计)
+// 用户行组件
 const UserRow = ({ user, onEditUser, onViewCredit, onToggleStatus, currentTab }) => (
     <tr className="hover:bg-gray-50/50 transition-colors">
         <td className="px-6 py-4">
@@ -149,12 +145,8 @@ const UserRow = ({ user, onEditUser, onViewCredit, onToggleStatus, currentTab })
     </tr>
 );
 
-// ==========================================
-// 以下为原汁原味的主组件逻辑
-// ==========================================
-
+// 主组件
 function UserCredit() {
-    // 补充您发来的片段中遗漏的核心状态
     const [activeTab, setActiveTab] = useState('users');
     const [selectedStatus, setSelectedStatus] = useState('');
 
@@ -180,18 +172,15 @@ function UserCredit() {
     const showConfirm = (message, onConfirmCallback) => setDialog({ isOpen: true, type: 'confirm', message, onConfirm: onConfirmCallback });
     const showAlert = (message) => setDialog({ isOpen: true, type: 'alert', message, onConfirm: () => setDialog(prev => ({ ...prev, isOpen: false })) });
 
-    // 去掉了 selectedCreditLevel 的依赖，避免给不支持此参数的后端发起错误请求
     useEffect(() => {
         loadUsers();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchTerm]);
 
     useEffect(() => {
         if (!loading) {
             loadStats();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [users]); // 当 users 更新后，重新计算本页的过滤统计
+    }, [users]); // users更新后，重新计算本页的过滤统计
 
     const loadUsers = async () => {
         try {
@@ -209,8 +198,6 @@ function UserCredit() {
                     try {
                         const creditInfo = await userService.getUserCredit(user.id);
                         
-                        // 核心修复点：如果后端没有返回准确的 creditLevel，我们根据 creditScore 推导
-                        // 确保“信用管理”页面与“用户管理”页面的评级逻辑完全一致
                         let score = creditInfo.creditScore || user.creditScore || 75;
                         let derivedLevel = creditInfo.creditLevel;
                         
@@ -264,7 +251,7 @@ function UserCredit() {
             const data = response.data || response || {};
             const totalUsers = data.totalUsers || data.total || users.length || 0;
 
-            // 根据用户列表计算各等级数量 (兼容数字和字符串格式)
+            // 根据用户列表计算各等级数量
             const excellentCount = users.filter(u => String(u.creditLevel) === '5' || String(u.creditLevel).toUpperCase() === 'EXCELLENT').length;
             const goodCount = users.filter(u => String(u.creditLevel) === '4' || String(u.creditLevel).toUpperCase() === 'GOOD').length;
             const normalCount = users.filter(u => String(u.creditLevel) === '3' || String(u.creditLevel).toUpperCase() === 'NORMAL').length;
@@ -281,7 +268,6 @@ function UserCredit() {
         }
     };
 
-    // 补充您片段中遗漏的点击处理函数
     const handleEditUser = (user) => {
         setAdjustingUser(user);
         
@@ -333,7 +319,7 @@ function UserCredit() {
         }
     };
 
-    // 前端过滤逻辑：已彻底修复数字与文本互相过滤失败的 Bug
+    // 前端过滤逻辑
     const filteredUsers = users.filter(user => {
         const matchesSearch = (user.username || '').includes(searchTerm) ||
             (user.phone || user.phoneNumber || '').includes(searchTerm) ||
@@ -349,7 +335,7 @@ function UserCredit() {
             if (uLevel === sLevel) {
                 matchesCreditLevel = true;
             } else {
-                // 兼容性映射：全面双向处理所有文本与数字的情况（无论下来框是数字还是文本）
+                // 全面双向处理所有文本与数字的情况，保证兼容性
                 const isExcellent = (l) => l === '5' || l === 'EXCELLENT';
                 const isGood = (l) => l === '4' || l === 'GOOD';
                 const isNormal = (l) => l === '3' || l === 'NORMAL';

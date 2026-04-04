@@ -38,7 +38,7 @@ class MerchantService {
         }
     }
 
-    // 获取所有商家（别名方法，向后兼容）
+    // 获取所有商家
     async getAllMerchants(params = {}) {
         return this.getMerchants(params);
     }
@@ -54,7 +54,7 @@ class MerchantService {
         }
     }
 
-    // 获取当前商家信息（商家端使用）
+    // 获取当前商家信息 - 商家端使用
     async getMyMerchantInfo() {
         try {
             const response = await merchantApi.get('/merchants/my');

@@ -2,19 +2,19 @@
 CollaborativeAgent — 协同过滤智能体
 
 职责:
-- 利用 FoodCF-Encoder (自训练领域专用嵌入模型) 编码用户和餐厅
-- 通过 Neural Collaborative Filtering (NCF) 网络计算交互分数
+- 利用FoodCF-Encoder（自训练领域专用嵌入模型）编码用户和餐厅
+- 通过Neural Collaborative Filtering (NCF)网络计算交互分数
 - 挖掘"与你消费习惯相似的用户还喜欢什么"的跨用户知识
 
 架构集成:
-  CollaborativeAgent 与 ContextAgent、ProfilerAgent 并行执行
-  (通过 ParallelOrchestrator 编排)，输出 collaborative_scores
-  注入 DecisionAgent 的 Contextual Bandit 评分公式作为第五层信号。
+  CollaborativeAgent与ContextAgent、ProfilerAgent并行执行
+  (通过ParallelOrchestrator编排)，输出collaborative_scores
+  注入DecisionAgent的Contextual Bandit评分公式作为第五层信号。
 
 降级策略:
-  FoodCF-Encoder 微调模型 → GTE-Qwen2 预训练 → TF-IDF 哈希嵌入
-  NCF 模型 → 余弦相似度
-  系统冷启动 (无数据) → 返回空 scores，不影响现有推荐
+  FoodCF-Encoder微调模型 → GTE-Qwen2预训练 → TF-IDF哈希嵌入
+  NCF模型 → 余弦相似度
+  系统冷启动（无数据） → 返回空scores，不影响现有推荐
 
 技术基础:
   [1] He et al., "Neural Collaborative Filtering", WWW 2017
@@ -38,28 +38,28 @@ logger = logging.getLogger(__name__)
 # 协同过滤分数在最终推荐公式中的默认权重
 CF_SCORE_WEIGHT = float(os.getenv("CF_SCORE_WEIGHT", "0.15"))
 
-# 新用户 (无订单历史) 时 CF 权重自动衰减系数
+# 新用户无订单历史，CF权重自动衰减系数
 CF_COLD_START_DECAY = float(os.getenv("CF_COLD_START_DECAY", "0.33"))
 
-# 嵌入缓存: restaurant_id → embedding
+# 嵌入缓存：restaurant_id → embedding
 _restaurant_embed_cache: Dict[str, "np.ndarray"] = {}
 
 
 class CollaborativeAgent(BaseAgent):
     """
-    协同过滤智能体 — 基于 FoodCF-Encoder + NCF 的跨用户推荐信号
+    协同过滤智能体 — 基于FoodCF-Encoder+NCF的跨用户推荐信号
     """
 
     def __init__(self):
         super().__init__(
             name="CollaborativeAgent",
-            description="协同过滤智能体 - 基于 FoodCF-Encoder + NCF 挖掘用户间行为关联"
+            description="协同过滤智能体 - 基于FoodCF-Encoder + NCF 挖掘用户间行为关联"
         )
 
-        # ML 组件 (懒加载)
+        # ML组件（懒加载）
         self._encoder = None
         self._ncf_engine = None
-        self._available = None  # None = 未检测
+        self._available = None  # None=未检测
 
         self._register_tools()
 
@@ -84,7 +84,7 @@ class CollaborativeAgent(BaseAgent):
             self._available = False
 
     def _register_tools(self):
-        """注册 MCP 工具"""
+        """注册MCP工具"""
         cf_tool = Tool(
             name="collaborative_filtering_score",
             description="基于协同过滤模型计算用户-餐厅匹配分数",
@@ -133,13 +133,13 @@ class CollaborativeAgent(BaseAgent):
 
         Args:
             input_data:
-                - restaurants: List[Dict] 候选餐厅列表
-                - profile_analysis: Dict 用户画像分析结果 (来自 ProfilerAgent)
+                - restaurants: List[Dict]，候选餐厅列表
+                - profile_analysis: Dict，用户画像分析结果（来自ProfilerAgent）
                 - user_id: str
 
         Returns:
             collaborative_scores: Dict[restaurant_id, float]
-            cf_weight: float  建议的 CF 权重 (冷启动时自动衰减)
+            cf_weight: float，建议的CF权重（冷启动时自动衰减）
             encoder_mode: str
             ncf_mode: str
         """
@@ -161,13 +161,13 @@ class CollaborativeAgent(BaseAgent):
                 return self._empty_result("no_restaurants")
 
             # ==========================================
-            # 1. 构建用户画像文本 (用于 User Tower)
+            # 构建用户画像文本（用于User Tower）
             # ==========================================
             user_profile_text = self._build_user_profile_text(profile_analysis, user_id)
             is_cold_start = self._is_cold_start(profile_analysis)
 
             # ==========================================
-            # 2. 构建餐厅描述文本 (用于 Restaurant Tower)
+            # 构建餐厅描述文本（用于Restaurant Tower）
             # ==========================================
             restaurant_texts = []
             restaurant_ids = []
@@ -177,7 +177,7 @@ class CollaborativeAgent(BaseAgent):
                 restaurant_texts.append(self._build_restaurant_text(r))
 
             # ==========================================
-            # 3. 编码
+            # 编码
             # ==========================================
             user_embed = await asyncio.get_event_loop().run_in_executor(
                 None, self._encoder.encode_user, user_profile_text
@@ -187,13 +187,13 @@ class CollaborativeAgent(BaseAgent):
             rest_embeds = await self._get_restaurant_embeddings(restaurant_ids, restaurant_texts)
 
             # ==========================================
-            # 4. NCF 交互预测
+            # NCF交互预测
             # ==========================================
             scores = await asyncio.get_event_loop().run_in_executor(
                 None, self._ncf_engine.predict, user_embed, rest_embeds
             )
 
-            # 构建 restaurant_id → score 映射
+            # 构建restaurant_id → score映射
             collaborative_scores = {}
             for rid, score in zip(restaurant_ids, scores):
                 collaborative_scores[rid] = float(score)
@@ -232,7 +232,7 @@ class CollaborativeAgent(BaseAgent):
             return self._empty_result(f"error: {e}")
 
     def _empty_result(self, reason: str) -> Dict[str, Any]:
-        """返回空结果 (降级/冷启动)"""
+        """返回空结果（降级/冷启动）"""
         return {
             "success": True,
             "agent": self.name,
@@ -248,10 +248,10 @@ class CollaborativeAgent(BaseAgent):
 
     def _build_user_profile_text(self, profile_analysis: Dict[str, Any], user_id: str) -> str:
         """
-        从 ProfilerAgent 结果构建用户画像文本
+        从ProfilerAgent结果构建用户画像文本
 
-        RLMRec 风格: 将结构化画像转为自然语言描述,
-        使 FoodCF-Encoder 能充分理解用户偏好语义。
+        RLMRec风格：将结构化画像转为自然语言描述,
+        使FoodCF-Encoder能充分理解用户偏好语义。
         """
         profile = profile_analysis.get("profile", {})
         if not profile:
@@ -291,7 +291,7 @@ class CollaborativeAgent(BaseAgent):
         if order_freq:
             parts.append(f"点餐频率: {order_freq}")
 
-        # 菜系订单频率 (历史行为)
+        # 菜系订单频率（历史行为）
         cuisine_freq = profile.get("cuisine_order_frequency", {})
         if cuisine_freq:
             top_cuisines = sorted(cuisine_freq.items(), key=lambda x: x[1], reverse=True)[:5]
@@ -337,7 +337,7 @@ class CollaborativeAgent(BaseAgent):
         return "; ".join(parts)
 
     def _is_cold_start(self, profile_analysis: Dict[str, Any]) -> bool:
-        """判断是否为冷启动用户 (无或极少历史数据)"""
+        """判断是否为冷启动用户（无或极少历史数据）"""
         profile = profile_analysis.get("profile", {})
         if not profile:
             return True
@@ -346,7 +346,7 @@ class CollaborativeAgent(BaseAgent):
         cuisine_freq = profile.get("cuisine_order_frequency", {})
         order_count = sum(cuisine_freq.values()) if cuisine_freq else 0
 
-        return order_count < 3  # 少于 3 次订单视为冷启动
+        return order_count < 3  # 少于3次订单视为冷启动
 
     async def _get_restaurant_embeddings(
         self, restaurant_ids: List[str], restaurant_texts: List[str]
@@ -366,7 +366,7 @@ class CollaborativeAgent(BaseAgent):
             else:
                 uncached_indices.append(i)
                 uncached_texts.append(text)
-                embeddings.append((i, None))  # 占位
+                embeddings.append((i, None))
 
         # 批量编码未缓存的餐厅
         if uncached_texts:

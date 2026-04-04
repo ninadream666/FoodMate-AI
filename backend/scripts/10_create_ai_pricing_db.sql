@@ -1,17 +1,17 @@
 -- ============================================================
--- AI Pricing 服务数据库初始化
+-- AI Pricing服务数据库初始化
 -- 文件位置: scripts/06_create_ai_pricing_db.sql
 -- ============================================================
 
--- 1. 创建数据库 (Postgres 容器启动时默认会处理 create database，但这里显式声明以防万一)
--- 注意：在 docker-entrypoint-initdb.d 中运行的脚本通常已经是在超级用户下
--- 如果数据库已存在，以下命令可能会报错或跳过，视 postgres 版本而定
--- 更好的方式是依赖 POSTGRES_DB 环境变量创建主库，这里只创建额外的库
+-- 1. 创建数据库 (Postgres容器启动时默认会处理create database，但这里显式声明以防万一)
+-- 在docker-entrypoint-initdb.d中运行的脚本通常已经是在超级用户下
+-- 如果数据库已存在，以下命令可能会报错或跳过，视postgres版本而定
+-- 更好的方式是依赖POSTGRES_DB环境变量创建主库，这里只创建额外的库
 
 SELECT 'CREATE DATABASE ai_pricing_db'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'ai_pricing_db')\gexec
 
--- 切换到新数据库 (在 psql 脚本中有效)
+-- 切换到新数据库（在psql脚本中有效）
 \c ai_pricing_db;
 
 -- 2. 创建销售历史表

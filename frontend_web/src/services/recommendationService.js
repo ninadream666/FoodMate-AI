@@ -1,4 +1,4 @@
-// 推荐服务 API
+// 推荐服务API
 
 import { merchantService } from './merchantService';
 
@@ -68,14 +68,14 @@ const MOCK_RECOMMENDATIONS = {
     },
 };
 
-// 获取 token
+// 获取token
 const getAuthHeader = () => {
     const token = localStorage.getItem('token');
     return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 /**
- * 获取主页推荐 (V2版本 - 智能推荐)
+ * 获取主页推荐
  * POST /api/v2/agents/recommend
  */
 export const getHomepageRecommendations = async (params = {}) => {
@@ -111,7 +111,7 @@ export const getHomepageRecommendations = async (params = {}) => {
 };
 
 /**
- * 获取智能推荐 (V2版本 - 使用新的智能推荐接口)
+ * 获取智能推荐
  * POST /api/v2/agents/recommend
  */
 export const getSmartRecommendations = async (params = {}) => {
@@ -167,7 +167,7 @@ export const getWorkflowExplanation = async () => {
 };
 
 /**
- * V2 智能推荐接口 (主要推荐函数)
+ * V2智能推荐接口
  * POST /api/v2/agents/recommend
  * @param {Object} params - 推荐参数
  * @param {string} params.userId - 用户ID

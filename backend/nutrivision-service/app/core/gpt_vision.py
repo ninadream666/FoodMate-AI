@@ -16,11 +16,10 @@ class NutriVisionClient:
         if not self.api_key:
             return self._error_msg("Backend API Key is missing")
 
-        # 1. Base64 预处理：剥离可能存在的前缀
-        # 匹配 data:image/xxx;base64, 格式并保留后面的内容
+        # Base64预处理：剥离可能存在的前缀。匹配data:image/xxx;base64, 格式并保留后面的内容
         clean_base64 = re.sub(r'^data:image/.+;base64,', '', image_base64)
 
-        # 2. 构造强约束 Prompt
+        # 构造强约束Prompt
         tags_info = "、".join(health_tags) if health_tags else "无特殊偏好"
         prompt = f"""
         你是一位专业的数字营养师。请识别图片菜单中的菜品，并根据用户背景【{tags_info}】给出健康建议。
@@ -57,7 +56,6 @@ class NutriVisionClient:
                     ]
                 }
             ],
-            # 某些中转站要求开启 json_object 模式时，Prompt 必须包含 "json" 词汇
             "response_format": {"type": "json_object"}
         }
 
@@ -74,16 +72,16 @@ class NutriVisionClient:
                 resp_json = response.json()
                 raw_content = resp_json["choices"][0]["message"]["content"]
                 
-                # 3. 结果清洗与防御性处理
+                # 结果清洗与防御性处理
                 cleaned_text = raw_content.replace("```json", "").replace("```", "").strip()
                 parsed_data = json.loads(cleaned_text)
 
-                # 4. 重点：处理返回结果是 List 的情况（解决 TypeError）
+                # 处理返回结果是List的情况，解决TypeError
                 if isinstance(parsed_data, list):
                     logger.warning("AI returned a list instead of an object, wrapping it.")
                     parsed_data = {"items": parsed_data}
 
-                # 5. 字段对齐与缺失填充
+                # 字段对齐与缺失填充
                 return self._standardize_response(parsed_data)
 
         except json.JSONDecodeError as e:
@@ -95,8 +93,7 @@ class NutriVisionClient:
 
     async def analyze_image_fallback(self, image_base64: str, health_tags: list) -> dict:
         """
-        新增：单菜品图片识别兜底方法。当本地 CV 模型识别置信度过低时调用，
-        直接把图片喂给大模型进行兜底识别。
+        单菜品图片识别兜底方法。
         """
         if not self.api_key:
             return self._error_msg("Backend API Key is missing")
@@ -104,7 +101,6 @@ class NutriVisionClient:
         clean_base64 = re.sub(r'^data:image/.+;base64,', '', image_base64)
         tags_info = "、".join(health_tags) if health_tags else "无特殊偏好"
         
-        # 这里的 Prompt 专门针对“单道菜品图”进行了优化，防止大模型按“菜单”去理解
         prompt = f"""
         你是一位专业的数字营养师。请识别图片中的这道菜品，并根据用户背景【{tags_info}】给出健康建议。
 
@@ -174,7 +170,7 @@ class NutriVisionClient:
 
     async def analyze_single_food(self, food_name: str, health_tags: list) -> dict:
         """
-        降级版 LLM 调用：不传图片，只传我们自研 CV 模型识别出的文本菜名，大幅降低成本并提升速度
+        降级版LLM调用：不传图片，只传我们自研CV模型识别出的文本菜名，大幅降低成本并提升速度
         """
         if not self.api_key:
             return self._error_msg("Backend API Key is missing")
@@ -241,16 +237,15 @@ class NutriVisionClient:
 
     def _standardize_response(self, data: dict) -> dict:
         """
-        确保返回的数据结构 100% 匹配 VisionAnalysisResponse schema
+        确保返回的数据结构100%匹配VisionAnalysisResponse schema
         """
-        # 尝试兼容不同的 AI 命名习惯
         items = data.get("items") or data.get("dishes") or data.get("menu_items") or []
         
         standard_items = []
         for item in items:
             if not isinstance(item, dict): continue
             
-            # 确保 ingredients 是列表
+            # 确保ingredients是列表
             ing = item.get("ingredients", [])
             if isinstance(ing, str):
                 ing = [i.strip() for i in ing.split("、")]

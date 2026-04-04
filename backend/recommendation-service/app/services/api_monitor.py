@@ -122,7 +122,7 @@ class APIStatusMonitor:
         if recent_calls:
             stats.average_response_time = sum(r.response_time for r in recent_calls) / len(recent_calls)
         
-        # 判断健康状态 (成功率>70%且最近5分钟内有成功调用)
+        # 判断健康状态，成功率>70%且最近5分钟内有成功调用
         now = datetime.now()
         recent_success = stats.last_success_time and (now - stats.last_success_time) < timedelta(minutes=5)
         stats.is_healthy = stats.success_rate > 70 and recent_success

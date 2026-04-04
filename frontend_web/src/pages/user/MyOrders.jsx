@@ -9,7 +9,7 @@ export default function MyOrders() {
   const [loading, setLoading] = useState(true);
   const [cancellingOrderId, setCancellingOrderId] = useState(null);
 
-  // 获取用户信息用于 Header 显示
+  // 获取用户信息用于Header显示
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   // 加载订单数据
@@ -64,7 +64,7 @@ export default function MyOrders() {
     }
   };
 
-  // 临时：商家ID转名称 (因为订单表只存了ID)
+  // 商家ID转名称
   const getMerchantName = (order) => {
     // 优先使用订单中的商家名称
     if (order.merchantName) return order.merchantName;

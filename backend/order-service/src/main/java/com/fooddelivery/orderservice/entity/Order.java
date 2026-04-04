@@ -19,7 +19,7 @@ public class Order {
     private Long userId;
 
     @Column(name = "merchant_id")
-    private String merchantId; // 支持数字 ID 或外部 ID（如 B0FFKPDZZI）
+    private String merchantId; // 支持数字ID或外部ID
 
     private BigDecimal totalAmount;
 

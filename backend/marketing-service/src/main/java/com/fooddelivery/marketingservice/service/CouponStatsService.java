@@ -55,7 +55,7 @@ public class CouponStatsService {
         Long monthlyUsage = userCouponRepository.countByStatusAndUsedAtBetween(
                 CouponStatus.USED, monthStart, now);
 
-        // 计算转化率（本月使用数 / 本月发放数）
+        // 计算转化率（本月使用数/本月发放数）
         BigDecimal conversionRate = monthlyIssuance > 0
                 ? BigDecimal.valueOf(monthlyUsage).divide(BigDecimal.valueOf(monthlyIssuance), 4, RoundingMode.HALF_UP)
                         .multiply(BigDecimal.valueOf(100))

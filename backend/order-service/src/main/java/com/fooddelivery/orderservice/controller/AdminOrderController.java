@@ -99,7 +99,7 @@ public class AdminOrderController {
 
     /**
      * 获取订单趋势（最近7天）
-     * 返回包含 trends 数组和 summary 统计的完整数据
+     * 返回包含trends数组和summary统计的完整数据
      */
     @GetMapping("/trends")
     public ResponseEntity<Map<String, Object>> getOrderTrends() {

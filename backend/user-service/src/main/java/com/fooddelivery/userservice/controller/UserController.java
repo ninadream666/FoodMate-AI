@@ -92,7 +92,7 @@ public class UserController {
             Path filePath = dir.resolve(fileName);
             Files.write(filePath, file.getBytes());
 
-            // 生成 URL 并保存到用户
+            // 生成URL并保存到用户
             String avatarUrl = baseUrl + "/users/avatars/" + fileName;
             user.setAvatarUrl(avatarUrl);
             userRepository.save(user);

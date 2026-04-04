@@ -28,7 +28,7 @@ public class OrderInternalController {
     private final OrderRepository orderRepository;
 
     /**
-     * AI Pricing 专用接口：获取商家近期销量统计
+     * AI Pricing专用接口：获取商家近期销量统计
      */
     @GetMapping("/stats/sales")
     public ResponseEntity<List<ItemSalesStatsDto>> getSalesStats(
@@ -73,7 +73,7 @@ public class OrderInternalController {
     /**
      * 获取商家的待审批退款订单列表（内部接口）
      * GET /orders/internal/merchant/{merchantId}/pending-refunds
-     * 支持同时传入 externalId，兼容订单中 merchant_id 存的是数据库主键或外部 ID
+     * 支持同时传入externalId，兼容订单中merchant_id存的是数据库主键或外部ID
      */
     @GetMapping("/merchant/{merchantId}/pending-refunds")
     public ResponseEntity<?> getPendingRefundsByMerchant(
@@ -166,14 +166,14 @@ public class OrderInternalController {
     /**
      * 获取商家的待处理订单列表（内部接口）
      * GET /orders/internal/merchant/{merchantId}/pending-orders
-     * 支持同时传入 externalId，兼容订单中 merchant_id 存的是数据库主键或外部 ID
+     * 支持同时传入externalId，兼容订单中merchant_id存的是数据库主键或外部ID
      */
     @GetMapping("/merchant/{merchantId}/pending-orders")
     public ResponseEntity<?> getPendingOrdersByMerchant(
             @PathVariable String merchantId,
             @RequestParam(required = false) String externalId) {
 
-        // 构建所有可能的 merchantId（数据库主键 + 外部ID）
+        // 构建所有可能的merchantId（数据库主键 + 外部ID）
         List<String> merchantIds = new java.util.ArrayList<>();
         merchantIds.add(merchantId);
         if (externalId != null && !externalId.isBlank() && !externalId.equals(merchantId)) {

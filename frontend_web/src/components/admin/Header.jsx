@@ -6,7 +6,6 @@ function Header({ onMenuClick, onLogout }) {
     const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
     const location = useLocation();
 
-    // 修复：使用更智能的路径模糊匹配，防止子路由或末尾斜杠导致匹配失败
     const getPageTitle = (pathname) => {
         if (pathname.includes('/dashboard')) return '平台数据概览';
         if (pathname.includes('/merchants')) return '商家管理';

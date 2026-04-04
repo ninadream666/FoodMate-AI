@@ -83,14 +83,14 @@ class CalendarInfo:
     desc: str  # 描述
 
 class WeatherAPIService:
-    """和风天气API服务（支持JWT认证）"""
+    """和风天气API服务，支持JWT认证"""
     
     def __init__(self, api_key: str = None, api_host: str = None, use_jwt: bool = None):
         # 和风天气API配置
         self.api_host = api_host or os.getenv("QWEATHER_API_HOST", "api.qweather.com")  # 使用正式API地址
         self.base_url = f"https://{self.api_host}/v7/weather/now"
         
-        # 判断是否使用JWT认证（默认启用）
+        # 判断是否使用JWT认证，默认启用
         self.use_jwt = use_jwt if use_jwt is not None else os.getenv("QWEATHER_USE_JWT", "true").lower() == "true"
         
         if self.use_jwt:
@@ -125,7 +125,7 @@ class WeatherAPIService:
         """获取指定位置的天气信息 - 和风天气API"""
         start_time = time.time()
         try:
-            # 和风天气API使用经纬度格式：longitude,latitude（注意顺序）
+            # 和风天气API使用经纬度格式：longitude,latitude
             location = f"{longitude:.2f},{latitude:.2f}"
             
             params = {
@@ -213,7 +213,7 @@ class WeatherAPIService:
                 error_message=error_msg
             )
         
-        # 返回智能默认天气信息（当API调用失败时）
+        # 当API调用失败时，返回智能默认天气信息
         return self._get_fallback_weather_info()
     
     def _get_fallback_weather_info(self) -> WeatherInfo:
@@ -420,7 +420,7 @@ class MapAPIService:
                                          level: int = 6, extensions: str = "base") -> Optional[TrafficStatusInfo]:
         """矩形区域内交通态势查询"""
         try:
-            # 检查矩形对角线距离（不能超过10公里）
+            # 检查矩形对角线距离，不能超过10公里
             from math import radians, cos, sin, asin, sqrt
             
             def haversine(lon1, lat1, lon2, lat2):
@@ -483,7 +483,7 @@ class MapAPIService:
                 }
                 roads.append(road_info)
             
-            # 解析百分比数据，处理字符串格式（如 "80.77%"）
+            # 解析百分比数据，处理字符串格式，如 "80.77%"
             def parse_percentage(value, default=0.0):
                 try:
                     if isinstance(value, str):
@@ -774,12 +774,12 @@ class CalendarAPIService:
             YYYY-M-D 格式的日期字符串（月日不补零）
         """
         try:
-            # 尝试解析日期并转换为YYYY-M-D格式（新API要求）
+            # 尝试解析日期并转换为YYYY-M-D格式
             if '-' in date_str:
                 parts = date_str.split('-')
                 if len(parts) == 3:
                     year, month, day = parts
-                    # 去掉前导零（新API要求YYYY-M-D格式）
+                    # 去掉前导零
                     month = str(int(month))
                     day = str(int(day))
                     return f"{year}-{month}-{day}"
@@ -827,7 +827,7 @@ class CalendarAPIService:
             if data.get('error_code') == 0:
                 result = data.get('result', {})
                 
-                # 解析基本信息 - 新API的结构不同
+                # 解析基本信息
                 date_str = result.get('date', '')
                 year = int(result.get('year', 0))
                 month = int(result.get('month', 0))
@@ -842,7 +842,7 @@ class CalendarAPIService:
                 lunar_date_str = result.get('lDate', '')
                 lunar_date = f"{lunar_year}年{lunar_month}月{lunar_date_str}"
                 
-                # 解析节假日信息 - 新API格式
+                # 解析节假日信息
                 status_desc = result.get('statusDesc', '')  # '工作日' 或 '节假日'
                 status = result.get('status')  # 1表示节假日
                 holiday_name = result.get('term', '')  # 节假日名称
@@ -1147,24 +1147,24 @@ class MixedSearchAPIService:
             包含餐厅推荐的详细信息
         """
         try:
-            # 1. 获取综合环境信息
+            # 获取综合环境信息
             logger.info(f"开始为位置 '{location}' 获取综合环境信息")
             context = await self.external_api.get_comprehensive_context(location)
             
             if "error" in context:
                 return {"error": context["error"]}
             
-            # 2. 分析环境条件生成推荐策略
+            # 分析环境条件生成推荐策略
             recommendation_strategy = self._analyze_context_for_recommendations(
                 context, user_preferences or {}
             )
             
-            # 3. 生成AI推荐餐厅列表（模拟数据，实际可接入餐厅数据库）
+            # 生成AI推荐餐厅列表
             recommended_restaurants = self._generate_restaurant_recommendations(
                 context, recommendation_strategy, max_results
             )
             
-            # 4. 返回完整推荐结果
+            # 返回完整推荐结果
             return {
                 "success": True,
                 "location_info": context["location"],

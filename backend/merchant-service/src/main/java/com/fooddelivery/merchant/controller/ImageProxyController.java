@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 智能外卖平台 - 图片代理控制器
- * 目的：代替移动端前端去请求外部图床资源，解决真机调试时的网络限制与防盗链问题。
+ * 代替移动端前端去请求外部图床资源，解决真机调试时的网络限制与防盗链问题。
  */
 @RestController
 public class ImageProxyController {
@@ -25,8 +25,7 @@ public class ImageProxyController {
     private final RestTemplate restTemplate;
 
     public ImageProxyController() {
-        // 【核心优化】加入连接与读取的超时断路器！
-        // 防止由于 Docker 容器无法访问外部网络导致线程永久挂起，从而让移动端永远白屏卡死。
+        // 防止由于Docker容器无法访问外部网络导致线程永久挂起，从而让移动端永远白屏卡死。
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(3000); // 3秒连接超时
         factory.setReadTimeout(3000);    // 3秒读取超时
@@ -40,7 +39,7 @@ public class ImageProxyController {
             @RequestParam int height,
             @RequestParam int hash) {
         
-        // 【新增排查点】在 Docker 控制台打印明确的请求日志，用于确认前端是否真的发起了请求
+        // 在Docker控制台打印明确的请求日志，用于确认前端是否真的发起了请求
         System.out.println("====== 收到前端图片请求: tag=" + tag + ", 尺寸=" + width + "x" + height + " ======");
         
         // 提前设置好成功的响应头（强制缓存7天）
@@ -49,7 +48,7 @@ public class ImageProxyController {
         responseHeaders.setCacheControl("public, max-age=" + TimeUnit.DAYS.toSeconds(7));
 
         try {
-            // 【主图库拉取】使用原生 String 拼接，避免特殊符号被转码导致 404
+            // 主图库拉取：使用原生String拼接，避免特殊符号被转码导致404
             String urlString = String.format("https://loremflickr.com/%d/%d/%s?lock=%d", width, height, tag, hash);
             URI targetUrl = URI.create(urlString);
             
@@ -65,7 +64,7 @@ public class ImageProxyController {
             System.err.println("--> 主图库代理失败，准备拉取备用图: " + e.getMessage()); 
             
             try {
-                // 废弃 302 重定向，直接在 Docker 内部下载备用图成字节流返回
+                // 在Docker内部下载备用图成字节流返回
                 String fallbackUrl = String.format("https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=%d&h=%d&fit=crop", width, height);
                 
                 HttpHeaders fallbackReqHeaders = new HttpHeaders();
@@ -79,7 +78,7 @@ public class ImageProxyController {
             } catch (Exception fatalEx) {
                 System.err.println("--> 备用图库拉取失败，触发终极像素兜底: " + fatalEx.getMessage());
                 
-                // 【终极降级方案】直接在内存中返回一张合法的 1x1 灰色空白 JPEG 字节流
+                // 【兜底方案：直接在内存中返回一张合法的1x1灰色空白JPEG字节流
                 byte[] tinyJpeg = new byte[] {
                     (byte)0xFF, (byte)0xD8, (byte)0xFF, (byte)0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x01, 0x00, 0x60,
                     0x00, 0x60, 0x00, 0x00, (byte)0xFF, (byte)0xDB, 0x00, 0x43, 0x00, 0x08, 0x06, 0x06, 0x07, 0x06, 0x05, 0x08, 0x07, 0x07, 0x07, 0x09,

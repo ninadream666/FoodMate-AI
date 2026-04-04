@@ -4,7 +4,7 @@ import authService from '../services/admin/authService';
 // 创建认证上下文
 const AuthContext = createContext(null);
 
-// 认证状态管理 Hook
+// 认证状态管理Hook
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
@@ -13,7 +13,7 @@ export const useAuth = () => {
     return context;
 };
 
-// 认证 Provider 组件
+// 认证Provider组件
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -95,14 +95,14 @@ export const ProtectedRoute = ({ children, requiredRole }) => {
     useEffect(() => {
         const checkAuth = () => {
             try {
-                // 根据需要的角色决定检查哪种 Token
+                // 根据需要的角色决定检查哪种Token
                 let token, userStr;
                 
                 if (requiredRole === 'admin') {
                     token = localStorage.getItem('adminToken');
                     userStr = localStorage.getItem('adminUser');
                 } else {
-                    // 普通用户和商家使用通用的 token
+                    // 普通用户和商家使用通用的token
                     token = localStorage.getItem('token');
                     userStr = localStorage.getItem('user');
                 }
@@ -113,7 +113,7 @@ export const ProtectedRoute = ({ children, requiredRole }) => {
                     return;
                 }
 
-                // 如果没有指定特定角色，只要有 token 就算通过（适用于普通用户）
+                // 如果没有指定特定角色，只要有token就算通过（适用于普通用户）
                 if (!requiredRole) {
                     setHasAccess(true);
                     setIsChecking(false);
@@ -123,18 +123,14 @@ export const ProtectedRoute = ({ children, requiredRole }) => {
                 // 如果指定了角色，需要验证角色
                 if (userStr) {
                     const user = JSON.parse(userStr);
-                    // 简单的角色匹配逻辑
-                    // 注意：这里假设 user.role 存储了角色信息
                     if (user.role === requiredRole) {
                         setHasAccess(true);
                     } else {
-                        // 特殊情况：如果要求是 customer，但用户是 merchant，可能也允许访问某些通用页面？
-                        // 目前严格匹配
                         console.warn(`角色不匹配: 需要 ${requiredRole}, 当前是 ${user.role}`);
                         setHasAccess(false);
                     }
                 } else {
-                    // 有 token 但没 user 信息，暂时认为不通过，或者需要重新获取用户信息
+                    // 有token但没user信息，暂时认为不通过，或者需要重新获取用户信息
                     setHasAccess(false);
                 }
 

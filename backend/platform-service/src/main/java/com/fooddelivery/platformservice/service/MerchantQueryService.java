@@ -20,8 +20,7 @@ public class MerchantQueryService {
     private final MerchantQueryRepository merchantQueryRepository;
 
     /**
-     * 简单的内存缓存：userId -> merchantId
-     * 生产环境建议使用 Redis
+     * 内存缓存：userId->merchantId
      */
     private final Map<Long, Long> merchantIdCache = new ConcurrentHashMap<>();
 
@@ -29,7 +28,7 @@ public class MerchantQueryService {
      * 根据用户ID获取其拥有的店铺ID
      * 
      * @param userId 用户ID
-     * @return 店铺ID，如果用户没有店铺则返回 null
+     * @return 店铺ID，如果用户没有店铺则返回null
      */
     public Long getMerchantIdByUserId(Long userId) {
         if (userId == null) {

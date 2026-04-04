@@ -10,7 +10,7 @@ import java.util.List;
 @Data
 public class OrderDetailDto {
     private Long orderId;
-    private String merchantId; // 支持数字 ID 或外部 ID
+    private String merchantId; // 支持数字ID或外部ID
     private Long userId;
     private List<OrderItemDetailDto> orderItems;
     private BigDecimal originalAmount; // 原价（优惠前）

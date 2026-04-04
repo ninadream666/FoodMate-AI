@@ -37,7 +37,7 @@ public class CouponStatsDTO {
     private Long totalUsed;
 
     /**
-     * 使用率 (%)
+     * 使用率（%）
      */
     private BigDecimal usageRate;
 
@@ -57,7 +57,7 @@ public class CouponStatsDTO {
     private Long monthlyUsage;
 
     /**
-     * 转化率 (%)
+     * 转化率（%）
      */
     private BigDecimal conversionRate;
 

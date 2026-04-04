@@ -13,10 +13,10 @@ import java.util.Map;
 public class UserProfile {
 
     @Id
-    private String id; // MongoDB 自动生成的 ObjectId
+    private String id; // MongoDB自动生成的ObjectId
 
     @Indexed(unique = true)
-    private String username; // 关联 User Service 的用户名
+    private String username; // 关联User Service的用户名
 
     // 存储口味偏好
     // example: "spicy": "high", "cuisine": "sichuan"

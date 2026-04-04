@@ -10,12 +10,12 @@ class DeepseekClient:
     def __init__(self):
         self.api_key = settings.AI_API_KEY
         self.model = settings.AI_MODEL
-        # 使用 OpenAI 兼容接口 (引力AI)
+        # 使用中转deepseek接口
         self.base_url = "https://yinli.one/v1/chat/completions"
 
     async def analyze_price(self, item_name: str, current_price: float, sales_data: dict) -> dict:
         """
-        真实的 AI 分析逻辑
+        真实的AI分析逻辑
         sales_data 格式: {'totalQuantity': 10, 'totalRevenue': 500}
         """
         if not self.api_key:
@@ -25,7 +25,6 @@ class DeepseekClient:
         qty = sales_data.get('totalQuantity', 0)
         revenue = sales_data.get('totalRevenue', 0)
 
-        # 构造更智能的 Prompt: 角色扮演 + 数据驱动 + 策略建议
         prompt_text = f"""
         你是该餐厅的收益管理总监。
         请根据以下真实运营数据，为菜品 "{item_name}" 制定下周的动态定价策略。
@@ -49,7 +48,7 @@ class DeepseekClient:
         }}
         """
 
-        # 构造 OpenAI 兼容格式 Payload
+        # 构造兼容格式Payload
         payload = {
             "model": self.model,
             "messages": [
@@ -79,14 +78,13 @@ class DeepseekClient:
                     return self._dummy_response(current_price)
 
                 data = response.json()
-                # 解析 OpenAI 兼容响应结构
+                # 解析响应结构
                 try:
                     text_content = data["choices"][0]["message"]["content"]
-                    # 清理可能的 markdown 标记
+                    # 清理可能的markdown标记
                     cleaned_text = text_content.replace("```json", "").replace("```", "").strip()
                     return json.loads(cleaned_text)
                 except (KeyError, IndexError, json.JSONDecodeError) as e:
-                    # 注意：这里 text_content 可能未定义如果解析失败，需要小心处理
                     logger.error(f"Error parsing Deepseek response: {e}")
                     return self._dummy_response(current_price)
 
@@ -98,7 +96,7 @@ class DeepseekClient:
         return {
             "suggested_price": current_price,
             "strategy_type": "MAINTAIN",
-            "reasoning": "AI 服务暂时不可用"
+            "reasoning": "AI服务暂时不可用"
         }
 
 deepseek_client = DeepseekClient()

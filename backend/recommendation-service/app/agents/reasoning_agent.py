@@ -1,11 +1,11 @@
 """
-ReasoningAgent - 推理智能体（核心大脑）
+ReasoningAgent - 推理智能体
 
 职责:
 - 整合所有并行智能体的结果
 - 深度思考和逻辑推理
 - 生成推荐排序和暖心文案
-- 调用 LLM 进行智能决策
+- 调用LLM进行智能决策
 
 能力:
 - 多因素综合分析
@@ -39,7 +39,7 @@ class ReasoningContext:
 
 class ReasoningAgent(BaseAgent):
     """
-    推理智能体（核心大脑）
+    推理智能体
     
     负责:
     1. 整合环境、用户画像、候选商家信息
@@ -92,7 +92,7 @@ class ReasoningAgent(BaseAgent):
         执行推理过程
         
         Args:
-            input_data: 包含环境、画像、候选商家等信息
+            input_data：包含环境、画像、候选商家等信息
             
         Returns:
             推荐结果，包含排序、理由和文案
@@ -109,20 +109,20 @@ class ReasoningAgent(BaseAgent):
         # 构建推理上下文
         reasoning_context = self._build_reasoning_context(context, profile, candidates, user_query)
         
-        # 1. 深度思考 - 分析各种因素
+        # 深度思考 - 分析各种因素
         thinking_result = await self._deep_thinking(reasoning_context)
         
-        # 2. 智能排序 - 基于多因素评分
+        # 智能排序 - 基于多因素评分
         ranked_restaurants = self._smart_ranking(candidates, thinking_result, top_k)
         
-        # 3. 生成推荐理由
+        # 生成推荐理由
         recommendations = await self._generate_recommendations(
             ranked_restaurants, 
             reasoning_context,
             thinking_result
         )
         
-        # 4. 生成暖心文案
+        # 生成暖心文案
         warm_message = await self._generate_warm_message(
             reasoning_context,
             recommendations
@@ -430,7 +430,7 @@ class ReasoningAgent(BaseAgent):
         ctx: ReasoningContext,
         thinking: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
-        """生成推荐结果（包含理由）"""
+        """生成推荐结果，包含理由"""
         recommendations = []
         
         for i, restaurant in enumerate(ranked_restaurants):

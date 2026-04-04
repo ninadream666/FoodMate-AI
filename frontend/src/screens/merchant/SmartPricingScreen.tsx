@@ -12,7 +12,6 @@ import {
     Image,
     SafeAreaView
 } from 'react-native';
-// 注意引用路径：因为在 screens/merchant/ 下，所以是 ../../services
 import LinearGradient from 'react-native-linear-gradient';
 import { aiPricingService } from '../../services/aiPricingService';
 import { merchantService } from '../../services/merchantService';
@@ -61,20 +60,20 @@ const SmartPricingScreen = ({ navigation }: any) => {
     const loadData = async (mId: number) => {
         setLoading(true);
         try {
-            // 1. 加载配置
+            // 加载配置
             const merchant = await merchantService.getMerchantDetail(mId);
             setConfig({
                 enableAutoApproval: merchant.enableAutoApproval || false,
                 autoApprovalThreshold: merchant.autoApprovalThreshold || 0.05
             });
 
-            // 2. 加载提案
+            // 加载提案
             const list = activeTab === 'pending'
                 ? await aiPricingService.getPendingProposals(mId)
                 : await aiPricingService.getProposalHistory(mId);
             setProposals(list);
 
-            // 3. 加载菜单匹配图片
+            // 加载菜单匹配图片
             if (list.length > 0) {
                 const menu = await merchantService.getMenu(mId);
                 const map: any = {};
@@ -171,7 +170,7 @@ const SmartPricingScreen = ({ navigation }: any) => {
                     <Text style={styles.reasonText}>{item.reason}</Text>
                 </View>
 
-                {/* 按钮区 (仅待处理状态显示) */}
+                {/* 按钮区，仅显示待处理状态 */}
                 {activeTab === 'pending' && (
                     <View style={styles.btnRow}>
                         <TouchableOpacity

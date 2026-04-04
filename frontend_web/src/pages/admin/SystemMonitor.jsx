@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-// --- 子组件: 横向 Tab 选项卡 (左对齐下划线风格) ---
+// --- 子组件: 横向Tab选项卡 ---
 const SettingTab = ({ id, icon, title, selected, onChange }) => (
     <button
         onClick={() => onChange(id)}
@@ -42,7 +42,7 @@ const SystemSettings = () => {
                     </div>
                 </div>
 
-                {/* 选项卡导航 - 统一左对齐下划线风格 */}
+                {/* 选项卡导航 */}
                 <div className="border-b border-border-light mb-6">
                     <nav className="flex space-x-8">
                         <SettingTab 

@@ -23,7 +23,7 @@ public class SettlementTrendDTO {
     private LocalDate date;
 
     /**
-     * 日期标签（如：2024-01-15, 2024年1月, 2024年第3周）
+     * 日期标签，如：2024-01-15, 2024年1月, 2024年第3周
      */
     private String dateLabel;
 

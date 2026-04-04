@@ -28,7 +28,6 @@ public class MenuService {
         item.setImageUrl(request.getImageUrl());
         item.setCategory(request.getCategory());
         item.setIsAvailable(true);
-        // Initialize dynamic pricing fields
         item.setBasePrice(request.getPrice());
         
         MenuItem saved = menuItemRepository.save(item);
@@ -43,7 +42,7 @@ public class MenuService {
         if (request.getName() != null) item.setName(request.getName());
         if (request.getPrice() != null) {
             item.setPrice(request.getPrice());
-            item.setBasePrice(request.getPrice()); // Update base price as well
+            item.setBasePrice(request.getPrice());
         }
         if (request.getDescription() != null) item.setDescription(request.getDescription());
         if (request.getImageUrl() != null) item.setImageUrl(request.getImageUrl());

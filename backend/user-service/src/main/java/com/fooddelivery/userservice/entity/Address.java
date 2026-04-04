@@ -21,7 +21,7 @@ public class Address {
     // 多个地址对应一个用户
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore // 返回 JSON 时不包含整个 User 对象，防止死循环
+    @JsonIgnore // 返回JSON时不包含整个User对象，防止死循环
     private User user;
 
     @Column(nullable = false)

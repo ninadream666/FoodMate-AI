@@ -1,4 +1,4 @@
-// 基础 URL
+// 基础URL
 const API_BASE = '/api';
 
 const getHeaders = () => {
@@ -10,7 +10,7 @@ const getHeaders = () => {
 };
 
 export const merchantService = {
-  // 1. 获取当前登录用户的商铺信息
+  // 获取当前登录用户的商铺信息
   getMyMerchant: async () => {
     const response = await fetch(`${API_BASE}/merchants/my`, {
       method: 'GET',
@@ -18,10 +18,9 @@ export const merchantService = {
     });
 
     if (!response.ok) {
-      // 这里的逻辑关键：
       // 404 Not Found: 明确表示没找到资源
-      // 403 Forbidden: 有时后端框架会在没权限(比如没关联店铺)时返回 403
-      // 我们把这两种情况都视为"需要入驻"
+      // 403 Forbidden: 有时后端框架会在没权限(比如没关联店铺)时返回403
+      // 这两种情况都视为"需要入驻"
       if (response.status === 404 || response.status === 403) {
         throw new Error('MERCHANT_NOT_FOUND');
       }
@@ -31,7 +30,7 @@ export const merchantService = {
     return await response.json();
   },
 
-  // 1.1 创建商铺
+  // 创建商铺
   // 对应 POST /merchants
   createMerchant: async (data) => {
     const response = await fetch(`${API_BASE}/merchants`, {
@@ -47,7 +46,7 @@ export const merchantService = {
     return await response.json();
   },
 
-  // 2. 获取商铺的所有菜品
+  // 获取商铺的所有菜品
   getMenu: async (merchantId) => {
     const response = await fetch(`${API_BASE}/merchants/${merchantId}/menu-items`, {
       method: 'GET',
@@ -60,7 +59,7 @@ export const merchantService = {
     return await response.json();
   },
 
-  // 3. 添加菜品
+  // 添加菜品
   addMenuItem: async (merchantId, data) => {
     const response = await fetch(`${API_BASE}/merchants/${merchantId}/menu-items`, {
       method: 'POST',
@@ -74,7 +73,7 @@ export const merchantService = {
     return await response.json();
   },
 
-  // 4. 更新菜品
+  // 更新菜品
   updateMenuItem: async (merchantId, itemId, data) => {
     const response = await fetch(`${API_BASE}/merchants/${merchantId}/menu-items/${itemId}`, {
       method: 'PUT',
@@ -88,7 +87,7 @@ export const merchantService = {
     return await response.json();
   },
 
-  // 5. 删除菜品
+  // 删除菜品
   deleteMenuItem: async (merchantId, itemId) => {
     const response = await fetch(`${API_BASE}/merchants/${merchantId}/menu-items/${itemId}`, {
       method: 'DELETE',

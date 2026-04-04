@@ -37,7 +37,7 @@ public class MerchantRefundService {
             String externalId) {
         
         try {
-            // 1. 调用订单服务的内部接口，获取订单信息并验证订单是否属于该商家
+            // 调用订单服务的内部接口，获取订单信息并验证订单是否属于该商家
             ResponseEntity<?> orderResponse = orderServiceClient.getOrderInternal(orderId);
             if (!orderResponse.getStatusCode().is2xxSuccessful()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -53,7 +53,7 @@ public class MerchantRefundService {
             }
 
             // 验证订单是否属于当前商家
-            // 订单的 merchantId 可能是数据库主键（如 "1"）或外部ID（如 "B0LDM1F2K5"）
+            // 订单的merchantId可能是数据库主键（如 "1"）或外部ID（如 "B0LDM1F2K5"）
             String orderMerchantIdStr = orderData.get("merchantId") != null
                     ? orderData.get("merchantId").toString() : null;
             if (orderMerchantIdStr == null) {
@@ -68,7 +68,6 @@ public class MerchantRefundService {
                         .body(Map.of("error", "该订单不属于当前商家"));
             }
 
-            // [修复点] 兼容微服务间状态常量命名不一致的问题 (CANCEL_PENDING vs PENDING_CANCEL)
             String orderStatus = (String) orderData.get("status");
             if (!"PENDING_CANCEL".equals(orderStatus) && !"CANCEL_PENDING".equals(orderStatus)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -79,17 +78,17 @@ public class MerchantRefundService {
             Long userId = parseLongSafe(orderData.get("userId"));
             
             if (approved) {
-                // 2. 计算退款金额
+                // 计算退款金额
                 BigDecimal refundAmount = calculateRefundAmount(orderData);
                 
-                // 3. 同意退款 - 调用订单服务的内部接口
+                // 同意退款 - 调用订单服务的内部接口
                 ResponseEntity<?> updateResponse = orderServiceClient.updateOrderCancelStatusToApproved(orderId, refundAmount);
                 if (!updateResponse.getStatusCode().is2xxSuccessful()) {
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body(Map.of("error", "更新订单状态失败"));
                 }
                 
-                // 4. 触发用户服务更新信用等级
+                // 触发用户服务更新信用等级
                 if (userId != null) {
                     try {
                         Map<String, Object> cancellationData = new HashMap<>();
@@ -102,9 +101,6 @@ public class MerchantRefundService {
                         // 不影响主流程
                     }
                 }
-                
-                // TODO: 5. 触发支付服务（未来实现）
-                // PaymentServiceClient.refund(orderId, refundAmount)
                 
                 return ResponseEntity.ok(Map.of(
                         "message", "退款已批准",
@@ -135,7 +131,7 @@ public class MerchantRefundService {
     }
 
     /**
-     * 辅助方法：安全地将 Object (String 或 Number) 转换为 Long
+     * 辅助方法：安全地将Object（String =或Number）转换为Long
      */
     private Long parseLongSafe(Object value) {
         if (value == null) return null;

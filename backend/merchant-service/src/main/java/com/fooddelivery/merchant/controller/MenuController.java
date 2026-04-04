@@ -56,16 +56,16 @@ public class MenuController {
     }
 
     /**
-     * 客户端/公开端：查看上架菜品（支持数字 ID 和外部 ID）
+     * 客户端/公开端：查看上架菜品（支持数字ID和外部ID）
      * GET /merchants/{merchantId}/menu-items/public
      */
     @GetMapping("/public")
     public ResponseEntity<List<MenuItemDto>> getPublicMenu(@PathVariable String merchantId) {
-        // 使用 findEntityByAnyId 方法，支持数字 ID 和外部 ID
+        // 使用findEntityByAnyId方法，支持数字ID和外部ID
         Optional<Merchant> merchantOpt = merchantService.findEntityByAnyId(merchantId);
         
         if (merchantOpt.isEmpty()) {
-            // 商家不存在，返回空列表（而不是 404，便于前端处理）
+            // 商家不存在，返回空列表而非404，便于前端处理
             return ResponseEntity.ok(Collections.emptyList());
         }
         
@@ -84,7 +84,7 @@ public class MenuController {
     }
     
     /**
-     * 解析商家 ID 并检查所有权
+     * 解析商家ID并检查所有权
      */
     private Long resolveAndCheckOwnership(String merchantId) {
         Long resolvedId = resolveMerchantId(merchantId);
@@ -93,7 +93,7 @@ public class MenuController {
     }
     
     /**
-     * 解析商家 ID 并检查权限
+     * 解析商家ID并检查权限
      */
     private Long resolveAndCheckPermission(String merchantId, boolean allowAdmin) {
         Long resolvedId = resolveMerchantId(merchantId);
@@ -102,14 +102,14 @@ public class MenuController {
     }
     
     /**
-     * 将字符串 ID 解析为数字 ID（支持外部 ID）
+     * 将字符串ID解析为数字ID（支持外部ID）
      */
     private Long resolveMerchantId(String merchantId) {
         // 先尝试作为数字解析
         try {
             return Long.parseLong(merchantId);
         } catch (NumberFormatException ignored) {
-            // 不是数字，按外部 ID 查询
+            // 不是数字，按外部ID查询
         }
         
         // 按外部 ID 查询
@@ -133,7 +133,7 @@ public class MenuController {
             throw new RuntimeException("User not authenticated");
         }
 
-        // 如果允许管理员，且当前用户拥有 ROLE_ADMIN 权限，则直接放行
+        // 如果允许管理员，且当前用户拥有ROLE_ADMIN权限，则直接放行
         if (allowAdmin && isAdmin(auth)) {
             return;
         }

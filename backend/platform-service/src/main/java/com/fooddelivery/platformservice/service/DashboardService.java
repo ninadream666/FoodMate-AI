@@ -282,7 +282,6 @@ public class DashboardService {
     }
 
     private List<DashboardOverviewDTO.MerchantRanking> getTopMerchants() {
-        // 返回模拟数据，实际应该从订单服务聚合
         return List.of(
                 DashboardOverviewDTO.MerchantRanking.builder()
                         .merchantId(1L).merchantName("美味川菜馆")

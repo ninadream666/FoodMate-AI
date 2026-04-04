@@ -39,7 +39,7 @@ function AdminLogin() {
         try {
             console.log('开始登录:', formData.username);
 
-            // 调用后端认证 API
+            // 调用后端认证API
             const response = await authService.login(formData.username, formData.password);
 
             if (response && response.token) {

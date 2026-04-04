@@ -9,7 +9,7 @@ const testStatsApis = async () => {
 
     const results = {};
 
-    // 1. 测试Dashboard统计
+    // 测试Dashboard统计
     try {
         console.log('📊 测试Dashboard统计接口...');
         const dashboardResponse = await fetch('/api/admin/dashboard/overview', {
@@ -32,7 +32,7 @@ const testStatsApis = async () => {
         console.error('❌ Dashboard请求异常:', error);
     }
 
-    // 2. 测试Orders统计
+    // 测试Orders统计
     try {
         console.log('📦 测试Orders统计接口...');
         const ordersResponse = await fetch('/api/admin/orders/stats', {
@@ -55,7 +55,7 @@ const testStatsApis = async () => {
         console.error('❌ Orders请求异常:', error);
     }
 
-    // 3. 测试Users统计
+    // 测试Users统计
     try {
         console.log('👥 测试Users统计接口...');
         const usersResponse = await fetch('/admin/users/stats', {
@@ -78,7 +78,7 @@ const testStatsApis = async () => {
         console.error('❌ Users请求异常:', error);
     }
 
-    // 4. 测试Merchants统计
+    // 测试Merchants统计
     try {
         console.log('🏪 测试Merchants统计接口...');
         const merchantsResponse = await fetch('/api/admin/merchants/stats', {

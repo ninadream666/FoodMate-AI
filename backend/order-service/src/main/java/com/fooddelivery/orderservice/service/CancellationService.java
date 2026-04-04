@@ -35,7 +35,7 @@ public class CancellationService {
 
     /**
      * 检查是否能升级信用等级
-     * 规则：7天内无取消记录 && 最近30天有3+订单
+     * 规则：7天内无取消记录&&最近30天有3+订单
      */
     public boolean canUpgradeCredit(Long userId) {
         // 检查7天内是否有取消

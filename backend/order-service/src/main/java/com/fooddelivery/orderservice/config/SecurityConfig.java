@@ -33,14 +33,14 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // 启用CORS
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // ========== Swagger & 监控 ==========
+                        // ========== Swagger&监控 ==========
                         .requestMatchers(new AntPathRequestMatcher("/swagger-ui/**")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/v3/api-docs/**")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/swagger-resources/**")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/actuator/**")).permitAll()
 
                         // ========== 内部/管理接口 ==========
-                        // 兼容 /api 前缀，防止网关透传路径导致 403
+                        // 兼容/api前缀，防止网关透传路径导致403
                         .requestMatchers(new AntPathRequestMatcher("/orders/internal/**")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/api/orders/internal/**")).permitAll()
 
@@ -48,11 +48,10 @@ public class SecurityConfig {
                         .requestMatchers(new AntPathRequestMatcher("/admin/orders/**")).permitAll()
 
                         // ========== 支付接口 ==========
-                        // 临时允许支付接口用于测试 (同时兼容两种路径)
                         .requestMatchers(new AntPathRequestMatcher("/orders/*/pay")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/api/orders/*/pay")).permitAll()
 
-                        // ========== 关键：OPTIONS 预检请求 ==========
+                        // ========== OPTIONS预检请求 ==========
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // ========== 其他所有请求必须认证 ==========
@@ -69,7 +68,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 允许的源（开发环境允许所有）
+        // 允许的源
         configuration.setAllowedOriginPatterns(List.of("*"));
 
         // 允许的HTTP方法
@@ -78,8 +77,7 @@ public class SecurityConfig {
         // 允许的请求头
         configuration.setAllowedHeaders(List.of("*"));
 
-        // 允许携带认证信息（如Cookie、Authorization header）
-        // 这一点非常重要，必须为 true，否则前端携带 Token 会报错
+        // 允许携带认证信息，如Cookie、Authorization header。必须为true，否则前端携带Token会报错
         configuration.setAllowCredentials(true);
 
         // 预检请求的有效期（秒）

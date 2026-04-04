@@ -83,7 +83,7 @@ class QWeatherJWTService:
         从环境变量或.env文件中加载私钥
         专门处理多行私钥格式
         """
-        # 首先尝试环境变量
+        # 尝试环境变量
         env_key = os.getenv("QWEATHER_PRIVATE_KEY")
         if env_key:
             return env_key

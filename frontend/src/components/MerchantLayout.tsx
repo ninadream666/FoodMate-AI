@@ -21,14 +21,14 @@ interface User {
 }
 
 /**
- * 商家端专用布局 (React Native版本)
+ * 商家端专用布局（React Native版本）
  */
 export default function MerchantLayout({ children }: MerchantLayoutProps) {
     const navigation = useNavigation();
     const [merchant, setMerchant] = useState<Merchant | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // 从 AsyncStorage 读取当前用户信息 (在实际React Native项目中应该使用AsyncStorage)
+    // 从AsyncStorage读取当前用户信息
     const user: User = {
         id: '1',
         nickname: '商家用户',
@@ -70,7 +70,7 @@ export default function MerchantLayout({ children }: MerchantLayoutProps) {
                 return;
             }
 
-            // 其他错误（如网络问题），也停止 Loading，以免白屏
+            // 其他错误（如网络问题），也停止Loading，以免白屏
             setLoading(false);
         }
     };
@@ -85,8 +85,8 @@ export default function MerchantLayout({ children }: MerchantLayoutProps) {
         );
     }
 
-    // 如果加载完了但没有 merchant 信息（且不是因为要去 onboarding），
-    // 说明发生了其他错误，此时不应该渲染 Layout，以免子组件报错
+    // 如果加载完了但没有merchant信息，且不是因为要去onboarding，
+    // 说明发生了其他错误，此时不应该渲染Layout，以免子组件报错
     if (!merchant) {
         return (
             <View style={styles.errorContainer}>

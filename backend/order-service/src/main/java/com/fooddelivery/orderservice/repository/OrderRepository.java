@@ -34,8 +34,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findByUserIdAndCreatedAtAfter(Long userId, LocalDateTime startTime);
 
-    // AI Pricing 专用聚合查询
-    // 真实逻辑：利用数据库计算能力，避免应用层内存溢出
+    // AI Pricing专用聚合查询：利用数据库计算能力，避免应用层内存溢出
     @Query("""
         SELECT new com.fooddelivery.orderservice.dto.ItemSalesStatsDto(
             oi.menuItemId,

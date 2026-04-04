@@ -45,13 +45,13 @@ class EnsembleInferenceEngine:
         Parameters
         ----------
         lgb_model_path : str
-            LightGBM 模型文件路径，默认 models/lightgbm_ranking.txt
+            LightGBM模型文件路径，默认models/lightgbm_ranking.txt
         deepfm_model_path : str
-            DeepFM 模型文件路径，默认 models/deepfm_ranking.pth
+            DeepFM模型文件路径，默认models/deepfm_ranking.pth
         lgb_weight : float
-            LightGBM 在 ensemble 中的权重（默认 0.6）
+            LightGBM在ensemble中的权重（默认 0.6）
         deepfm_weight : float
-            DeepFM 在 ensemble 中的权重（默认 0.4）
+            DeepFM在ensemble中的权重（默认 0.4）
         """
         self.lgb_model_path = lgb_model_path or os.path.join(MODEL_DIR, "lightgbm_ranking.txt")
         self.deepfm_model_path = deepfm_model_path or os.path.join(MODEL_DIR, "deepfm_ranking.pth")
@@ -125,12 +125,12 @@ class EnsembleInferenceEngine:
         Parameters
         ----------
         feature_dicts : list[dict]
-            每个元素是 extract_features() 的输出
+            每个元素是extract_features()的输出
 
         Returns
         -------
         list[float] | None
-            每个样本的 ensemble 分数 (0~1)，如果两个模型都不可用返回 None
+            每个样本的ensemble分数(0~1)，如果两个模型都不可用返回None
         """
         self._load_models()
 
@@ -173,7 +173,7 @@ class EnsembleInferenceEngine:
         else:
             return None  # 两个都失败，交由调用者降级
 
-        # 归一化到 0~1
+        # 归一化到0~1
         scores = [max(0.0, min(1.0, s)) for s in scores]
         return scores
 
@@ -194,7 +194,7 @@ class EnsembleInferenceEngine:
 
         df = pd.DataFrame(rows)
 
-        # 类别特征转 category dtype（与训练时一致）
+        # 类别特征转category dtype，与训练时一致
         cat_vocabs = {
             "cuisine_type": CUISINE_VOCAB + ["其他", "unknown"],
             "meal_period": MEAL_PERIOD_VOCAB + ["unknown"],
@@ -214,13 +214,13 @@ class EnsembleInferenceEngine:
         """DeepFM 批量推理"""
         import torch
 
-        # 准备 dense tensor
+        # 准备dense tensor
         dense = np.zeros((len(feature_dicts), len(ALL_NUMERIC)), dtype=np.float32)
         for i, fd in enumerate(feature_dicts):
             for j, col in enumerate(ALL_NUMERIC):
                 dense[i, j] = float(fd.get(col, 0.0))
 
-        # 准备 sparse tensor
+        # 准备sparse tensor
         sparse = np.zeros((len(feature_dicts), len(CATEGORICAL_FEATURES)), dtype=np.int64)
         for i, fd in enumerate(feature_dicts):
             for j, col in enumerate(CATEGORICAL_FEATURES):

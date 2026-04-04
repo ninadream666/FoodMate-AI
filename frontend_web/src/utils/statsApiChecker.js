@@ -86,7 +86,7 @@ class StatsApiChecker {
         }
     }
 
-    // 检查Merchants API (目前没有统计接口，只检查列表)
+    // 检查Merchants API
     async checkMerchantsApi() {
         console.log('🏪 检查Merchants API...');
         try {

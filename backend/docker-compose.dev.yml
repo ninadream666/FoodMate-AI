@@ -1,6 +1,6 @@
 services:
   # === 基础设施服务 ===
-  # PostgreSQL 数据库
+  # PostgreSQL数据库
   postgres-db:
     image: postgres:15
     container_name: food-platform-db
@@ -22,7 +22,7 @@ services:
       retries: 10
       start_period: 120s
 
-  # MongoDB 数据库
+  # MongoDB数据库
   mongo-db:
     image: mongo:6.0
     container_name: food-platform-mongo
@@ -41,13 +41,13 @@ services:
       retries: 3
       start_period: 60s
 
-  # Mongo Express 管理界面
+  # Mongo Express管理界面
   mongo-express:
     image: mongo-express:latest
     container_name: food-platform-mongo-express
     restart: unless-stopped
     ports:
-      - "8085:8081" # 访问 localhost:8085 查看MongoDB数据
+      - "8085:8081" # 访问localhost:8085查看MongoDB数据
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: dev
       ME_CONFIG_MONGODB_ADMINPASSWORD: dev123
@@ -57,13 +57,13 @@ services:
       mongo-db:
         condition: service_healthy
 
-  # RabbitMQ 消息队列
+  # RabbitMQ消息队列
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
     container_name: food-platform-rabbitmq
     restart: unless-stopped
     ports:
-      - "5672:5672" # AMQP 端口
+      - "5672:5672" # AMQP端口
       - "15672:15672" # 管理界面端口
     environment:
       RABBITMQ_DEFAULT_USER: dev
@@ -93,7 +93,7 @@ services:
       retries: 3
       start_period: 30s
 
-  # === Java 微服务 ===
+  # === Java微服务 ===
   # 商家服务
   merchant-service:
     build:
@@ -247,7 +247,7 @@ services:
       retries: 3
       start_period: 60s
 
-  # === Python 服务 ===
+  # === Python服务 ===
   # 推荐服务（智能推荐系统）
   recommendation-service:
     build:
@@ -264,10 +264,10 @@ services:
     volumes:
       # 保留这个挂载，以防代码需要读取私钥文件路径等
       - ./.env:/app/.env:ro
-      # ML 模型 & 训练数据（直接挂载宿主机目录，确保微调模型可用）
+      # ML模型 & 训练数据（直接挂载宿主机目录，确保微调模型可用）
       - ./recommendation-service/models:/app/models:ro
       - ml_data:/app/ml_data
-      # HuggingFace 模型缓存（挂载宿主机默认缓存，可通过 HF_CACHE_DIR 覆盖）
+      # HuggingFace模型缓存（挂载宿主机默认缓存，可通过HF_CACHE_DIR覆盖）
       - ${HF_CACHE_DIR:-~/.cache/huggingface}:/root/.cache/huggingface:ro
 
     environment:
@@ -303,13 +303,13 @@ services:
       postgres-db:
         condition: service_healthy
 
-  # ML 模型训练服务（一次性 / 定时训练）
+  # ML模型训练服务（一次性/定时训练）
   ml-trainer:
     build:
       context: ./recommendation-service
       dockerfile: Dockerfile
     container_name: food-platform-ml-trainer
-    # 不设 restart — 训练完成即退出，需要时手动 docker compose run
+    # 不设restart — 训练完成即退出，需要时手动docker compose run
     restart: "no"
     volumes:
       - ml_models:/app/models
@@ -319,12 +319,12 @@ services:
       - PYTHONPATH=/app
       - ML_DATA_DIR=/app/ml_data
       - ML_MODEL_DIR=/app/models
-    # 默认: 用模拟数据冷启动训练（2000条）
-    # 有真实数据后改为:  python -m app.ml.train_all --incremental
+    # 默认：用模拟数据冷启动训练（2000条）
+    # 有真实数据后改为：python -m app.ml.train_all --incremental
     command: [ "python", "-m", "app.ml.train_all", "--generate-mock", "2000" ]
     profiles: [ "ml-train" ]
 
-  # AI 智能定价服务 (Python/FastAPI)
+  # AI智能定价服务 (Python/FastAPI)
   ai-pricing-service:
     build:
       context: ./ai-pricing-service
@@ -350,7 +350,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-    # 平台管理服务
+  
+  # 平台管理服务
   platform-service:
     build:
       context: .
@@ -415,7 +416,7 @@ services:
       - EUREKA_SERVER_ENABLE_SELF_PRESERVATION=false
     # profiles: [ "enhanced" ]
 
-    # Spring Cloud 配置中心
+    # Spring Cloud配置中心
   config-server:
     image: hyness/spring-cloud-config-server:3.1.3
     container_name: food-platform-config-server
@@ -433,7 +434,7 @@ services:
     profiles: [ "enhanced" ]
 
   # === 监控和可观测性（Profile: monitoring/enhanced）===
-  # Prometheus 指标收集
+  # Prometheus指标收集
   prometheus:
     image: prom/prometheus:latest
     container_name: food-platform-prometheus
@@ -454,7 +455,7 @@ services:
         target: /etc/prometheus/prometheus.yml
     profiles: [ "monitoring", "enhanced" ]
 
-  # Zipkin 分布式链路追踪
+  # Zipkin分布式链路追踪
   zipkin:
     image: openzipkin/zipkin:latest
     container_name: food-platform-zipkin
@@ -465,7 +466,7 @@ services:
       - STORAGE_TYPE=mem
     profiles: [ "monitoring", "enhanced" ]
 
-  # Grafana 监控面板
+  # Grafana监控面板
   grafana:
     image: grafana/grafana:latest
     container_name: food-platform-grafana

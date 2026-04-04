@@ -3,14 +3,14 @@ from typing import List, Optional
 
 class VisionAnalysisRequest(BaseModel):
     """
-    Android 端发送的请求结构 (拍菜单模式)
+    Android端发送的请求结构（拍菜单模式）
     """
     image_base64: str = Field(..., description="图片的 Base64 编码字符串")
     health_tags: Optional[List[str]] = Field(default=[], description="用户健康标签，如：低糖、过敏原等")
 
 class SingleFoodAnalysisRequest(BaseModel):
     """
-    Android 端发送的请求结构 (拍单道菜品模式)
+    Android端发送的请求结构（拍单道菜品模式）
     """
     image_base64: str = Field(..., description="图片的 Base64 编码字符串")
     health_tags: Optional[List[str]] = Field(default=[], description="用户健康标签，如：低糖、过敏原等")
@@ -27,7 +27,7 @@ class MenuItem(BaseModel):
 
 class VisionAnalysisResponse(BaseModel):
     """
-    返回给 Android 端的结构化结果
+    返回给Android端的结构化结果
     """
     status: str
     items: List[MenuItem]

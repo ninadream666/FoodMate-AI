@@ -3,11 +3,11 @@ DecisionAgent - 决策智能体
 
 职责:
 - 整合上下文和用户画像信息
-- 使用 MAB (Multi-Armed Bandit) 算法进行决策
+- 使用MAB（Multi-Armed Bandit）算法进行决策
 - 输出最终的餐厅推荐排序
 
 能力:
-- 多臂老虎机算法 (UCB1, Thompson Sampling, ε-Greedy)
+- 多臂老虎机算法：UCB1, Thompson Sampling, ε-Greedy
 - 智能排序和决策
 - 推荐理由生成
 """
@@ -51,14 +51,14 @@ class RestaurantArm:
 
 
 class MABStrategy:
-    """MAB 策略基类"""
+    """MAB策略基类"""
     
     def select(self, arms: List[RestaurantArm], context: Dict[str, Any] = None) -> RestaurantArm:
         raise NotImplementedError
 
 
 class UCB1Strategy(MABStrategy):
-    """UCB1 (Upper Confidence Bound) 策略"""
+    """UCB1（Upper Confidence Bound）策略"""
     
     def __init__(self, exploration_factor: float = 2.0):
         self.exploration_factor = exploration_factor
@@ -106,10 +106,10 @@ class ThompsonSamplingStrategy(MABStrategy):
         if not arms:
             return None
         
-        # 使用 Beta 分布采样
+        # 使用Beta分布采样
         def sample_beta(arm: RestaurantArm) -> float:
-            alpha = arm.rewards + 1  # 成功次数 + 1
-            beta = max(arm.pulls - arm.rewards, 0) + 1  # 失败次数 + 1
+            alpha = arm.rewards + 1  # 成功次数+1
+            beta = max(arm.pulls - arm.rewards, 0) + 1  # 失败次数+1
             return random.betavariate(alpha, beta)
         
         return max(arms, key=sample_beta)
@@ -134,7 +134,7 @@ class ThompsonSamplingStrategy(MABStrategy):
 
 
 class EpsilonGreedyStrategy(MABStrategy):
-    """ε-Greedy 策略"""
+    """ε-Greedy策略"""
     
     def __init__(self, epsilon: float = 0.1):
         self.epsilon = epsilon
@@ -143,7 +143,7 @@ class EpsilonGreedyStrategy(MABStrategy):
         if not arms:
             return None
             
-        # 以 epsilon 概率探索，1-epsilon 概率利用
+        # 以epsilon概率探索，1-epsilon概率利用
         if random.random() < self.epsilon:
             return random.choice(arms)
         else:
@@ -160,7 +160,7 @@ class EpsilonGreedyStrategy(MABStrategy):
 
 
 class ContextualBanditStrategy(MABStrategy):
-    """上下文感知 MAB 策略"""
+    """上下文感知MAB策略"""
     
     def __init__(self, weights: Dict[str, float] = None):
         self.weights = weights or {
@@ -192,7 +192,7 @@ class ContextualBanditStrategy(MABStrategy):
         features = arm.features
         context = context or {}
 
-        # 基础分 0.35（降低基础分，给可变分更多空间拉开差距）
+        # 基础分0.35（降低基础分，给可变分更多空间拉开差距）
         base_score = 0.35
         variable_score = 0.0
 
@@ -282,20 +282,20 @@ class ContextualBanditStrategy(MABStrategy):
         # ========== 上下文感知加成（天气/交通/运动/时段） ==========
         context_bonus = 0.0
         
-        # 优先从前端传入的 weather_context 获取天气数据（后端天气API经常降级为默认值）
+        # 优先从前端传入的weather_context获取天气数据（后端天气API经常降级为默认值）
         env = context.get("environment", {})
         weather_ctx = env.get("weather", {})
         frontend_weather = context.get("frontend_weather", {})
         
-        # is_bad_weather: 前端标记 > 当前上下文 > 天气分析结果
+        # is_bad_weather: 前端标记>当前上下文>天气分析结果
         is_bad_weather = context.get("is_bad_weather", False) or frontend_weather.get("is_bad_weather", False) or weather_ctx.get("is_bad_weather", False)
         
         # 温度: 优先用前端传入的真实温度，而不是后端API降级后的默认值25°C
         temperature = frontend_weather.get("temperature") or weather_ctx.get("temperature")
-        if temperature is None or temperature == 25:  # 25很可能是后端降级默认值
+        if temperature is None or temperature == 25:
             temperature = frontend_weather.get("temperature") or weather_ctx.get("temperature", 20)
         
-        # 1. 天气影响排序（加大幅度！）
+        # 天气影响排序
         if is_bad_weather:
             # 雨天：近距离餐厅大幅加分，远距离大幅扣分
             if distance <= 1000:
@@ -309,7 +309,7 @@ class ContextualBanditStrategy(MABStrategy):
             elif delivery_time > 35:
                 context_bonus -= 0.10
         
-        # 2. 温度影响排序（强上下文时大幅放大）
+        # 温度影响排序（强上下文时大幅放大）
         is_hot_food = features.get("is_hot_food", True)
         cuisine_str = str(cuisine).lower()
         if temperature is not None:
@@ -338,7 +338,7 @@ class ContextualBanditStrategy(MABStrategy):
                 else:
                     context_bonus -= 0.05  # 非热食轻微扣分
         
-        # 3. 交通拥堵影响排序
+        # 交通拥堵影响排序
         congestion_index = context.get("congestion_index", 1.0)
         if isinstance(congestion_index, str):
             try:
@@ -353,7 +353,7 @@ class ContextualBanditStrategy(MABStrategy):
             elif distance > 3000:
                 context_bonus -= 0.10
         
-        # 4. 高峰时段影响
+        # 高峰时段影响
         if context.get("is_peak_hour", False):
             if delivery_time <= 20:
                 context_bonus += 0.08
@@ -361,7 +361,7 @@ class ContextualBanditStrategy(MABStrategy):
                 context_bonus -= 0.06
         
         # ========================================================================
-        # 5. 健康数据驱动推荐（基于国际营养与运动科学标准）
+        # 健康数据驱动推荐（基于国际营养与运动科学标准）
         #
         # 参考依据：
         # - ISSN (国际运动营养学会): 运动后 30min 内摄入 20-40g 蛋白质 + 碳水 4:1
@@ -374,7 +374,7 @@ class ContextualBanditStrategy(MABStrategy):
         health_ctx = context.get("health_context", {})
         heart_rate = health_ctx.get("heart_rate", 75)
 
-        # ----- 5.1 心率分区推荐 (AHA 心率区间标准) -----
+        # ----- 心率分区推荐（AHA心率区间标准） -----
         # Zone 1: <100 静息态, Zone 2: 100-120 轻度, Zone 3: 120-140 中等
         # Zone 4: 140-160 高强度, Zone 5: >160 极限
         if health_ctx.get("is_post_workout", False):
@@ -391,7 +391,7 @@ class ContextualBanditStrategy(MABStrategy):
             else:
                 context_bonus += 0.05
         elif heart_rate > 140:
-            # Zone 4-5 高强度心率: AHA建议低钠、富钾、易消化
+            # Zone 4-5高强度心率: AHA建议低钠、富钾、易消化
             cardio_safe = ["粥", "汤", "蒸", "轻食", "沙拉", "面", "日料", "清淡", "蔬菜", "鱼"]
             cardio_avoid = ["火锅", "烧烤", "麻辣", "油炸", "重口味", "咖啡"]
             if any(k in cuisine_str for k in cardio_safe):
@@ -399,18 +399,18 @@ class ContextualBanditStrategy(MABStrategy):
             elif any(k in cuisine_str for k in cardio_avoid):
                 context_bonus -= 0.20
         elif heart_rate > 100:
-            # Zone 2-3 中度心率: 偏向均衡营养
+            # Zone 2-3中度心率: 偏向均衡营养
             balanced_keywords = ["粥", "汤", "面", "轻食", "沙拉", "日料", "健康"]
             if any(k in cuisine_str for k in balanced_keywords):
                 context_bonus += 0.12
 
-        # ----- 5.2 压力/皮质醇管理 (Harvard 营养学院) -----
-        # 高皮质醇时 Omega-3 脂肪酸(鱼、坚果)和镁(深色蔬菜)有助调节
+        # ----- 压力/皮质醇管理（Harvard营养学院） -----
+        # 高皮质醇时Omega-3脂肪酸（鱼、坚果）和镁（深色蔬菜）有助调节
         # 避免高糖高咖啡因加剧皮质醇分泌
         pressure_value = health_ctx.get("pressure_value", 50)
         pressure_level = health_ctx.get("pressure_level", "正常")
         if pressure_value >= 80 or pressure_level == "偏高":
-            # 重度压力: 强推 Omega-3 + 镁 + 色氨酸食物
+            # 重度压力: 强推Omega-3+镁+色氨酸食物
             destress_keywords = ["鱼", "三文鱼", "日料", "寿司", "坚果", "牛油果",
                                 "蔬菜", "沙拉", "粥", "汤", "蒸", "清淡", "轻食"]
             stress_amplify = ["咖啡", "麻辣", "辣", "火锅", "油炸", "酒", "甜品",
@@ -420,7 +420,7 @@ class ContextualBanditStrategy(MABStrategy):
             elif any(k in cuisine_str for k in stress_amplify):
                 context_bonus -= 0.18
         elif pressure_value >= 60 or pressure_level == "中等":
-            # 中度压力: 推荐舒缓食物，适度放松
+            # 中度压力：推荐舒缓食物，适度放松
             comfort_keywords = ["茶", "粥", "汤", "日料", "轻食", "沙拉",
                                "蔬菜", "面", "蒸"]
             heavy_keywords = ["麻辣", "火锅", "烧烤", "油炸"]
@@ -429,22 +429,22 @@ class ContextualBanditStrategy(MABStrategy):
             elif any(k in cuisine_str for k in heavy_keywords):
                 context_bonus -= 0.08
         elif pressure_value <= 30 or pressure_level == "放松":
-            # 放松态: 探索性饮食，奖励丰富口味
+            # 放松态：探索性饮食，奖励丰富口味
             adventure_keywords = ["新疆", "泰国", "印度", "韩国", "日料", "西餐",
                                  "创意", "甜品", "下午茶"]
             if any(k in cuisine_str for k in adventure_keywords):
                 context_bonus += 0.10
 
-        # ----- 5.3 睡眠质量影响 (NSF 国家睡眠基金会 + WHO) -----
-        # 睡眠不足: 色氨酸(火鸡/香蕉/牛奶)助眠, 维B6促褪黑素合成
-        # 严重缺觉: 避免过量咖啡因(>400mg/日), 避免高糖导致血糖波动
+        # ----- 睡眠质量影响（NSF国家睡眠基金会+WHO） -----
+        # 睡眠不足：色氨酸（火鸡/香蕉/牛奶）助眠， 维B6促褪黑素合成
+        # 严重缺觉：避免过量咖啡因（>400mg/日）， 避免高糖导致血糖波动
         sleep_duration_hours = health_ctx.get("last_sleep_duration_hours", 0)
         sleep_quality = health_ctx.get("sleep_quality", "无数据")
         sleep_score = health_ctx.get("last_sleep_score", 0)
         needs_rest = health_ctx.get("needs_rest", False)
 
         if sleep_duration_hours < 5 or sleep_score < 40:
-            # 严重睡眠不足(<5h): 稳定血糖 + 色氨酸 + 避免兴奋剂
+            # 严重睡眠不足（<5h）：稳定血糖+色氨酸+避免兴奋剂
             recovery_keywords = ["粥", "汤", "面", "蛋白", "鸡肉", "鱼", "蒸",
                                 "牛奶", "香蕉", "全麦", "燕麦", "蔬菜"]
             avoid_keywords = ["咖啡", "火锅", "烧烤", "油炸", "酒", "夜宵",
@@ -454,7 +454,7 @@ class ContextualBanditStrategy(MABStrategy):
             elif any(k in cuisine_str for k in avoid_keywords):
                 context_bonus -= 0.18
         elif sleep_duration_hours < 6 or sleep_quality == "较差" or sleep_score < 60 or needs_rest:
-            # 轻度睡眠不足(5-6h): 温和能量补充
+            # 轻度睡眠不足（5-6h）：温和能量补充
             energy_keywords = ["粥", "汤", "面", "蛋白", "鸡肉", "牛肉",
                               "早餐", "全麦", "蔬菜", "健康"]
             heavy_keywords = ["火锅", "烧烤", "油炸", "夜宵", "酒"]
@@ -463,17 +463,17 @@ class ContextualBanditStrategy(MABStrategy):
             elif any(k in cuisine_str for k in heavy_keywords):
                 context_bonus -= 0.10
         elif sleep_duration_hours >= 7 and (sleep_quality in ["优秀", "良好"] or sleep_score >= 80):
-            # 睡眠充足(≥7h): 精力充沛，可享受丰富美食
+            # 睡眠充足（≥7h）：精力充沛，可享受丰富美食
             if rating >= 4.3:
                 context_bonus += 0.08
 
-        # ----- 5.4 血氧饱和度 (WHO 临床标准) -----
-        # SpO2 <90%: 严重低氧, 90-94%: 低氧, ≥95%: 正常
+        # ----- 血氧饱和度（WHO 临床标准） -----
+        # SpO2<90%：严重低氧， 90-94%：低氧， ≥95%：正常
         # 低氧时消化能力下降，需易消化+补铁+补维C食物
         blood_oxygen = health_ctx.get("blood_oxygen", 98)
         blood_oxygen_status = health_ctx.get("blood_oxygen_status", "正常")
         if blood_oxygen < 90 or blood_oxygen_status == "低氧":
-            # 严重低氧: 强推补铁+维C+易消化
+            # 严重低氧：强推补铁+维C+易消化
             iron_rich = ["牛肉", "菠菜", "蛋", "鱼", "豆腐", "粥", "汤", "蒸",
                         "蔬菜", "清淡", "轻食"]
             hard_digest = ["油炸", "烧烤", "火锅", "麻辣", "重口味", "酒",
@@ -483,7 +483,7 @@ class ContextualBanditStrategy(MABStrategy):
             elif any(k in cuisine_str for k in hard_digest):
                 context_bonus -= 0.25
         elif blood_oxygen < 95 or blood_oxygen_status == "偏低":
-            # 轻度低氧: 推荐清淡易消化
+            # 轻度低氧：推荐清淡易消化
             health_keywords = ["轻食", "沙拉", "粥", "汤", "蒸", "清淡", "蔬菜",
                               "牛肉", "菠菜", "鱼"]
             avoid_keywords = ["油炸", "烧烤", "火锅", "麻辣", "重口味", "酒"]
@@ -492,27 +492,27 @@ class ContextualBanditStrategy(MABStrategy):
             elif any(k in cuisine_str for k in avoid_keywords):
                 context_bonus -= 0.15
 
-        # ----- 5.5 活动水平 (ACSM 运动医学会 + WHO 体力活动指南) -----
-        # WHO: 成人每周≥150min中等强度 或 ≥75min高强度
-        # ACSM: 久坐风险独立于运动量，每30min应起身活动
+        # ----- 活动水平（ACSM运动医学会+WHO体力活动指南） -----
+        # WHO：成人每周≥150min中等强度或≥75min高强度
+        # ACSM：久坐风险独立于运动量，每30min应起身活动
         daily_steps = health_ctx.get("daily_steps", 0)
         daily_calories = health_ctx.get("daily_calories", 0)
         activity_level = health_ctx.get("activity_level", "无数据")
 
         if daily_steps >= 15000 or daily_calories >= 600:
-            # 超高活动量(≥15000步): 需大量碳水+蛋白补充糖原
+            # 超高活动量（≥15000步）：需大量碳水+蛋白补充糖原
             replenish_keywords = ["蛋白", "肉", "牛肉", "鸡肉", "鱼", "米饭", "面",
                                  "碳水", "全麦", "香蕉", "能量", "健康"]
             if any(k in cuisine_str for k in replenish_keywords):
                 context_bonus += 0.20
         elif daily_steps >= 8000 or activity_level == "活跃" or daily_calories >= 300:
-            # 活跃(8000-15000步): 均衡营养补充
+            # 活跃（8000-15000步）：均衡营养补充
             energy_keywords = ["蛋白", "肉", "牛肉", "鸡肉", "碳水", "米饭", "面",
                               "能量", "健康", "沙拉"]
             if any(k in cuisine_str for k in energy_keywords):
                 context_bonus += 0.12
         elif daily_steps < 2000 and activity_level in ["久坐", "轻度"]:
-            # 久坐(<2000步): ACSM建议低卡低脂，增加纤维
+            # 久坐（<2000步）：ACSM建议低卡低脂，增加纤维
             fiber_light = ["轻食", "沙拉", "蔬菜", "清淡", "低脂", "健康", "蒸",
                           "粥", "全麦", "粗粮"]
             calorie_dense = ["火锅", "烤肉", "炸鸡", "汉堡", "披萨", "奶茶",
@@ -522,15 +522,15 @@ class ContextualBanditStrategy(MABStrategy):
             elif any(k in cuisine_str for k in calorie_dense):
                 context_bonus -= 0.12
         elif daily_steps < 5000:
-            # 轻度活动(2000-5000步): 适度控制热量
+            # 轻度活动（2000-5000步）：适度控制热量
             light_keywords = ["轻食", "沙拉", "蔬菜", "健康", "清淡"]
             if any(k in cuisine_str for k in light_keywords):
                 context_bonus += 0.06
 
-        # ----- 5.6 综合健康状态 (AHA + WHO 综合评估) -----
+        # ----- 综合健康状态（AHA+WHO综合评估） -----
         overall_health = health_ctx.get("overall_health_status", "无数据")
         if overall_health == "需关注":
-            # AHA: 限钠<1500mg, 限添加糖<25g, 增蔬果≥400g
+            # AHA：限钠<1500mg，限添加糖<25g，增蔬果≥400g
             aha_healthy = ["轻食", "沙拉", "蔬菜", "蒸", "清淡", "健康", "粥",
                           "汤", "鱼", "全麦", "豆腐", "日料"]
             aha_avoid = ["油炸", "烧烤", "火锅", "麻辣", "重口味", "夜宵",
@@ -540,15 +540,15 @@ class ContextualBanditStrategy(MABStrategy):
             elif any(k in cuisine_str for k in aha_avoid):
                 context_bonus -= 0.20
         elif overall_health == "良好":
-            # 健康良好: 适度推荐均衡饮食
+            # 健康良好：适度推荐均衡饮食
             if rating >= 4.3:
                 context_bonus += 0.05
         elif overall_health == "优秀":
-            # 健康优秀: 自由享受
+            # 健康优秀：自由享受
             if rating >= 4.5:
                 context_bonus += 0.08
         
-        # ========== 🆕 6. 绝对意图匹配（最高优先级，实现"指名道姓"的推荐） ==========
+        # ========== 绝对意图匹配（最高优先级，实现"指名道姓"的推荐） ==========
         pure_query = context.get("pure_query", "").strip()
         if pure_query and pure_query not in ["餐厅", "美食", "饭店"]:
             pure_query_lower = pure_query.lower()
@@ -557,7 +557,7 @@ class ContextualBanditStrategy(MABStrategy):
                 context_bonus += 0.40  # 给极高分数加成，保证冲上榜首
                 logger.info(f"🎯 绝对意图命中: '{pure_query}' 匹配了餐厅 '{arm.name}'，获得一票否决级加分 0.40")
 
-        # 7. 节日/周末影响
+        # 节日/周末影响
         temporal_ctx = env.get("temporal", {})
         if temporal_ctx.get("is_holiday", False) or temporal_ctx.get("festival"):
             if rating >= 4.5:
@@ -566,7 +566,7 @@ class ContextualBanditStrategy(MABStrategy):
         # 加入历史奖励（小幅加成）
         historical_score = arm.average_reward * 0.05
         
-        # ========== 🆕 8. 协同过滤分数融合 (CollaborativeAgent NCF 信号) ==========
+        # ========== 协同过滤分数融合（CollaborativeAgent NCF信号） ==========
         cf_bonus = 0.0
         cf_scores = context.get("collaborative_scores", {})
         cf_weight = context.get("cf_weight", 0.0)
@@ -578,7 +578,7 @@ class ContextualBanditStrategy(MABStrategy):
                     f"🤝 CF加成: {arm.name} cf_raw={cf_raw:.3f} × α={cf_weight:.3f} → +{cf_bonus:.3f}"
                 )
         
-        # ========== 🆕 9. 环境光线影响（端侧光传感器信号） ==========
+        # ========== 环境光线影响（端侧光传感器信号） ==========
         light_level = health_ctx.get("light_level", "normal")
         if light_level in ("dark", "dim"):
             # 暗光/夜间 → 偏向夜宵、热饮、暖食
@@ -597,7 +597,7 @@ class ContextualBanditStrategy(MABStrategy):
             elif any(k in cuisine_str for k in heavy_keywords):
                 context_bonus -= 0.06
 
-        # 最终得分 = 基础分 + 可变分 + 上下文加成 + 历史 + 协同过滤
+        # 最终得分=基础分+可变分+上下文加成+历史+协同过滤
         # 强上下文时可变分乘数更高（因为菜系匹配权重从0.20提升到0.40，需要更大的分差）
         var_multiplier = 0.65 if has_strong_context else 0.50
         final_score = base_score + variable_score * var_multiplier + context_bonus + historical_score + cf_bonus
@@ -627,15 +627,15 @@ class DecisionAgent(BaseAgent):
             description="决策智能体 - 基于MAB算法进行智能推荐决策"
         )
         
-        # MAB 策略
+        # MAB策略
         self.strategy_name = strategy
         self.strategy = self._create_strategy(strategy)
         
-        # LLM 客户端（用于生成推荐理由）
+        # LLM客户端（用于生成推荐理由）
         if llm_client:
             self.llm_client = llm_client
         else:
-            # 默认使用 DeepSeek
+            # 默认使用DeepSeek
             self.llm_client = AsyncOpenAI(
                 api_key=os.getenv("DEEPSEEK_API_KEY", ""),
                 base_url="https://api.deepseek.com/v1"
@@ -657,7 +657,7 @@ class DecisionAgent(BaseAgent):
             "contextual": ContextualBanditStrategy()
         }
         
-        # ML Ensemble 策略: LightGBM + DeepFM 融合排序
+        # ML Ensemble策略：LightGBM+DeepFM融合排序
         if strategy == "ml_ensemble" and ML_AVAILABLE:
             try:
                 fallback = ContextualBanditStrategy()
@@ -762,7 +762,7 @@ class DecisionAgent(BaseAgent):
                 context_analysis, profile_analysis
             )
             
-            # 🆕 注入前端传入的健康/天气/纯净意图到决策上下文
+            # 注入前端传入的健康/天气/纯净意图到决策上下文
             if health_context:
                 decision_context["health_context"] = health_context
                 if health_context.get("is_post_workout"):
@@ -773,13 +773,13 @@ class DecisionAgent(BaseAgent):
                     decision_context["edge_constraints"] = health_context.get("edge_constraints")
                     logger.info(f"🛡️ 接收到端侧隐私约束: {decision_context['edge_constraints']}")
                 
-                # 🆕 提取纯净查询（由 Service 层透传过来）
+                # 提取纯净查询（由Service层透传过来）
                 pure_query = health_context.get("pure_query", "")
                 if pure_query:
                     decision_context["pure_query"] = pure_query
                     
             if weather_context:
-                # 将前端天气单独存储为 frontend_weather，优先级最高
+                # 将前端天气单独存储为frontend_weather，优先级最高
                 decision_context["frontend_weather"] = weather_context
                 # 同时合并到环境天气
                 if weather_context.get("is_heavy_rain") or weather_context.get("is_raining"):
@@ -795,7 +795,7 @@ class DecisionAgent(BaseAgent):
                     decision_context["environment"]["weather"] = env_weather
                     logger.info(f"🌡️ 使用前端传入温度: {frontend_temp}°C")
             
-            # 🆕 注入协同过滤分数 (来自 CollaborativeAgent)
+            # 注入协同过滤分数（来自CollaborativeAgent）
             if collaborative_analysis and collaborative_analysis.get("collaborative_scores"):
                 decision_context["collaborative_scores"] = collaborative_analysis["collaborative_scores"]
                 decision_context["cf_weight"] = collaborative_analysis.get("cf_weight", 0.0)
@@ -806,10 +806,10 @@ class DecisionAgent(BaseAgent):
                     f"NCF={collaborative_analysis.get('ncf_mode', 'unknown')}"
                 )
             
-            # 将餐厅转换为 MAB 臂
+            # 将餐厅转换为MAB臂
             arms = self._restaurants_to_arms(restaurants)
             
-            # 端云协同前置硬过滤 (Hard-Filter)
+            # 端云协同前置硬过滤（Hard-Filter）
             # 确保端侧不允许的敏感物质/菜品类别被完全拦截，防止被推荐
             edge_constraints = decision_context.get("edge_constraints")
             if edge_constraints:
@@ -822,7 +822,7 @@ class DecisionAgent(BaseAgent):
                     name_str = str(arm.name).lower()
                     is_hot_food = arm.features.get("is_hot_food", True)
                     
-                    # 1. 检查过敏原及违禁成分 (例如端侧测出过敏史，直接过滤)
+                    # 检查过敏原及违禁成分，例如端侧测出过敏史，直接过滤
                     is_forbidden = False
                     for forbidden in forbidden_ingredients:
                         if forbidden.lower() in cuisine_str or forbidden.lower() in name_str:
@@ -832,7 +832,7 @@ class DecisionAgent(BaseAgent):
                     if is_forbidden:
                         continue
                         
-                    # 2. 检查硬性温度限制 (例如生理期要求，屏蔽冰沙/冷饮)
+                    # 检查硬性温度限制，例如生理期要求，屏蔽冰沙/冷饮
                     if required_temperature:
                         # 识别是否明显是冷饮生冷品
                         is_cold = any(k in cuisine_str or k in name_str for k in ["冰", "冷", "凉", "沙拉", "刺身"])
@@ -896,10 +896,10 @@ class DecisionAgent(BaseAgent):
                 arms = filtered_by_allergy
                 logger.info(f"忌口过滤完成: {pre_filter_count} -> {len(arms)} 家餐厅 (忌口: {user_allergies})")
 
-            # 使用 MAB 策略排序 (对于已经过安全过滤的餐厅)
+            # 使用MAB策略排序（对于已经过安全过滤的餐厅）
             ranked_arms = self.strategy.rank_all(arms, decision_context)
             
-            # 📦 异步记录推荐曝光数据（用于 ML 模型训练）
+            # 异步记录推荐曝光数据（用于ML模型训练）
             if ML_AVAILABLE:
                 try:
                     collector = get_data_collector()
@@ -924,7 +924,7 @@ class DecisionAgent(BaseAgent):
                 ranked_arms[:top_k], decision_context
             )
             
-            # 使用 DeepSeek AI 生成个性化推荐理由
+            # 使用DeepSeek AI生成个性化推荐理由
             recommendations = await self.generate_ai_reasons(
                 recommendations, decision_context
             )
@@ -1025,7 +1025,7 @@ class DecisionAgent(BaseAgent):
         }
 
     def _restaurants_to_arms(self, restaurants: List[Dict[str, Any]]) -> List[RestaurantArm]:
-        """将餐厅转换为 MAB 臂"""
+        """将餐厅转换为MAB臂"""
         arms = []
         for r in restaurants:
             restaurant_id = r.get("id", str(id(r)))
@@ -1139,13 +1139,13 @@ class DecisionAgent(BaseAgent):
         # 构建理由部分
         parts = []
 
-        # 1. 排名标识
+        # 排名标识
         if rank == 1:
             parts.append("今日首推")
         elif rank <= 3:
             parts.append("精选好店")
 
-        # 2. 天气+温度相关（核心卖点）
+        # 天气+温度相关
         if temperature <= 10:
             if any(k in cuisine for k in ["火锅", "汤", "粥", "麻辣", "烤"]):
                 parts.append(f"{temperature}°C天寒，热食暖身")
@@ -1164,7 +1164,7 @@ class DecisionAgent(BaseAgent):
         elif weather_condition in ["小雨", "阴"]:
             parts.append(f"{weather_condition}天暖心推荐")
 
-        # 3. 时间段相关
+        # 时间段相关
         if is_holiday or festival:
             parts.append(f"{festival or '假日'}精选")
         elif is_weekend:
@@ -1181,12 +1181,12 @@ class DecisionAgent(BaseAgent):
         if period_tip:
             parts.append(period_tip)
 
-        # 4. 交通相关
+        # 交通相关
         if congestion_index > 1.5 or congestion_level in ["拥堵", "严重拥堵"]:
             if distance <= 1000:
                 parts.append("拥堵时段近距离优选")
 
-        # 5. 基础评分和距离
+        # 基础评分和距离
         if rating >= 4.5:
             parts.append(f"{rating}分高评")
         elif rating >= 4.0:
@@ -1197,11 +1197,11 @@ class DecisionAgent(BaseAgent):
         elif distance <= 1000:
             parts.append("就在附近")
 
-        # 6. 配送速度
+        # 配送速度
         if delivery_time <= 20:
             parts.append("闪电配送")
 
-        # ========== 7. 健康状态相关推荐理由（OPPO健康数据） ==========
+        # ========== 健康状态相关推荐理由（OPPO健康数据） ==========
         cuisine_lower = cuisine.lower() if cuisine else ""
 
         # 运动后推荐
@@ -1409,7 +1409,7 @@ class DecisionAgent(BaseAgent):
             health_context_str = "\n• ".join(health_analysis) if health_analysis else "健康状态正常"
             
             # 只给排名靠前的餐厅生成AI理由（LLM调用是主要耗时瓶颈，5家≈3秒，20家≈10秒）
-            # 其余餐厅保留规则引擎生成的 quick_reason（毫秒级）
+            # 其余餐厅保留规则引擎生成的quick_reason（毫秒级）
             target_count = min(len(recommendations), 20)
             target_restaurants = recommendations[:target_count]
             
@@ -1483,7 +1483,7 @@ class DecisionAgent(BaseAgent):
             for line in lines:
                 if reason_idx >= len(recommendations):
                     break
-                # 匹配格式：数字 + 分隔符 + 理由内容
+                # 匹配格式：数字+分隔符+理由内容
                 match = re.match(r'^(\d+)[.、:：\s]+(.+)$', line)
                 if match:
                     reason = match.group(2).strip()
@@ -1533,13 +1533,13 @@ class DecisionAgent(BaseAgent):
         cuisine = features.get("cuisine_type", features.get("cuisine", ""))
         is_hot_food = features.get("is_hot_food", True)
         
-        # ========== 1. 排名标识 ==========
+        # ========== 排名标识 ==========
         if rank == 1:
             reasons.append("今日首推")
         elif rank <= 3:
             reasons.append("精选推荐")
 
-        # ========== 2. 天气+温度相关推荐 ==========
+        # ========== 天气+温度相关推荐 ==========
         if temperature <= 10:
             if is_hot_food:
                 reasons.append(f"{temperature}°C寒冷天气，热食暖身")
@@ -1566,7 +1566,7 @@ class DecisionAgent(BaseAgent):
                 if temperature >= 20 and temperature <= 28:
                     reasons.append("天气宜人，享美食")
 
-        # ========== 3. 时间段相关推荐 ==========
+        # ========== 时间段相关推荐 ==========
         if meal_period == "breakfast" or (6 <= hour < 10):
             if any(k in cuisine for k in ["早餐", "粥", "豆浆", "包子", "油条", "面"]):
                 reasons.append("早餐优选")
@@ -1582,41 +1582,41 @@ class DecisionAgent(BaseAgent):
             if any(k in cuisine for k in ["烧烤", "小龙虾", "夜宵", "串串", "啤酒"]):
                 reasons.append("夜宵必点")
 
-        # ========== 4. 周末/节假日推荐 ==========
+        # ========== 周末/节假日推荐 ==========
         if is_weekend:
             reasons.append("周末犒劳自己")
         if is_holiday or festival:
             fest_name = festival if festival else "假日"
             reasons.append(f"{fest_name}特惠")
 
-        # ========== 5. 交通状况推荐 ==========
+        # ========== 交通状况推荐 ==========
         if congestion > 1.5:
             if distance <= 800:
                 reasons.append("拥堵时段近距离优选")
 
-        # ========== 6. 基础评分推荐 ==========
+        # ========== 基础评分推荐 ==========
         if rating >= 4.5:
             reasons.append(f"高分好评({rating}分)")
         elif rating >= 4.0:
             reasons.append(f"口碑不错({rating}分)")
 
-        # ========== 7. 距离优势 ==========
+        # ========== 距离优势 ==========
         if distance <= 500:
             reasons.append("距离超近")
         elif distance <= 1000:
             reasons.append("距离较近")
 
-        # ========== 8. 配送时间 ==========
+        # ========== 配送时间 ==========
         if delivery_time <= 20:
             reasons.append("配送快速")
 
-        # ========== 9. 价格优势 ==========
+        # ========== 价格优势 ==========
         if avg_price <= 20:
             reasons.append("超高性价比")
         elif avg_price <= 35:
             reasons.append("价格实惠")
 
-        # ========== 10. 回头客因素 ==========
+        # ========== 回头客因素 ==========
         if arm.pulls > 5 and arm.average_reward > 0.7:
             reasons.append("回头客最爱")
         
@@ -1630,7 +1630,7 @@ class DecisionAgent(BaseAgent):
     def _calculate_display_score(self, arm: RestaurantArm,
                                  context: Dict[str, Any]) -> float:
         """计算展示分数（60-100分范围）"""
-        # ML Ensemble 模式：直接用模型输出分数映射到 60-100
+        # ML Ensemble模式：直接用模型输出分数映射到60-100
         ml_score = arm.features.get("_ml_score")
         if ml_score is not None:
             display_score = 60 + ml_score * 40  # 0~1 -> 60~100
@@ -1642,7 +1642,7 @@ class DecisionAgent(BaseAgent):
             display_score = raw_score * 100
             return round(max(60.0, min(100.0, display_score)), 1)
         else:
-            # 简单评分（也确保60-100范围）
+            # 简单评分，也确保60-100范围
             features = arm.features
             score = (
                 features.get("rating", 4.0) * 15 +
@@ -1738,7 +1738,7 @@ class DecisionAgent(BaseAgent):
             if meal_period == "lunch":
                 reasoning_parts.append("工作日午餐时段，为您优选出餐快、性价比高的餐厅")
 
-        # 🆕 健康状态因素（OPPO健康SDK）
+        # 健康状态因素（OPPO健康SDK）
         health_ctx = context_analysis.get("health_context", {})
         if health_ctx:
             # 运动状态
@@ -1902,7 +1902,7 @@ class DecisionAgent(BaseAgent):
             arm.rewards += reward
             logger.debug(f"Updated reward for {restaurant_id}: {arm.average_reward:.3f}")
             
-            # 📦 异步记录反馈数据（用于 ML 模型训练）
+            # 异步记录反馈数据（用于ML模型训练）
             if ML_AVAILABLE:
                 try:
                     collector = get_data_collector()

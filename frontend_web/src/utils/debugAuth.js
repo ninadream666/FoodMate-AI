@@ -16,7 +16,7 @@ export const debugAuth = () => {
 
     if (token) {
         try {
-            // 解析 JWT token (不验证签名，仅查看内容)
+            // 解析JWT token
             const parts = token.split('.');
             if (parts.length === 3) {
                 const payload = JSON.parse(atob(parts[1]));
@@ -38,7 +38,7 @@ export const debugAuth = () => {
     return { token, user, userId };
 };
 
-// 测试 API 调用
+// 测试API调用
 export const testApiCall = async (url, method = 'GET', body = null) => {
     const token = localStorage.getItem('token');
 

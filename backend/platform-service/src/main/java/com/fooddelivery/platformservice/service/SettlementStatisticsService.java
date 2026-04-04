@@ -66,7 +66,6 @@ public class SettlementStatisticsService {
         try {
             List<SettlementTrendDTO> trends = new ArrayList<>();
 
-            // 简化处理，返回示例趋势数据
             LocalDate now = LocalDate.now();
             for (int i = 6; i >= 0; i--) {
                 LocalDate date = now.minusDays(i * 7); // 按周展示

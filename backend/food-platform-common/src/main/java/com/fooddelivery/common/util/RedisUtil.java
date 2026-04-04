@@ -164,7 +164,7 @@ public class RedisUtil {
     }
 
     /**
-     * HashSet 并设置时间
+     * HashSet并设置时间
      */
     public boolean hset(String key, String item, Object value, long time) {
         try {
