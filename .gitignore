@@ -1,4 +1,4 @@
-# IDEs and Editors
+# IDE配置 and Editors
 .idea/
 .vscode/
 *.swp
@@ -11,7 +11,7 @@ Thumbs.db
 # Logs
 *.log
 
-# AI Models
+# AI模型文件
 *.bin
 *.pt
 *.gguf
@@ -41,7 +41,18 @@ build/
 dist/
 .cache/
 
-# Node
+# Maven编译产物（.class/.jar）
+target/
+
+# Gradle缓存
+.gradle/
+
+# Test 缓存
+tests/target/
+.pytest_cache/
+*/__pycache__/
+
+# npm依赖
 node_modules/
 npm-debug.log*
 yarn-debug.log*
