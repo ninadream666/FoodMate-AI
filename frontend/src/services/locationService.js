@@ -1,14 +1,12 @@
-// src/services/locationService.js
-// 地理定位服务
-
 import { Platform, PermissionsAndroid, Alert } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
 
 // 默认位置（仅在无法获取定位时使用）
 const DEFAULT_LOCATION = {
-    latitude: 39.9042,
-    longitude: 116.4074,
-    address: '定位失败，请检查权限设置'
+    latitude: 31.2304,
+    longitude: 121.4737,
+    address: '定位中...',
+    isDefault: true,
 };
 
 class LocationService {
@@ -51,9 +49,10 @@ class LocationService {
                 return;
             }
 
-            // 如果有缓存且不超过60秒，直接返回
-            if (this.currentLocation && (Date.now() - this.lastRequestTime < 60000)) {
-                console.log('⚡ 使用60秒内缓存位置，秒返回');
+            // 如果有缓存且不超过5分钟，直接返回（减少定位失败概率）
+            if (this.currentLocation && !this.currentLocation.isDefault
+                && (Date.now() - this.lastRequestTime < 5 * 60 * 1000)) {
+                console.log('⚡ 使用5分钟内缓存位置，秒返回');
                 resolve(this.currentLocation);
                 return;
             }
@@ -75,10 +74,11 @@ class LocationService {
             const emergencyTimeout = setTimeout(() => {
                 if (!isResolved) {
                     isResolved = true;
-                    console.log('⏰ 超时保护触发（10秒），使用默认位置');
-                    resolve(DEFAULT_LOCATION);
+                    console.log('⏰ 超时保护触发（15秒），使用上次缓存或默认位置');
+                    // 优先用上次成功的缓存位置，而非固定默认值
+                    resolve(this.currentLocation || DEFAULT_LOCATION);
                 }
-            }, 10000);
+            }, 15000);
 
             const makeLocation = (position, source) => ({
                 latitude: position.coords.latitude,
@@ -87,7 +87,7 @@ class LocationService {
                 address: `纬度: ${position.coords.latitude.toFixed(6)}, 经度: ${position.coords.longitude.toFixed(6)}`
             });
 
-            // 策略1: 网络定位（快，允许缓存）
+            // 策略1: 网络定位（快，允许更长缓存10分钟，室内也能用）
             Geolocation.getCurrentPosition(
                 (position) => {
                     clearTimeout(emergencyTimeout);
@@ -96,7 +96,7 @@ class LocationService {
                 (error) => {
                     console.warn('⚠️ 网络定位失败:', error.message);
                 },
-                { enableHighAccuracy: false, timeout: 5000, maximumAge: 5 * 60 * 1000 }
+                { enableHighAccuracy: false, timeout: 8000, maximumAge: 10 * 60 * 1000 }
             );
 
             // 策略2: GPS高精度（慢但准，谁先到用谁）
@@ -107,17 +107,22 @@ class LocationService {
                 },
                 (error) => {
                     console.warn('⚠️ GPS定位失败:', error.message);
-                    // 两个都失败时用默认
+                    // 两个都失败时优先用缓存，其次用默认
                     setTimeout(() => {
                         if (!isResolved) {
                             isResolved = true;
                             clearTimeout(emergencyTimeout);
-                            console.log('📍 所有定位失败，使用默认位置');
-                            resolve(DEFAULT_LOCATION);
+                            if (this.currentLocation) {
+                                console.log('📍 定位失败，使用上次缓存位置');
+                                resolve(this.currentLocation);
+                            } else {
+                                console.log('📍 无缓存位置，使用默认位置');
+                                resolve(DEFAULT_LOCATION);
+                            }
                         }
                     }, 500);
                 },
-                { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000, forceRequestLocation: true, showLocationDialog: true }
+                { enableHighAccuracy: true, timeout: 12000, maximumAge: 5 * 60 * 1000, forceRequestLocation: true, showLocationDialog: true }
             );
         });
     }

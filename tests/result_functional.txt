@@ -1,0 +1,27 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.6, pytest-9.0.2, pluggy-1.6.0 -- C:\Python312\python.exe
+cachedir: .pytest_cache
+rootdir: D:\FoodMate-AI
+plugins: anyio-4.12.1, langsmith-0.7.16, locust-2.43.4, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 17 items
+
+tests/system/functional/test_order_flow.py::TestBrowseBeforeOrder::test_merchant_list_accessible PASSED [  5%]
+tests/system/functional/test_order_flow.py::TestBrowseBeforeOrder::test_merchant_list_has_content PASSED [ 11%]
+tests/system/functional/test_order_flow.py::TestOrderList::test_get_my_orders PASSED [ 17%]
+tests/system/functional/test_order_flow.py::TestOrderList::test_my_orders_returns_paginated_data PASSED [ 23%]
+tests/system/functional/test_order_flow.py::TestOrderList::test_orders_without_auth_fails PASSED [ 29%]
+tests/system/functional/test_order_flow.py::TestOrderCreation::test_create_order_endpoint_exists PASSED [ 35%]
+tests/system/functional/test_order_flow.py::TestOrderCreation::test_create_order_without_auth_fails PASSED [ 41%]
+tests/system/functional/test_user_flow.py::TestUserRegistration::test_register_new_customer PASSED [ 47%]
+tests/system/functional/test_user_flow.py::TestUserRegistration::test_register_duplicate_should_fail PASSED [ 52%]
+tests/system/functional/test_user_flow.py::TestUserRegistration::test_register_empty_fields_should_fail PASSED [ 58%]
+tests/system/functional/test_user_flow.py::TestUserLogin::test_login_success_returns_token PASSED [ 64%]
+tests/system/functional/test_user_flow.py::TestUserLogin::test_login_wrong_password_fails PASSED [ 70%]
+tests/system/functional/test_user_flow.py::TestUserLogin::test_login_response_contains_user_info PASSED [ 76%]
+tests/system/functional/test_user_flow.py::TestUserProfile::test_get_my_profile PASSED [ 82%]
+tests/system/functional/test_user_flow.py::TestUserProfile::test_profile_without_auth_fails PASSED [ 88%]
+tests/system/functional/test_user_flow.py::TestBrowseMerchants::test_get_merchant_list PASSED [ 94%]
+tests/system/functional/test_user_flow.py::TestBrowseMerchants::test_get_merchant_detail PASSED [100%]
+
+============================= 17 passed in 1.72s ==============================

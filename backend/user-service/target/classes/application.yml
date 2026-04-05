@@ -24,7 +24,7 @@ spring:
       hibernate:
         format_sql: true
         
-  # Flyway 数据库迁移配置
+  # Flyway数据库迁移配置
   flyway:
     enabled: ${FLYWAY_ENABLED:true}
     locations: classpath:db/migration

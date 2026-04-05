@@ -15,7 +15,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="CN"/>
     <property name="sun.boot.library.path" value="C:\Users\21478\AppData\Local\Programs\Eclipse Adoptium\jdk-21.0.9.10-hotspot\bin"/>
-    <property name="sun.java.command" value="C:\Users\21478\AppData\Local\Temp\surefire13175011574647392089\surefirebooter-20260405094338465_3.jar C:\Users\21478\AppData\Local\Temp\surefire13175011574647392089 2026-04-05T09-43-37_967-jvmRun1 surefire-20260405094338465_1tmp surefire_0-20260405094338465_2tmp"/>
+    <property name="sun.java.command" value="C:\Users\21478\AppData\Local\Temp\surefire14095975075177116946\surefirebooter-20260405111755806_3.jar C:\Users\21478\AppData\Local\Temp\surefire14095975075177116946 2026-04-05T11-17-54_979-jvmRun1 surefire-20260405111755806_1tmp surefire_0-20260405111755806_2tmp"/>
     <property name="jdk.debug" value="release"/>
     <property name="surefire.test.class.path" value="D:\FoodMate-AI\tests\target\test-classes;D:\FoodMate-AI\tests\target\classes;C:\Users\21478\.m2\repository\org\junit\jupiter\junit-jupiter\5.10.2\junit-jupiter-5.10.2.jar;C:\Users\21478\.m2\repository\org\junit\jupiter\junit-jupiter-api\5.10.2\junit-jupiter-api-5.10.2.jar;C:\Users\21478\.m2\repository\org\opentest4j\opentest4j\1.3.0\opentest4j-1.3.0.jar;C:\Users\21478\.m2\repository\org\junit\platform\junit-platform-commons\1.10.2\junit-platform-commons-1.10.2.jar;C:\Users\21478\.m2\repository\org\apiguardian\apiguardian-api\1.1.2\apiguardian-api-1.1.2.jar;C:\Users\21478\.m2\repository\org\junit\jupiter\junit-jupiter-params\5.10.2\junit-jupiter-params-5.10.2.jar;C:\Users\21478\.m2\repository\org\junit\jupiter\junit-jupiter-engine\5.10.2\junit-jupiter-engine-5.10.2.jar;C:\Users\21478\.m2\repository\org\junit\platform\junit-platform-engine\1.10.2\junit-platform-engine-1.10.2.jar;"/>
     <property name="sun.cpu.endian" value="little"/>
@@ -30,7 +30,7 @@
     <property name="line.separator" value="&#10;"/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
-    <property name="surefire.real.class.path" value="C:\Users\21478\AppData\Local\Temp\surefire13175011574647392089\surefirebooter-20260405094338465_3.jar"/>
+    <property name="surefire.real.class.path" value="C:\Users\21478\AppData\Local\Temp\surefire14095975075177116946\surefirebooter-20260405111755806_3.jar"/>
     <property name="user.script" value=""/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="java.runtime.version" value="21.0.9+10-LTS"/>
@@ -59,13 +59,13 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="getMerchantList_shouldReturnActiveMerchants" classname="MerchantServiceTest" time="0.004"/>
-  <testcase name="claimMerchant_withAlreadyClaimed_shouldReject" classname="MerchantServiceTest" time="0.002"/>
+  <testcase name="getMerchantList_shouldReturnActiveMerchants" classname="MerchantServiceTest" time="0.002"/>
+  <testcase name="claimMerchant_withAlreadyClaimed_shouldReject" classname="MerchantServiceTest" time="0.001"/>
   <testcase name="disableMerchant_shouldSetInactive" classname="MerchantServiceTest" time="0.001"/>
   <testcase name="importMerchant_shouldSetExternalIdAndSave" classname="MerchantServiceTest" time="0.002"/>
   <testcase name="importMerchant_withExistingExternalId_shouldUpdate" classname="MerchantServiceTest" time="0.001"/>
-  <testcase name="getMerchant_withNonExistent_shouldThrowException" classname="MerchantServiceTest" time="0.001"/>
-  <testcase name="claimMerchant_withUnclaimedMerchant_shouldSetUserId" classname="MerchantServiceTest" time="0.002"/>
-  <testcase name="getUnclaimedMerchants_shouldReturnMerchantsWithoutUserId" classname="MerchantServiceTest" time="0.003"/>
-  <testcase name="getMerchant_shouldReturnMerchantDetail" classname="MerchantServiceTest" time="0.003"/>
+  <testcase name="getMerchant_withNonExistent_shouldThrowException" classname="MerchantServiceTest" time="0.002"/>
+  <testcase name="claimMerchant_withUnclaimedMerchant_shouldSetUserId" classname="MerchantServiceTest" time="0.001"/>
+  <testcase name="getUnclaimedMerchants_shouldReturnMerchantsWithoutUserId" classname="MerchantServiceTest" time="0.004"/>
+  <testcase name="getMerchant_shouldReturnMerchantDetail" classname="MerchantServiceTest" time="0.002"/>
 </testsuite>

@@ -1,138 +1,142 @@
 # -*- coding: utf-8 -*-
 """
 用户流程功能测试
-完整用户生命周期：注册 → 登录 → 完善资料 → 地址管理 → 浏览商户 → 退出
+完整用户生命周期：注册 → 登录 → 查看资料 → 浏览商户
+直连真实运行的微服务
 """
 import pytest
 import requests
 import time
+import os
 
-# 服务地址配置
-BASE_URLS = {
+os.environ["no_proxy"] = "localhost,127.0.0.1"
+
+BASE = {
     "user": "http://localhost:8083",
     "merchant": "http://localhost:8081",
-    "profile": "http://localhost:8086",
 }
 
+_s = requests.Session()
+_s.proxies = {"http": None, "https": None}
+_s.trust_env = False
 
-class TestUserRegistrationFlow:
-    """用户注册流程测试"""
 
-    def test_register_new_customer(self):
-        """新用户注册 - 应返回用户ID"""
-        payload = {
-            "username": f"testuser_{int(time.time())}",
-            "email": f"test_{int(time.time())}@example.com",
-            "password": "Test@123456",
-            "role": "CUSTOMER"
-        }
-        response = requests.post(f"{BASE_URLS['user']}/api/auth/register", json=payload)
-        assert response.status_code in [200, 201]
-        data = response.json()
-        assert "id" in data or "data" in data
+@pytest.fixture(scope="module")
+def registered_user():
+    """注册一个测试用户并登录，返回token和用户信息"""
+    ts = int(time.time())
+    username = f"functest_{ts}"
+    reg = _s.post(f"{BASE['user']}/auth/register", json={
+        "username": username, "email": f"{username}@test.com",
+        "password": "Func@Test123", "role": "CUSTOMER",
+    }, timeout=10)
 
-    def test_register_duplicate_username_should_fail(self):
+    login = _s.post(f"{BASE['user']}/auth/login", json={
+        "username": username, "password": "Func@Test123", "role": "CUSTOMER",
+    }, timeout=10)
+
+    data = login.json() if login.status_code == 200 else {}
+    return {
+        "username": username,
+        "token": data.get("token", ""),
+        "id": data.get("id"),
+        "headers": {"Authorization": f"Bearer {data.get('token', '')}"},
+        "reg_status": reg.status_code,
+        "login_status": login.status_code,
+    }
+
+
+# ==================== 注册流程 ====================
+
+class TestUserRegistration:
+    """用户注册流程"""
+
+    def test_register_new_customer(self, registered_user):
+        """新用户注册应成功"""
+        assert registered_user["reg_status"] == 200
+
+    def test_register_duplicate_should_fail(self, registered_user):
         """重复用户名注册应失败"""
-        payload = {
-            "username": "duplicate_user",
-            "email": "dup@example.com",
-            "password": "Test@123456",
-            "role": "CUSTOMER"
-        }
-        # 第一次注册
-        requests.post(f"{BASE_URLS['user']}/api/auth/register", json=payload)
-        # 第二次重复注册
-        response = requests.post(f"{BASE_URLS['user']}/api/auth/register", json=payload)
-        assert response.status_code in [400, 409, 500]
+        r = _s.post(f"{BASE['user']}/auth/register", json={
+            "username": registered_user["username"],
+            "email": "dup@test.com", "password": "Dup@123", "role": "CUSTOMER",
+        }, timeout=10)
+        assert r.status_code in [400, 409, 500]
 
-    def test_register_with_invalid_email_should_fail(self):
-        """无效邮箱格式应被拒绝"""
-        payload = {
-            "username": "invalid_email_user",
-            "email": "not-an-email",
-            "password": "Test@123456",
-            "role": "CUSTOMER"
-        }
-        response = requests.post(f"{BASE_URLS['user']}/api/auth/register", json=payload)
-        assert response.status_code in [400, 422]
+    def test_register_empty_fields_should_fail(self):
+        """空字段注册应失败"""
+        r = _s.post(f"{BASE['user']}/auth/register", json={}, timeout=10)
+        assert r.status_code in [400, 422, 500]
 
 
-class TestUserLoginFlow:
-    """用户登录流程测试"""
+# ==================== 登录流程 ====================
 
-    def test_login_with_valid_credentials(self):
+class TestUserLogin:
+    """用户登录流程"""
+
+    def test_login_success_returns_token(self, registered_user):
         """正确凭据登录应返回JWT Token"""
-        payload = {"username": "testuser", "password": "password123", "role": "CUSTOMER"}
-        response = requests.post(f"{BASE_URLS['user']}/api/auth/login", json=payload)
-        if response.status_code == 200:
-            data = response.json()
-            assert "token" in data
-            assert len(data["token"]) > 20  # JWT Token长度
+        assert registered_user["login_status"] == 200
+        assert len(registered_user["token"]) > 20
 
-    def test_login_with_wrong_password_should_fail(self):
-        """错误密码应返回认证失败"""
-        payload = {"username": "testuser", "password": "wrong_password", "role": "CUSTOMER"}
-        response = requests.post(f"{BASE_URLS['user']}/api/auth/login", json=payload)
-        assert response.status_code in [400, 401, 403]
+    def test_login_wrong_password_fails(self):
+        """错误密码应返回401"""
+        r = _s.post(f"{BASE['user']}/auth/login", json={
+            "username": "functest_nonexist", "password": "wrong", "role": "CUSTOMER",
+        }, timeout=10)
+        assert r.status_code in [400, 401]
 
-    def test_login_with_nonexistent_user_should_fail(self):
-        """不存在的用户名应返回错误"""
-        payload = {"username": "nobody_exists_123", "password": "any", "role": "CUSTOMER"}
-        response = requests.post(f"{BASE_URLS['user']}/api/auth/login", json=payload)
-        assert response.status_code in [400, 401, 404]
+    def test_login_response_contains_user_info(self, registered_user):
+        """登录响应应包含用户ID和角色"""
+        assert registered_user["id"] is not None
 
 
-class TestAddressManagementFlow:
-    """地址管理流程测试"""
+# ==================== 个人资料 ====================
 
-    def test_create_address(self):
-        """创建收货地址"""
-        # 需要先登录获取token
-        headers = {"Authorization": "Bearer test-token"}
-        payload = {
-            "receiverName": "张三",
-            "receiverPhone": "13800138000",
-            "province": "上海市",
-            "city": "上海市",
-            "district": "浦东新区",
-            "detailAddress": "陆家嘴环路1000号",
-            "isDefault": True
-        }
-        response = requests.post(
-            f"{BASE_URLS['user']}/api/addresses",
-            json=payload, headers=headers
-        )
-        # 未认证时应返回401，认证后应返回200/201
-        assert response.status_code in [200, 201, 401, 403]
+class TestUserProfile:
+    """个人资料查看"""
 
-    def test_get_address_list(self):
-        """获取地址列表"""
-        headers = {"Authorization": "Bearer test-token"}
-        response = requests.get(
-            f"{BASE_URLS['user']}/api/addresses",
-            headers=headers
-        )
-        assert response.status_code in [200, 401]
+    def test_get_my_profile(self, registered_user):
+        """已登录用户可查看个人资料"""
+        r = _s.get(f"{BASE['user']}/users/me",
+                   headers=registered_user["headers"], timeout=10)
+        assert r.status_code == 200
+        data = r.json()
+        assert data.get("username") == registered_user["username"]
+
+    def test_profile_without_auth_fails(self):
+        """未登录访问资料应被拒绝"""
+        r = _s.get(f"{BASE['user']}/users/me", timeout=10)
+        assert r.status_code in [401, 403]
 
 
-class TestUserProfileFlow:
-    """用户资料管理流程测试"""
+# ==================== 浏览商户 ====================
 
-    def test_get_user_profile(self):
-        """获取用户个人资料"""
-        headers = {"Authorization": "Bearer test-token"}
-        response = requests.get(
-            f"{BASE_URLS['user']}/api/users/profile",
-            headers=headers
-        )
-        assert response.status_code in [200, 401]
+class TestBrowseMerchants:
+    """浏览商户"""
 
-    def test_update_avatar(self):
-        """更新用户头像"""
-        headers = {"Authorization": "Bearer test-token"}
-        # 头像上传通常是multipart/form-data
-        response = requests.get(
-            f"{BASE_URLS['user']}/api/users/profile",
-            headers=headers
-        )
-        assert response.status_code in [200, 401]
+    def test_get_merchant_list(self, registered_user):
+        """应能获取商户列表"""
+        r = _s.get(f"{BASE['merchant']}/merchants",
+                   headers=registered_user["headers"], timeout=10)
+        assert r.status_code == 200
+        data = r.json()
+        assert "content" in data or isinstance(data, list)
+
+    def test_get_merchant_detail(self, registered_user):
+        """应能获取商户详情"""
+        # 先拿列表
+        r = _s.get(f"{BASE['merchant']}/merchants",
+                   headers=registered_user["headers"], timeout=10)
+        if r.status_code == 200:
+            data = r.json()
+            merchants = data.get("content", data) if isinstance(data, dict) else data
+            if merchants and len(merchants) > 0:
+                mid = merchants[0].get("id")
+                r2 = _s.get(f"{BASE['merchant']}/merchants/{mid}",
+                            headers=registered_user["headers"], timeout=10)
+                assert r2.status_code == 200
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

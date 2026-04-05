@@ -11,7 +11,7 @@ spring:
     
   data:
     mongodb:
-      # 连接 docker-compose 中的 mongo-db 服务
+      # 连接docker-compose中的mongo-db服务
       uri: mongodb://dev:dev123@mongo-db:27017/food_delivery_profile?authSource=admin
 
 # 服务发现配置（可选）
@@ -27,7 +27,7 @@ eureka:
     health-check-url-path: /actuator/health
 
 jwt:
-  # 必须与 User Service 一致
+  # 必须与User Service一致
   secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
   expiration: ${JWT_EXPIRATION:86400000}
 

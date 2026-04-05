@@ -127,12 +127,45 @@ const HomeScreen = ({ navigation }: any) => {
                     console.error('初始定位失败:', e);
                     return null;
                 }),
-                profileService.getAllergies().then(setUserAllergies).catch(() => {}),
+                profileService.getAllergies().then(setUserAllergies).catch(() => { }),
             ]);
 
             if (loc) {
-                setCurrentLocation(loc);
-                loadData(loc);
+                // 检查是否为默认坐标（定位失败的标志）
+                const isDefaultLocation = loc.isDefault ||
+                    (Math.abs(loc.latitude - 31.2304) < 0.001 && Math.abs(loc.longitude - 121.4737) < 0.001) ||
+                    (Math.abs(loc.latitude - 39.9042) < 0.001 && Math.abs(loc.longitude - 116.4074) < 0.001);
+
+                if (isDefaultLocation) {
+                    console.warn('⚠️ 定位失败，使用默认位置，尝试重新定位...');
+                    // 不立即用默认坐标请求推荐，先尝试紧急定位
+                    try {
+                        const retryLoc = await locationService.getLocationEmergency();
+                        const stillDefault =
+                            Math.abs(retryLoc.latitude - 39.9042) < 0.001 &&
+                            Math.abs(retryLoc.longitude - 116.4074) < 0.001;
+                        if (!stillDefault) {
+                            setCurrentLocation(retryLoc);
+                            loadData(retryLoc);
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn('⚠️ 紧急定位也失败');
+                    }
+                    // 确实无法定位，用默认坐标但从商户列表加载而非推荐服务
+                    setCurrentLocation(loc);
+                    try {
+                        const { merchantService: ms } = require('../services/merchantService');
+                        const fallback = await ms.getRecommendedMerchants();
+                        setRestaurants(fallback);
+                        setHasInitialData(true);
+                    } catch (e) {
+                        loadData(loc);
+                    }
+                } else {
+                    setCurrentLocation(loc);
+                    loadData(loc);
+                }
             }
         };
         init();
@@ -567,7 +600,7 @@ const HomeScreen = ({ navigation }: any) => {
                 if (__DEV__) console.log('✅ 获取到智能推荐数据:', list.length, '条');
                 setRestaurants(list);
                 setHasInitialData(true);
-                cacheService.set('recommendations', cacheKey, list).catch(() => {});
+                cacheService.set('recommendations', cacheKey, list).catch(() => { });
             }
 
         } catch (error) {
@@ -802,8 +835,8 @@ const HomeScreen = ({ navigation }: any) => {
                     <Text style={styles.synergyBannerText}>✨ 本地健康守卫已启动：为您筛选符合隐私约束的安全餐品</Text>
                 </View>
             )}
-            </View>
-        );
+        </View>
+    );
 
     // --- 动画插值计算 ---
     const scanTranslateY = scanAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 300] });
@@ -826,19 +859,19 @@ const HomeScreen = ({ navigation }: any) => {
                             Math.abs(currentLocation.longitude - 116.4074) < 0.001;
                         const isNewRealGPS = loc &&
                             !(Math.abs(loc.latitude - 39.9042) < 0.001 && Math.abs(loc.longitude - 116.4074) < 0.001);
-                        
+
                         if (isCurrentDefault && isNewRealGPS) {
                             setCurrentLocation(loc);
                             loadData(loc);
                             return;
                         }
-                        
+
                         if (currentLocation && hasInitialData) {
                             const latDiff = Math.abs(loc.latitude - currentLocation.latitude);
                             const lonDiff = Math.abs(loc.longitude - currentLocation.longitude);
                             if (latDiff < 0.001 && lonDiff < 0.001) return;
                         }
-                        
+
                         setCurrentLocation(loc);
                         if (shouldReload(loc)) debouncedLoadData(loc);
                     }}
@@ -849,7 +882,7 @@ const HomeScreen = ({ navigation }: any) => {
                         condition: weatherData.condition,
                         temperature: weatherData.temperature,
                     } : undefined}
-                    onPress={() => {}}
+                    onPress={() => { }}
                 />
             </View>
 

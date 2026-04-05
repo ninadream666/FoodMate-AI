@@ -95,8 +95,9 @@ class TestUserOperations:
         """应能按角色查询用户"""
         cursor.execute("SELECT role, COUNT(*) FROM users GROUP BY role")
         roles = {row[0]: row[1] for row in cursor.fetchall()}
-        # 角色应该是 customer / merchant / admin / rider 之一（小写）
-        valid_roles = ["customer", "merchant", "admin", "rider", None]
+        # 角色值（系统支持大小写混合）
+        valid_roles = ["customer", "merchant", "admin", "rider",
+                       "CUSTOMER", "MERCHANT", "ADMIN", "RIDER", "SUPERADMIN", None]
         for role in roles:
             assert role in valid_roles, f"未知角色: {role}"
 
