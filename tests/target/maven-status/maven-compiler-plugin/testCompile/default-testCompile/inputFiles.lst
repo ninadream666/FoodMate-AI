@@ -1,0 +1,14 @@
+D:\FoodMate-AI\tests\integration\database\MongoIntegrationTest.java
+D:\FoodMate-AI\tests\integration\database\PostgresIntegrationTest.java
+D:\FoodMate-AI\tests\integration\database\RedisIntegrationTest.java
+D:\FoodMate-AI\tests\integration\service-communication\OrderMerchantIntegrationTest.java
+D:\FoodMate-AI\tests\unit\backend\marketing-service\CouponCalculationServiceTest.java
+D:\FoodMate-AI\tests\unit\backend\marketing-service\CouponTemplateServiceTest.java
+D:\FoodMate-AI\tests\unit\backend\merchant-service\MenuServiceTest.java
+D:\FoodMate-AI\tests\unit\backend\merchant-service\MerchantServiceTest.java
+D:\FoodMate-AI\tests\unit\backend\order-service\OrderServiceTest.java
+D:\FoodMate-AI\tests\unit\backend\platform-service\CommissionServiceTest.java
+D:\FoodMate-AI\tests\unit\backend\profile-service\UserProfileServiceTest.java
+D:\FoodMate-AI\tests\unit\backend\user-service\AddressServiceTest.java
+D:\FoodMate-AI\tests\unit\backend\user-service\AuthServiceTest.java
+D:\FoodMate-AI\tests\unit\backend\user-service\CreditServiceTest.java

@@ -1,0 +1,10 @@
+PASS tests/unit/frontend/hooks/useAuth.test.js
+PASS tests/unit/frontend/services/orderService.test.js
+PASS tests/unit/frontend/services/networkUtils.test.js
+PASS tests/unit/frontend/services/authService.test.js
+
+Test Suites: 4 passed, 4 total
+Tests:       62 passed, 62 total
+Snapshots:   0 total
+Time:        4.033 s
+Ran all test suites matching tests/unit/frontend/.

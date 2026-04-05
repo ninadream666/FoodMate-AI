@@ -1,14 +1,52 @@
-// src/services/recommendationService.js
 import api from './apiClient';
 import { merchantService } from './merchantService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// 模拟数据
-const MOCK_RECOMMENDATIONS = {
-    restaurants: [
-        { id: 1, name: '川味观', image: 'https://loremflickr.com/400/300/chinese,food', rating: 4.8, deliveryTime: '30-40分钟', tags: ['川菜', '辣味'] },
-        { id: 2, name: '寿司之家', image: 'https://loremflickr.com/400/300/sushi,japanese', rating: 4.6, deliveryTime: '25-35分钟', tags: ['日料', '寿司'] },
-    ],
-    total_count: 2,
+const CACHE_KEY = 'last_recommendations';
+const CACHE_TTL = 30 * 60 * 1000; // 30分钟缓存有效期
+
+const saveRecommendationCache = async (data) => {
+    try {
+        await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({
+            data,
+            timestamp: Date.now(),
+        }));
+    } catch (e) { /* 缓存写入失败不影响主流程 */ }
+};
+
+const getRecommendationCache = async () => {
+    try {
+        const raw = await AsyncStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        const { data, timestamp } = JSON.parse(raw);
+        if (Date.now() - timestamp > CACHE_TTL) return null; // 过期
+        return data;
+    } catch (e) { return null; }
+};
+
+const getFallbackRecommendations = async () => {
+    // 1. 尝试用上次缓存的推荐结果
+    const cached = await getRecommendationCache();
+    if (cached) {
+        const list = cached.recommendations || cached.restaurants || [];
+        if (list.length > 0) {
+            console.log('📦 使用缓存的推荐数据兜底:', list.length, '条');
+            return { ...cached, is_fallback: true, is_cached: true };
+        }
+    }
+
+    // 2. 从商户服务获取真实商户列表
+    try {
+        const merchants = await merchantService.getRecommendedMerchants();
+        if (merchants && merchants.length > 0) {
+            return { restaurants: merchants, total_count: merchants.length, is_fallback: true };
+        }
+    } catch (e) {
+        console.warn('兜底商户列表也获取失败:', e.message);
+    }
+
+    // 3. 最终兜底：返回空列表
+    return { restaurants: [], total_count: 0, is_fallback: true };
 };
 
 export const recommendationService = {
@@ -68,10 +106,15 @@ export const recommendationService = {
                 importAgentRestaurants(list);
             }
 
+            // 推荐成功时持久化缓存，下次超时可立即展示
+            if (list.length > 0) {
+                saveRecommendationCache(data);
+            }
+
             return data;
         } catch (error) {
-            console.warn('推荐服务不可用，使用兜底数据:', error.message);
-            return MOCK_RECOMMENDATIONS;
+            console.warn('推荐服务不可用，使用商户列表兜底:', error.message);
+            return await getFallbackRecommendations();
         }
     },
 
@@ -104,7 +147,7 @@ export const recommendationService = {
 
             console.log('🛡️ [Edge Synergy] 向云端发送脱敏约束请求:', JSON.stringify(body, null, 2));
             const data = await api.post('recommendation', '/agents/edge-synergy-recommend', body);
-            
+
             // 处理云端传回的降级状态
             if (data.status === 'NO_MATCH') {
                 console.log('🛡️ [Edge Synergy] 云端返回 NO_MATCH，未找到严格符合健康约束的餐品，需要触发降级');
@@ -138,7 +181,7 @@ const importAgentRestaurants = async (restaurants) => {
                     name: r.name,
                     address: r.address,
                     imageUrl: r.image,
-                }).catch(() => {})
+                }).catch(() => { })
             )
         );
     } catch (e) {

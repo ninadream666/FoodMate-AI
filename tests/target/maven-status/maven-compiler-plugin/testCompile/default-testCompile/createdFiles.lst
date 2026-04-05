@@ -1,0 +1,14 @@
+AddressServiceTest.class
+MenuServiceTest.class
+MerchantServiceTest.class
+UserProfileServiceTest.class
+PostgresIntegrationTest.class
+OrderMerchantIntegrationTest.class
+CouponCalculationServiceTest.class
+CommissionServiceTest.class
+OrderServiceTest.class
+RedisIntegrationTest.class
+MongoIntegrationTest.class
+AuthServiceTest.class
+CouponTemplateServiceTest.class
+CreditServiceTest.class

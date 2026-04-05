@@ -1,0 +1,138 @@
+# FoodMate-AI 性能测试配置
+# 定义各接口的响应时间阈值、吞吐量目标、并发级别
+
+# ==================== 测试环境 ====================
+environment:
+  host: http://localhost
+  services:
+    user-service: http://localhost:8083
+    merchant-service: http://localhost:8081
+    order-service: http://localhost:8084
+    marketing-service: http://localhost:8082
+    profile-service: http://localhost:8086
+    recommendation-service: http://localhost:8087
+    platform-service: http://localhost:8088
+    ai-pricing-service: http://localhost:8089
+    nutrivision-service: http://localhost:8090
+
+# ==================== 响应时间阈值 (毫秒) ====================
+response_time_thresholds:
+  # 读操作 - 用户体验敏感
+  merchant_list:
+    p50: 200      # 50%请求应在200ms内
+    p95: 500      # 95%请求应在500ms内
+    p99: 1000     # 99%请求应在1000ms内
+    max: 3000     # 最大不超过3s
+
+  merchant_menu:
+    p50: 150
+    p95: 400
+    p99: 800
+    max: 2000
+
+  order_list:
+    p50: 300
+    p95: 600
+    p99: 1200
+    max: 3000
+
+  user_profile:
+    p50: 200
+    p95: 500
+    p99: 1000
+    max: 2000
+
+  # 写操作 - 允许略慢
+  order_create:
+    p50: 500
+    p95: 1000
+    p99: 2000
+    max: 5000
+
+  user_login:
+    p50: 300
+    p95: 800
+    p99: 1500
+    max: 3000
+
+  # AI服务 - 计算密集，允许更长
+  ai_recommendation:
+    p50: 2000
+    p95: 5000
+    p99: 10000
+    max: 60000   # 最大60s（含外部API调用）
+
+  nutrivision_analyze:
+    p50: 5000
+    p95: 15000
+    p99: 30000
+    max: 120000  # 最大120s（含图片上传+AI推理）
+
+  ai_pricing:
+    p50: 3000
+    p95: 8000
+    p99: 15000
+    max: 30000
+
+# ==================== 吞吐量目标 (RPS) ====================
+throughput_targets:
+  merchant_list: 100    # 商户列表查询 100 RPS
+  merchant_menu: 80     # 菜单查询 80 RPS
+  order_create: 50      # 订单创建 50 RPS
+  order_list: 60        # 订单列表 60 RPS
+  user_login: 30        # 登录 30 RPS
+  ai_recommendation: 10 # AI推荐 10 RPS（计算密集）
+  nutrivision: 5        # 图片分析 5 RPS（GPU限制）
+
+# ==================== 并发测试级别 ====================
+concurrency_levels:
+  - name: "轻量级"
+    users: 10
+    ramp_up_rate: 2        # 每秒增加2个用户
+    duration: "2m"
+    description: "基础功能验证"
+
+  - name: "中等负载"
+    users: 50
+    ramp_up_rate: 5
+    duration: "5m"
+    description: "日常使用场景"
+
+  - name: "高负载"
+    users: 100
+    ramp_up_rate: 10
+    duration: "10m"
+    description: "高峰期模拟"
+
+  - name: "压力测试"
+    users: 500
+    ramp_up_rate: 20
+    duration: "15m"
+    description: "极端压力，寻找系统瓶颈"
+
+# ==================== 错误率阈值 ====================
+error_rate_thresholds:
+  light_load: 0.01       # 轻量级: 错误率 < 1%
+  medium_load: 0.02      # 中等负载: 错误率 < 2%
+  high_load: 0.05        # 高负载: 错误率 < 5%
+  stress_load: 0.10      # 压力测试: 错误率 < 10%
+
+# ==================== 资源监控 ====================
+resource_monitoring:
+  cpu_threshold: 80       # CPU使用率不超过80%
+  memory_threshold: 85    # 内存使用率不超过85%
+  disk_io_threshold: 70   # 磁盘IO不超过70%
+  network_threshold: 60   # 网络带宽不超过60%
+
+  # 数据库连接池
+  db_connection_pool:
+    max_active: 20
+    max_idle: 10
+    min_idle: 5
+    max_wait: 10000       # 最大等待时间10s
+
+  # Redis连接
+  redis_connection:
+    max_total: 128
+    max_idle: 64
+    timeout: 3000
