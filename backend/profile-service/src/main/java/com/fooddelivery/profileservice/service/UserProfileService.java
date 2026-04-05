@@ -64,7 +64,7 @@ public class UserProfileService {
         return repository.save(existing);
     }
 
-    // 聚合查询：画像 + 订单历史
+    // 聚合查询：画像+订单历史
     public UserContextDto getUserContext(Long userId, String username) {
         UserContextDto context = new UserContextDto();
 
@@ -74,7 +74,7 @@ public class UserProfileService {
 
         // 获取订单历史
         try {
-            // 调用 Feign 接口，FeignConfig会自动加上Authorization头
+            // 调用Feign接口，FeignConfig会自动加上Authorization头
             List<OrderDto> orders = orderClient.getOrdersByUserId(userId);
             context.setRecentOrders(orders);
             log.info("Successfully fetched {} orders for user {}", orders.size(), userId);

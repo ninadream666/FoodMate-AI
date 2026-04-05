@@ -23,7 +23,6 @@ export const platformService = {
 
     // 取消订阅
     cancelSubscription: async (subscriptionId, reason = "商家主动取消") => {
-        // DELETE 请求带 body 在某些 fetch 实现中可能被忽略，但在 axios/apiClient 中通常支持
         return await api.del('merchantPlatform', `/subscriptions/${subscriptionId}`, { reason });
     }
 };

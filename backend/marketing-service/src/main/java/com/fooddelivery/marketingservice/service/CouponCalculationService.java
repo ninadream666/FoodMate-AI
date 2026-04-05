@@ -41,7 +41,7 @@ public class CouponCalculationService {
         log.info("计算用户 {} 的最优优惠券方案，订单总额: {}", userId, orderTotal);
 
         try {
-            // 1. 获取用户的所有可用优惠券
+            // 获取用户的所有可用优惠券
             LocalDateTime now = LocalDateTime.now();
             List<UserCoupon> availableCoupons = userCouponRepository
                     .findAvailableCouponsByUser(userId, now);
@@ -51,7 +51,7 @@ public class CouponCalculationService {
                 return buildEmptyResponse(orderTotal);
             }
 
-            // 2. 加载这些优惠券对应的模板信息
+            // 加载这些优惠券对应的模板信息
             Set<Long> templateIds = availableCoupons.stream()
                     .map(UserCoupon::getCouponTemplateId)
                     .collect(Collectors.toSet());
@@ -60,7 +60,7 @@ public class CouponCalculationService {
             Map<Long, CouponTemplate> templateMap = templates.stream()
                     .collect(Collectors.toMap(CouponTemplate::getId, t -> t));
 
-            // 3. 过滤出有效的优惠券模板
+            // 过滤出有效的优惠券模板
             List<UserCoupon> validCoupons = availableCoupons.stream()
                     .filter(uc -> {
                         CouponTemplate template = templateMap.get(uc.getCouponTemplateId());
@@ -73,13 +73,13 @@ public class CouponCalculationService {
                 return buildEmptyResponse(orderTotal);
             }
 
-            // 4. 调用组合算法计算最优方案
+            // 调用组合算法计算最优方案
             CouponCombinationService.CombinationResult result = combinationService.calculateBestCombination(
                     orderTotal,
                     validCoupons,
                     templateMap);
 
-            // 5. 构建响应
+            // 构建响应
             return buildResponse(result, orderTotal, validCoupons, templateMap);
 
         } catch (Exception e) {

@@ -1,7 +1,7 @@
 /**
  * AdaptiveOverlay.tsx - 环境光自适应遮罩
  *
- * 只在暗光环境 (dark/dim) 下叠深色遮罩护眼。
+ * 只在暗光环境（dark/dim）下叠深色遮罩护眼。
  * 其他光线条件下完全透明，不影响显示。
  */
 
@@ -13,7 +13,7 @@ const AdaptiveOverlay: React.FC = () => {
     const { lightLevel } = useHealthContext();
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
-    // 只有 dark 和 dim 才显示遮罩
+    // 只有dark和dim才显示遮罩
     const isDark = lightLevel === 'dark' || lightLevel === 'dim';
     const overlayColor = lightLevel === 'dark'
         ? 'rgba(15, 10, 5, 0.45)'

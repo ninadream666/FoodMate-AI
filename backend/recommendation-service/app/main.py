@@ -3,8 +3,8 @@
 基于天气、节气、时间、交通、地点等多维度因素推荐餐厅
 
 支持两种推荐模式：
-1. MCP智能体编排（原有）
-2. LangGraph多智能体协作（新）- ContextAgent → ProfilerAgent → DecisionAgent
+1. MCP智能体编排
+2. LangGraph多智能体协作 - ContextAgent → ProfilerAgent → DecisionAgent
 """
 
 from fastapi import FastAPI, HTTPException, Request
@@ -35,15 +35,15 @@ app = FastAPI(
     description="""
     基于天气、节气、时间、交通、地点等多维度因素的智能餐厅推荐系统。
     
-    ## 🤖 多智能体架构
+    ## 多智能体架构
     
-    本服务采用先进的多智能体协作架构，基于 LangGraph 实现图状态机编排：
+    本服务采用先进的多智能体协作架构，基于LangGraph实现图状态机编排：
     
     - **ContextAgent**: 环境感知智能体（天气、交通、时间）
     - **ProfilerAgent**: 用户画像智能体（偏好、意图分析）
     - **DecisionAgent**: 决策智能体（MAB算法推荐）
     
-    ## 📡 协议支持
+    ## 协议支持
     
     - Model Context Protocol (MCP) - 标准化智能体通信
     - 多种MAB策略：UCB1、Thompson Sampling、ε-Greedy、上下文感知
@@ -102,7 +102,7 @@ app.include_router(
     tags=["多智能体推荐"]
 )
 
-# 注册 MCP 集成推荐路由
+# 注册MCP集成推荐路由
 app.include_router(
     mcp_router,
     tags=["MCP智能推荐"]
@@ -114,7 +114,7 @@ app.include_router(
     tags=["认证"]
 )
 
-# 注册 ML 模型管理路由
+# 注册ML模型管理路由
 app.include_router(
     ml_router,
     prefix="/api/v2",

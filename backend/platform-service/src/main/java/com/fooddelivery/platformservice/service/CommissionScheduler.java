@@ -42,7 +42,7 @@ public class CommissionScheduler {
 
         try {
             // 查找已支付但未计算分成的订单
-            // 状态 'PAID', 'COMPLETED' 或 'DELIVERED' 表示订单已支付，可以计算商家收入
+            // 状态'PAID', 'COMPLETED'或'DELIVERED'表示订单已支付，可以计算商家收入
             String sql = """
                         SELECT o.id, o.merchant_id, o.total_amount
                         FROM orders o

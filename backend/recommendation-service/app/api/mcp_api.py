@@ -1,13 +1,13 @@
 """
 MCP 集成版推荐 API
 
-提供通过 Model Context Protocol (MCP) 协议调用智能推荐能力的 API 端点。
+提供通过Model Context Protocol(MCP)协议调用智能推荐能力的API端点。
 
 端点:
-    POST /api/v2/mcp/recommend - 通过 MCP 获取智能推荐
-    GET  /api/v2/mcp/status - 获取 MCP 系统状态
-    GET  /api/v2/mcp/tools - 列出可用的 MCP 工具
-    POST /api/v2/mcp/tool/{tool_name} - 直接调用指定 MCP 工具
+    POST /api/v2/mcp/recommend - 通过MCP获取智能推荐
+    GET  /api/v2/mcp/status - 获取MCP系统状态
+    GET  /api/v2/mcp/tools - 列出可用的MCP工具
+    POST /api/v2/mcp/tool/{tool_name} - 直接调用指定MCP工具
 """
 
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v2/mcp", tags=["MCP 智能推荐"])
 
-# 全局 MCP 服务实例
+# 全局MCP服务实例
 _mcp_service: Optional[MCPIntegratedRecommendationService] = None
 _mcp_connected: bool = False
 
@@ -64,13 +64,13 @@ async def mcp_recommend(
     service: MCPIntegratedRecommendationService = Depends(get_mcp_service)
 ):
     """
-    🔌 通过 MCP 协议获取智能推荐
+    🔌 通过MCP协议获取智能推荐
     
-    完整的 MCP 调用流程:
-    1. 通过 MCP 协议连接到 enhanced_mcp_server.py
-    2. 调用 get_smart_recommendations 工具
+    完整的MCP调用流程:
+    1. 通过MCP协议连接到enhanced_mcp_server.py
+    2. 调用get_smart_recommendations工具
     3. 工具内部执行: ContextAgent → ProfilerAgent → DecisionAgent
-    4. 返回 MAB 算法排序后的推荐结果
+    4. 返回MAB算法排序后的推荐结果
     
     请求示例:
     ```json
@@ -103,13 +103,13 @@ async def mcp_status(
     service: MCPIntegratedRecommendationService = Depends(get_mcp_service)
 ):
     """
-    📊 获取 MCP 系统状态
+    获取MCP系统状态
     
     返回:
-    - MCP 连接状态
+    - MCP连接状态
     - 可用工具列表
     - 智能体状态
-    - MAB 策略
+    - MAB策略
     """
     try:
         status = await service.get_system_status()
@@ -130,9 +130,9 @@ async def list_mcp_tools(
     service: MCPIntegratedRecommendationService = Depends(get_mcp_service)
 ):
     """
-    🛠️ 列出所有可用的 MCP 工具
+    列出所有可用的MCP工具
     
-    返回 MCP 服务器提供的所有工具及其描述。
+    返回MCP服务器提供的所有工具及其描述。
     """
     try:
         if not service._mcp_session:
@@ -181,7 +181,7 @@ async def call_mcp_tool(
     service: MCPIntegratedRecommendationService = Depends(get_mcp_service)
 ):
     """
-    🔧 直接调用指定的 MCP 工具
+    直接调用指定的MCP工具
     
     可用工具:
     - analyze_environment: 环境分析（天气/交通/时间）
@@ -234,9 +234,9 @@ async def analyze_environment(
     service: MCPIntegratedRecommendationService = Depends(get_mcp_service)
 ):
     """
-    🌍 环境分析
+    环境分析
     
-    通过 MCP 调用环境分析工具，获取:
+    通过MCP调用环境分析工具，获取:
     - 天气状况
     - 交通状态
     - 时间上下文（节假日/用餐时段）
@@ -263,9 +263,9 @@ async def analyze_profile(
     service: MCPIntegratedRecommendationService = Depends(get_mcp_service)
 ):
     """
-    👤 用户画像分析
+    用户画像分析
     
-    通过 MCP 调用用户画像分析工具
+    通过MCP调用用户画像分析工具
     """
     try:
         result = await service.analyze_user_profile(
@@ -291,9 +291,9 @@ async def search_restaurants(
     service: MCPIntegratedRecommendationService = Depends(get_mcp_service)
 ):
     """
-    🔍 搜索附近餐厅
+    搜索附近餐厅
     
-    通过 MCP 调用餐厅搜索工具
+    通过MCP调用餐厅搜索工具
     """
     try:
         restaurants = await service.search_nearby_restaurants(
@@ -319,13 +319,13 @@ async def switch_strategy(
     service: MCPIntegratedRecommendationService = Depends(get_mcp_service)
 ):
     """
-    🔄 切换 MAB 策略
+    切换MAB策略
     
     可用策略:
-    - ucb1: UCB1 算法
-    - thompson: Thompson 采样
+    - ucb1: UCB1算法
+    - thompson: Thompson采样
     - epsilon: ε-Greedy
-    - contextual: 上下文感知 MAB（默认）
+    - contextual: 上下文感知MAB（默认）
     """
     valid_strategies = ["ucb1", "thompson", "epsilon", "contextual"]
     if strategy not in valid_strategies:
@@ -350,14 +350,14 @@ async def update_feedback(
     service: MCPIntegratedRecommendationService = Depends(get_mcp_service)
 ):
     """
-    📊 更新推荐反馈
+    更新推荐反馈
     
-    用于 MAB 算法的在线学习
+    用于MAB算法的在线学习
     
     Args:
-        restaurant_id: 餐厅 ID
-        reward: 奖励值 (0-1)
-        feedback_type: 反馈类型 (order/click/rating)
+        restaurant_id: 餐厅ID
+        reward: 奖励值（0-1）
+        feedback_type: 反馈类型（order/click/rating）
     """
     if not 0 <= reward <= 1:
         raise HTTPException(
@@ -379,7 +379,7 @@ async def update_feedback(
 
 # 启动/关闭事件
 async def startup_mcp():
-    """启动时连接 MCP 服务器"""
+    """启动时连接MCP服务器"""
     global _mcp_service, _mcp_connected
     try:
         _mcp_service = MCPIntegratedRecommendationService(use_mcp=True)
@@ -393,7 +393,7 @@ async def startup_mcp():
 
 
 async def shutdown_mcp():
-    """关闭时断开 MCP 服务器"""
+    """关闭时断开MCP服务器"""
     global _mcp_service
     if _mcp_service:
         await _mcp_service.disconnect_mcp_server()

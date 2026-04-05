@@ -59,7 +59,7 @@ export const testAdminCouponsApi = async () => {
     console.log('🔧 测试管理员优惠券API...');
 
     try {
-        // 先测试健康检查
+        // 测试健康检查
         console.log('🏥 测试健康检查...');
         const healthResponse = await marketingApi.get('/coupons/health');
         console.log('✅ 健康检查成功:', healthResponse.data);

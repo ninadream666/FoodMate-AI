@@ -1,7 +1,7 @@
 """
 智能体编排系统 - 基于ReAct模式的推理引擎
 实现Context Assembly -> Agent Orchestration -> Decision & Output三层架构
-支持 OpenAI 和 DeepSeek API
+支持OpenAI和DeepSeek API
 """
 
 import json
@@ -47,18 +47,18 @@ class SmartRecommendationOrchestrator:
     def __init__(self, openai_api_key: str, model_name: str = None):
         """
         初始化智能体编排器
-        支持 OpenAI 和 DeepSeek API
+        支持 OpenAI和DeepSeek API
         
         Args:
             openai_api_key: API密钥（OpenAI 或 DeepSeek）
             model_name: 使用的模型名称
         """
-        # 检查是否使用 DeepSeek
+        # 检查是否使用DeepSeek
         self.use_deepseek = os.getenv("USE_DEEPSEEK", "false").lower() == "true"
         deepseek_key = os.getenv("DEEPSEEK_API_KEY")
 
         if self.use_deepseek and deepseek_key:
-            # 使用 DeepSeek API
+            # 使用DeepSeek API
             self.openai_client = openai.AsyncOpenAI(
                 api_key=deepseek_key,
                 base_url="https://api.deepseek.com"
@@ -66,7 +66,7 @@ class SmartRecommendationOrchestrator:
             self.model_name = model_name or os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
             logger.info(f"✅ 使用 DeepSeek API，模型: {self.model_name}")
         else:
-            # 使用 OpenAI API
+            # 使用OpenAI API
             self.openai_client = openai.AsyncOpenAI(api_key=openai_api_key)
             self.model_name = model_name or os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
             logger.info(f"✅ 使用 OpenAI API，模型: {self.model_name}")
@@ -135,7 +135,7 @@ class SmartRecommendationOrchestrator:
 
     async def _assemble_context(self, context: RecommendationContext) -> Dict[str, Any]:
         """
-        第一层：Context Assembly (上下文聚合层)
+        第一层：Context Assembly（上下文聚合层）
         数据预处理和清洗，符合"Thinking with the data pipeline"理念
         """
         try:
@@ -189,7 +189,7 @@ class SmartRecommendationOrchestrator:
 
     async def _execute_react_reasoning(self, processed_context: Dict[str, Any]) -> Dict[str, Any]:
         """
-        第二层：Agent Orchestration (智能编排层)
+        第二层：Agent Orchestration（智能编排层）
         基于ReAct模式的推理决策
         """
         try:
@@ -284,7 +284,7 @@ class SmartRecommendationOrchestrator:
 
     async def _format_final_output(self, reasoning_result: Dict[str, Any], context: RecommendationContext) -> RecommendationResult:
         """
-        第三层：Decision & Output (决策输出层)
+        第三层：Decision&Output（决策输出层）
         格式化最终推荐结果
         """
         try:

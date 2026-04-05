@@ -12,27 +12,22 @@ interface Props {
 
 const MenuListItem = memo(({ dish, onAdd, fallbackMerchantImage }: Props) => {
     
-    // 动态计算该菜品的最终配图 URL
+    // 动态计算该菜品的最终配图URL
     const displayImage = (() => {
         // 兼容后端可能使用的多种图片字段名
         let finalUrl = dish.imageUrl || dish.image || dish.picture || '';
         
-        // 【核心修复】启用最霸道的“白名单”模式：
-        // 无论数据库里存了什么（比如 http://10.0.2.2... 这种本地测试网，或者其他未知的残缺路径）
-        // 只要里面没有明确包含我们专属的代理接口 '/api/images/proxy'
-        // 就一律视为脏数据，强行拦截！
+        // 无论数据库里存了什么，只要没有明确包含代理接口'/api/images/proxy'
+        // 就一律视为脏数据，强行拦截
         const isBadUrl = !finalUrl || !finalUrl.includes('/api/images/proxy');
 
         if (isBadUrl) {
-            // 【米饭专属特判】
-            // 因为图库字典里“饭”包含了炒饭、烩饭等，容易让白米饭显示成五颜六色的炒饭
-            // 这里直接强制拦截，只要名字叫米饭，就锁死请求一碗白米饭 (white,rice,bowl)
             if (dish.name === '米饭' || dish.name === '白米饭') {
-                // 生成安全的 hash 确保后端不溢出
+                // 生成安全的hash确保后端不溢出
                 const safeHash = (dish.id ? String(dish.id).charCodeAt(0) : Math.floor(Math.random() * 1000)) % 2147483647;
                 finalUrl = `http://127.0.0.1:8081/api/images/proxy?tag=white,rice,bowl&width=200&height=200&hash=${safeHash}`;
             } 
-            // 【例汤专属特判】
+
             // 将默认的例汤固定为视觉效果更好的西红柿汤
             else if (dish.name === '例汤' || dish.name.includes('番茄') || dish.name.includes('西红柿')) {
                 const safeHash = (dish.id ? String(dish.id).charCodeAt(0) : Math.floor(Math.random() * 1000)) % 2147483647;
@@ -54,7 +49,7 @@ const MenuListItem = memo(({ dish, onAdd, fallbackMerchantImage }: Props) => {
 
     return (
         <View style={styles.container}>
-            {/* 使用原生 Image 组件，彻底告别第三方库的莫名拦截机制 */}
+            {/* 使用原生Image组件，彻底告别第三方库的莫名拦截机制 */}
             <Image
                 source={{ uri: displayImage }}
                 style={styles.image}

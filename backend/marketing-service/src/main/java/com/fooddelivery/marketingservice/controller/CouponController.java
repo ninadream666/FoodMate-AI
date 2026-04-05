@@ -63,8 +63,8 @@ public class CouponController {
                         .body(buildErrorResponse(400, "优惠券模板ID不能为空"));
             }
 
-            // 如果用户已认证，从 SecurityContext 中获取 userId
-            // 否则使用请求中的 userId（用于后台管理员或内部接口）
+            // 如果用户已认证，从SecurityContext中获取userId
+            // 否则使用请求中的userId（用于后台管理员或内部接口）
             Long userId = request.getUserId();
             if (userId == null) {
                 Object principal = org.springframework.security.core.context.SecurityContextHolder
@@ -77,7 +77,7 @@ public class CouponController {
                 }
             }
 
-            // 设置 userId 到请求对象中
+            // 设置userId到请求对象中
             request.setUserId(userId);
 
             // 调用发放服务
@@ -198,7 +198,7 @@ public class CouponController {
      * 计算订单的最优优惠券组合
      * POST /api/coupons/calculate-best
      * 
-     * 这是核心算法接口。输入订单信息，返回：
+     * 输入订单信息，返回：
      * 1. 最优的优惠券ID列表
      * 2. 总优惠金额
      * 3. 优惠后的最终价格
@@ -280,7 +280,7 @@ public class CouponController {
     }
 
     /**
-     * 获取用户的所有优惠券（包括已使用）
+     * 获取用户的所有优惠券，包括已使用
      * GET /api/coupons/user/{userId}/all
      * 
      * @param userId 用户ID
@@ -465,7 +465,7 @@ public class CouponController {
      * 使用/核销优惠券
      * POST /coupons/{id}/use (or /verify)
      * 
-     * 订单服务调用此接口来"消耗"用户的优惠券
+     * 订单服务调用此接口来核销用户的优惠券
      * 
      * @param request 核销请求
      * @return 核销后的优惠券信息
@@ -643,7 +643,6 @@ public class CouponController {
      * 获取营销活动列表
      * GET /campaigns
      * 
-     * 注意：当前系统暂未实现独立的活动表，返回基于优惠券模板的活动信息
      */
     @GetMapping("/campaigns")
     @Operation(summary = "获取营销活动列表", description = "获取所有营销活动（基于优惠券模板）")

@@ -102,10 +102,7 @@ class SettlementService {
         }
     }
 
-    // 注意: confirmSettlement 是商家端功能，平台管理端不需要
-    // 商家确认结算单后，平台只需审核和打款
-
-    // 取消结算单 (后端使用 POST 而非 PATCH)
+    // 取消结算单 
     async cancelSettlement(settlementId, reason) {
         try {
             const response = await platformApi.post(`/api/admin/settlements/${settlementId}/cancel`, {
@@ -234,7 +231,7 @@ class SettlementService {
         }
     }
 
-    // ============== 补充：手动触发操作接口 ==============
+    // ============== 手动触发操作接口 ==============
 
     // 手动触发月结算
     async triggerMonthlySettlement() {

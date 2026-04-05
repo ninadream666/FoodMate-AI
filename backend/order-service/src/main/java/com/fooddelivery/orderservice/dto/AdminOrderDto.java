@@ -54,12 +54,12 @@ public class AdminOrderDto {
     @AllArgsConstructor
     public static class OrderStatusInfo {
         /**
-         * 状态码（如：pending, paid, completed, cancelled）
+         * 状态码：pending, paid, completed, cancelled
          */
         private String code;
 
         /**
-         * 状态中文描述（如：待支付、已支付、已完成、已取消）
+         * 状态中文描述：待支付、已支付、已完成、已取消
          */
         private String description;
     }
@@ -73,12 +73,12 @@ public class AdminOrderDto {
     @AllArgsConstructor
     public static class PaymentMethodInfo {
         /**
-         * 支付方式代码（如：WECHAT, ALIPAY, CASH, CARD）
+         * 支付方式代码：WECHAT, ALIPAY, CASH, CARD）
          */
         private String code;
 
         /**
-         * 支付方式中文描述（如：微信支付、支付宝、现金支付、银行卡支付）
+         * 支付方式中文描述：微信支付、支付宝、现金支付、银行卡支付
          */
         private String description;
     }

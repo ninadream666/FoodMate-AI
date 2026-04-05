@@ -9,8 +9,8 @@ const MAX_IMAGE_BASE64_LENGTH = 4 * 1024 * 1024;
  */
 export const nutriVisionService = {
     /**
-     * 分析菜单图片 (多模态识图模式)
-     * @param {string} imageBase64 - 图片的 Base64 字符串
+     * 分析菜单图片（多模态识图模式）
+     * @param {string} imageBase64 - 图片的Base64字符串
      * @param {string[]} healthTags - 用户健康标签
      * @returns {Promise<VisionAnalysisResponse>}
      */
@@ -35,8 +35,8 @@ export const nutriVisionService = {
     },
 
     /**
-     * 分析单道菜品图片 (CV本地识别 + LLM知识图谱模式)
-     * @param {string} imageBase64 - 图片的 Base64 字符串
+     * 分析单道菜品图片（CV本地识别 + LLM知识图谱模式）
+     * @param {string} imageBase64 - 图片的Base64字符串
      * @param {string[]} healthTags - 用户健康标签
      * @returns {Promise<VisionAnalysisResponse>}
      */
@@ -60,7 +60,7 @@ export const nutriVisionService = {
     },
 
     /**
-     * 取消所有进行中的 NutriVision 请求
+     * 取消所有进行中的NutriVision请求
      * 用于用户返回上一页时释放资源
      */
     cancelPending: () => {

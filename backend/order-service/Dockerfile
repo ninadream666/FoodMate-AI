@@ -4,11 +4,11 @@ WORKDIR /app
 
 COPY maven-settings.xml /app/maven-settings.xml
 
-# 1. 安装公共依赖
+# 安装公共依赖
 COPY food-platform-common /app/food-platform-common
 RUN mvn -s /app/maven-settings.xml -f /app/food-platform-common/pom.xml clean install -DskipTests
 
-# 2. 构建服务
+# 构建服务
 COPY order-service/pom.xml /app/order-service/
 COPY order-service/src /app/order-service/src
 WORKDIR /app/order-service

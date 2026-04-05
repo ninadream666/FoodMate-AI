@@ -1,5 +1,5 @@
 server:
-  port: 8080 # Docker 内部端口
+  port: 8080 # Docker内部端口
 
 spring:
   application:
@@ -19,7 +19,7 @@ spring:
     port: ${SPRING_RABBITMQ_PORT:5672}
     username: ${SPRING_RABBITMQ_USERNAME:dev}
     password: ${SPRING_RABBITMQ_PASSWORD:dev123}
-    # 消费重试策略：失败后指数退避重试 3 次，仍失败则进入死信队列
+    # 消费重试策略：失败后指数退避重试3次，仍失败则进入死信队列
     listener:
       simple:
         retry:

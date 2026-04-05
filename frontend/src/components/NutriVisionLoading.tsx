@@ -16,7 +16,7 @@ const { width } = Dimensions.get('window');
 
 interface NutriVisionLoadingProps {
     imageUri: string;
-    mode?: 'menu' | 'food'; // 新增 mode 属性识别加载状态
+    mode?: 'menu' | 'food';
     onCancel?: () => void;
 }
 
@@ -45,7 +45,7 @@ const NutriVisionLoading: React.FC<NutriVisionLoadingProps> = ({ imageUri, mode 
     const [textIndex, setTextIndex] = useState(0);
 
     useEffect(() => {
-        // 1. 启动呼吸灯动画
+        // 启动呼吸灯动画
         Animated.loop(
             Animated.sequence([
                 Animated.timing(pulseAnim, {
@@ -61,7 +61,7 @@ const NutriVisionLoading: React.FC<NutriVisionLoadingProps> = ({ imageUri, mode 
             ])
         ).start();
 
-        // 2. 启动雷达旋转动画
+        // 2动雷达旋转动画
         Animated.loop(
             Animated.timing(radarRotate, {
                 toValue: 1,
@@ -71,8 +71,7 @@ const NutriVisionLoading: React.FC<NutriVisionLoadingProps> = ({ imageUri, mode 
             })
         ).start();
 
-        // 3. 模拟进度条动画 (假进度，为了视觉效果)
-        // 单品模式因为有 CV 加持速度更快，进度条可以走得稍微快一点
+        // 模拟进度条动画
         const duration = mode === 'food' ? 5000 : 8000;
         Animated.timing(progressAnim, {
             toValue: 90, // 走到90%停住等待接口返回
@@ -81,7 +80,7 @@ const NutriVisionLoading: React.FC<NutriVisionLoadingProps> = ({ imageUri, mode 
             useNativeDriver: false,
         }).start();
 
-        // 4. 文字轮播定时器
+        // 文字轮播定时器
         const interval = setInterval(() => {
             setTextIndex(prev => (prev + 1) % loadingTexts.length);
         }, 2000);
@@ -164,7 +163,7 @@ const NutriVisionLoading: React.FC<NutriVisionLoadingProps> = ({ imageUri, mode 
                 <View style={styles.poweredBy}>
                     <Text style={styles.poweredByIcon}>⚡</Text>
                     <Text style={styles.poweredByText}>
-                        {mode === 'food' ? '基于自研 CV 模型与云端知识图谱' : '基于 Google Gemini Vision 提供技术支持'}
+                        {mode === 'food' ? '基于自研CV模型与云端知识图谱' : '基于云端大模型技术支持'}
                     </Text>
                 </View>
             </View>

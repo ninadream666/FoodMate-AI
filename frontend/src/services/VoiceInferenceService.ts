@@ -1,7 +1,7 @@
 /**
- * VoiceInferenceService.ts - 离线语音与端侧大模型引擎 (多轮对话增强版)
- * 阶段一：使用 react-native-vosk 进行离线语音实时转文字
- * 阶段二：使用 llama.rn 加载微调后的端侧大模型，支持多轮对话的状态追踪(DST)
+ * VoiceInferenceService.ts - 离线语音与端侧大模型引擎
+ * 阶段一：使用react-native-vosk进行离线语音实时转文字
+ * 阶段二：使用llama.rn加载微调后的端侧大模型，支持多轮对话的状态追踪(DST)
  * 绝对保护隐私，录音不出端。
  */
 
@@ -19,7 +19,7 @@ interface DialogueMessage {
 class VoiceInferenceService {
     private vosk: typeof Vosk | null = null;
     private llamaContext: LlamaContext | null = null;
-    public isInitialized = false; // 【修改处】将 private 变为 public，供外部感知
+    public isInitialized = false;
 
     // 状态控制
     private isRecording = false;
@@ -28,7 +28,7 @@ class VoiceInferenceService {
     // 多轮对话核心状态
     private dialogueHistory: DialogueMessage[] = [];
     
-    // 训练时的精确 System Prompt (必须一字不差)
+    // 训练时的精确System Prompt
     private readonly SYSTEM_PROMPT = "你是一个运行在手机端侧的外卖意图提取助手。请提取用户的点餐需求，输出严格的JSON格式。如果用户没有明确提到价格或特定的健康约束，对应字段必须为空数组 [] 或 null。";
 
     // 回调函数
@@ -40,7 +40,7 @@ class VoiceInferenceService {
     private lastPartialText = ""; 
 
     /**
-     * 初始化 Vosk 和 端侧 LLM
+     * 初始化Vosk和端侧LLM
      */
     public async init(onProgress?: (progress: number) => void) {
         if (this.isInitialized) {
@@ -48,7 +48,7 @@ class VoiceInferenceService {
             return;
         }
 
-        // --- 1. 独立初始化 Vosk 语音引擎 ---
+        // --- 独立初始化Vosk语音引擎 ---
         try {
             console.log('🔍 [系统诊断] 当前已加载的原生模块列表:', Object.keys(NativeModules));
             this.vosk = Vosk || NativeModules.Vosk;
@@ -66,7 +66,7 @@ class VoiceInferenceService {
             throw error; 
         }
 
-        // --- 2. 独立初始化 Llama 大模型引擎 (加入网络动态下载与防损坏机制) ---
+        // --- 独立初始化Llama大模型引擎 ---
         try {
             await new Promise(resolve => setTimeout(resolve, 1500));
             console.log('🧠 [LLM] 准备加载微调后的端侧大模型...');
@@ -74,10 +74,10 @@ class VoiceInferenceService {
             const modelFileName = 'model_1500_q8.gguf';
             const destPath = `${RNFS.DocumentDirectoryPath}/${modelFileName}`;
             
-            // 【硬核修复】：不仅检查是否存在，还要严查文件体积，防范 0 字节导致 C++ 引擎崩溃！
+            // 不仅检查是否存在，还要严查文件体积，防范0字节导致C++引擎崩溃
             const fileStat = await RNFS.stat(destPath).catch(() => null);
             const exists = fileStat !== null && fileStat.isFile();
-            const minValidSize = 50 * 1024 * 1024; // 假设正常的模型至少大于 50MB
+            const minValidSize = 50 * 1024 * 1024;
 
             if (!exists || Number(fileStat.size) < minValidSize) {
                 if (exists) {
@@ -86,7 +86,6 @@ class VoiceInferenceService {
                 }
 
                 console.log(`📦 [LLM] 初次运行：正在通过 USB 物理隧道从电脑下载模型...`);
-                // 【硬核修复】：使用 127.0.0.1 配合 adb reverse 实现物理线缆级极速稳定下载
                 const downloadUrl = 'http://127.0.0.1:9099/models/model_1500_q8.gguf';
 
                 const downloadOptions = {
@@ -123,12 +122,11 @@ class VoiceInferenceService {
             console.warn('⚠️ [LLM] 大模型初始化/下载失败 (将降级使用基础语音服务):', error);
             this.llamaContext = null; 
             
-            // 如果出错，顺手把可能下载了一半的残缺文件清理掉，保护下一次运行
             const destPath = `${RNFS.DocumentDirectoryPath}/model_1500_q8.gguf`;
             await RNFS.unlink(destPath).catch(() => {});
         }
 
-        // --- 3. 终极事件拦截网（全通道监听） ---
+        // --- 终极事件拦截网（全通道监听） ---
         this.setupBulletproofEventListeners();
 
         this.isInitialized = true;

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import settlementService from '../../services/admin/settlementService';
 import platformService from '../../services/admin/platformService';
 
-// 服务分类标签颜色配置 (北欧语义化 - 同色系暖橙调，支持中英文全量匹配)
+// 服务分类标签颜色配置（北欧语义化 - 同色系暖橙调，支持中英文全量匹配）
 const CATEGORY_COLORS = {
     '基础服务': 'bg-primary-bg text-primary border border-primary/20',        
     '支付服务': 'bg-primary-bg text-primary border border-primary/20',        
@@ -81,7 +81,7 @@ const Commissions = () => {
         }
     }, [activeTab]);
 
-    // 加载分成统计数据 (使用新的settlement统计接口)
+    // 加载分成统计数据（使用新的settlement统计接口）
     const loadCommissionData = async () => {
         try {
             setLoading(true);
@@ -158,7 +158,7 @@ const Commissions = () => {
         }
     };
 
-    // 加载平台服务列表 (用于显示分成比例配置)
+    // 加载平台服务列表（用于显示分成比例配置）
     const loadPlatformServices = async () => {
         try {
             const response = await platformService.getServices({ page: 0, size: 100 });
@@ -505,7 +505,7 @@ const Commissions = () => {
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-5 whitespace-nowrap text-center">
-                                                            {/* 兼容各种可能的后端字段名，兜底为 0 */}
+                                                            {/* 兼容各种可能的后端字段名，兜底为0 */}
                                                             <span className="text-sm font-black text-text-primary">
                                                                 {service.subscriberCount || service.subscriptionCount || service.merchantCount || service.subscribers || 0} 家
                                                             </span>

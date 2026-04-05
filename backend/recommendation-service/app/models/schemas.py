@@ -68,7 +68,7 @@ class RecommendationRequest(BaseModel):
         populate_by_name = True
 
 
-# ========== 端云协同专有模型 (新增) ==========
+# ========== 端云协同专有模型 ==========
 
 class EdgeSynergyConstraints(BaseModel):
     """端云协同 - 边缘端计算出的脱敏硬性约束"""
@@ -94,10 +94,10 @@ class EdgeSynergyRequest(BaseModel):
         populate_by_name = True
 
 
-# ========== 简化版上下文模型（兼容多智能体输出） ==========
+# ========== 上下文模型，兼容多智能体输出 ==========
 
 class ContextInfo(BaseModel):
-    """上下文信息模型（简化版，兼容多种输入格式）"""
+    """上下文信息模型，兼容多种输入格式"""
     # 天气
     weather: Optional[str] = Field(None, description="天气状况")
     temperature: Optional[float] = Field(None, description="温度")
@@ -122,7 +122,7 @@ class ContextInfo(BaseModel):
 
 
 class RestaurantInfo(BaseModel):
-    """餐厅信息模型（简化版，必填字段减少）"""
+    """餐厅信息模型"""
     id: str
     name: str
     cuisine_type: str = ""

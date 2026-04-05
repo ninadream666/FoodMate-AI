@@ -2,10 +2,10 @@
  * useAmbientLight.ts - 环境光传感器 Hook
  *
  * 功能：
- * 1. 通过 react-native-ambient-light-sensor 读取手机光线传感器 (lux)
- * 2. 根据 lux 值自动分级 (dark/dim/normal/bright/sunlight)
+ * 1. 通过react-native-ambient-light-sensor读取手机光线传感器(lux)
+ * 2. 根据lux值自动分级 (dark/dim/normal/bright/sunlight)
  * 3. 移动平均平滑，避免频繁跳动
- * 4. 仅 Android 支持，iOS 和不支持设备优雅降级
+ * 4. 仅Android支持，iOS和不支持设备优雅降级
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -14,16 +14,15 @@ import { Platform, DeviceEventEmitter } from 'react-native';
 // 光线等级类型
 export type LightLevel = 'dark' | 'dim' | 'normal' | 'bright' | 'sunlight';
 
-// lux 分级阈值
+// lux分级阈值
 const LIGHT_THRESHOLDS: { max: number; level: LightLevel }[] = [
-    { max: 50, level: 'dark' },          // 暗光 / 夜间
+    { max: 50, level: 'dark' },          // 暗光/夜间
     { max: 200, level: 'dim' },          // 昏暗室内
     { max: 1000, level: 'normal' },      // 正常室内照明
-    { max: 10000, level: 'bright' },     // 户外阴天 / 明亮室内
+    { max: 10000, level: 'bright' },     // 户外阴天/明亮室内
     { max: Infinity, level: 'sunlight' }, // 户外强烈日照
 ];
 
-// 尝试导入 react-native-ambient-light-sensor
 let AmbientLightSensor: {
     hasLightSensor: () => Promise<boolean>;
     startLightSensor: () => void;

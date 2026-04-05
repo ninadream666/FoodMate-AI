@@ -44,7 +44,6 @@ const StatusBadge = ({ status }) => {
             case '已退款':
                 return { text: '已退款', class: 'bg-background-section text-text-secondary border border-border-light' };
             default:
-                // 如果是小写的paid等，也要正确处理
                 const lowerStatus = normalizedStatus.toLowerCase();
                 if (lowerStatus === 'paid' || lowerStatus === 'payment_completed') {
                     return { text: '已支付', class: 'bg-info-bg text-info border border-info/20' };
@@ -82,7 +81,7 @@ const StatCard = ({ label, value, trend, icon, iconColor, iconBg }) => (
 
 // 订单行组件
 const OrderRow = ({ order, onViewDetails, onUpdateStatus, onSyncPaymentStatus }) => {
-    // 字段映射处理 - 兼容不同的后端数据结构
+    // 字段映射处理
     const orderNumber = String(order.orderNumber || order.orderId || order.id || order._id || `ORDER-${Date.now()}`);
 
     // 调试：打印订单数据结构
@@ -207,7 +206,7 @@ const OrderRow = ({ order, onViewDetails, onUpdateStatus, onSyncPaymentStatus })
         return 0;
     };
 
-    // 支付状态映射和处理（基于后端支付接口优化）
+    // 支付状态映射和处理
     const getPaymentStatus = () => {
         // 优先检查明确的支付状态字段
         const statusFields = [
@@ -299,7 +298,7 @@ const OrderRow = ({ order, onViewDetails, onUpdateStatus, onSyncPaymentStatus })
             }
         }
 
-        // 最后，根据订单状态推断支付状态
+        // 根据订单状态推断支付状态
         const orderStatusValue = order.status || order.orderStatus || '';
         const orderStatusNormalized = String(orderStatusValue).toUpperCase().trim();
 
@@ -320,7 +319,7 @@ const OrderRow = ({ order, onViewDetails, onUpdateStatus, onSyncPaymentStatus })
 
     const totalAmount = getOrderAmount();
 
-    // 处理 status 可能是对象的情况
+    // 处理status可能是对象的情况
     let orderStatus = order.status || order.orderStatus || order.state || 'pending';
     let statusDescription = '';
 
@@ -331,12 +330,12 @@ const OrderRow = ({ order, onViewDetails, onUpdateStatus, onSyncPaymentStatus })
         console.log(`🔧 订单 ${orderNumber} status是对象，提取code:`, orderStatus, '描述:', statusDescription);
     }
 
-    // 处理 paymentMethod 可能是对象的情况
+    // 处理paymentMethod可能是对象的情况
     let paymentMethod = order.paymentMethod;
     let paymentMethodDescription = '';
 
     if (typeof paymentMethod === 'object' && paymentMethod !== null) {
-        // 如果是对象，提取 code 和 description 字段
+        // 如果是对象，提取code和description字段
         paymentMethodDescription = paymentMethod.description || '';
         paymentMethod = paymentMethod.code || paymentMethod.value || 'UNKNOWN';
         console.log(`🔧 订单 ${orderNumber} paymentMethod是对象，提取code:`, paymentMethod, '描述:', paymentMethodDescription);
@@ -611,7 +610,7 @@ const OrderManagement = () => {
                     paymentStatus: order.paymentStatus
                 })));
 
-                // 打印第一个订单的结构用于调试 - 必须在这里，确保 ordersData 已定义
+                // 打印第一个订单的结构用于调试 - 必须在这里，确保ordersData已定义
                 if (ordersData.length > 0) {
                     const firstOrder = ordersData[0];
                     console.log('🔍 第一个订单的数据结构:', firstOrder);
@@ -811,9 +810,6 @@ const OrderManagement = () => {
             const orderId = selectedOrder.id || selectedOrder.orderId || selectedOrder._id;
             console.log(`🔄 更新订单 ${orderId} 状态:`, { orderStatus: newOrderStatus, paymentStatus: newPaymentStatus });
 
-            // 这里调用后端API更新状态
-            // await orderService.updateOrderStatus(orderId, { status: newOrderStatus, paymentStatus: newPaymentStatus });
-
             // 更新本地状态
             setOrders(prevOrders =>
                 prevOrders.map(o => {
@@ -851,9 +847,6 @@ const OrderManagement = () => {
             setDialog(prev => ({ ...prev, isOpen: false }));
             try {
                 console.log(`🔄 批量同步 ${orders.length} 个订单的支付状态`);
-
-                // 这里可以调用后端API来批量同步支付状态
-                // await orderService.batchSyncPaymentStatus(orders.map(o => o.id || o.orderId || o._id));
 
                 // 更新本地状态，将所有订单的支付状态设置为已支付
                 setOrders(prevOrders =>
@@ -928,7 +921,6 @@ const OrderManagement = () => {
 
     const handleViewDetails = (order) => {
         console.log('查看订单详情:', order);
-        // TODO: 跳转到详情页面
     };
 
     const handleUpdateStatus = async (order) => {
@@ -1173,7 +1165,7 @@ const OrderManagement = () => {
                 )}
             </div>
 
-            {/* 更新状态定制化 Modal */}
+            {/* 更新状态定制化Modal */}
             {showUpdateModal && (
                 <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-overlay backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-surface w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200 border border-border-light">
@@ -1228,7 +1220,7 @@ const OrderManagement = () => {
                 </div>
             )}
 
-            {/* 全局定制化基础 Modal 弹窗 */}
+            {/* 全局定制化基础Modal弹窗 */}
             {dialog.isOpen && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-overlay backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-surface rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-border-light">

@@ -5,7 +5,7 @@ export default function MerchantSidebar({ user }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 导航配置 - 添加 AI 定价项
+  // 导航配置 - 添加AI定价项
   const navItems = [
     { path: '/merchant/order-manage', icon: 'receipt_long', label: '订单管理' },
     { path: '/merchant/menu', icon: 'restaurant_menu', label: '菜单管理' },

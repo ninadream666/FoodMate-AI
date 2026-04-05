@@ -3,7 +3,7 @@
 -- 为 orders 表添加支付相关字段
 -- ============================================================
 
--- 添加支付相关字段到 orders 表
+-- 添加支付相关字段到orders表
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS paid_at TIMESTAMP;
 
 ALTER TABLE orders

@@ -1,14 +1,14 @@
 """
-FoodCF-Encoder 三阶段微调训练脚本
+FoodCF-Encoder三阶段微调训练脚本
 
 基于文档 "协同过滤使用的大模型" 实现:
-  Stage 1: LLM 合成数据增强预热 (E5-Mistral, NAACL 2024 范式)
-  Stage 2: 指令感知对比学习 (NV-Embed, NeurIPS 2024: 双向注意力 + Latent Attention Pooling)
-  Stage 3: 多任务 + Matryoshka 表示学习联合微调
+  Stage 1: LLM合成数据增强预热(E5-Mistral, NAACL 2024 范式)
+  Stage 2: 指令感知对比学习(NV-Embed, NeurIPS 2024：双向注意力+Latent Attention Pooling)
+  Stage 3: 多任务+Matryoshka表示学习联合微调
            (Matryoshka, NeurIPS 2022; OpenAI text-embedding-3 实践 2024)
 
-基座模型: GTE-Qwen2-1.5B (阿里通义, Decoder-only, MTEB 中文 Top 3)
-微调方法: QLoRA (4-bit 量化, LoRA rank=64)
+基座模型: GTE-Qwen2-1.5B(阿里通义, Decoder-only, MTEB中文Top3)
+微调方法: QLoRA(4-bit量化, LoRA rank=64)
 
 核心参考文献:
   [1] Wang et al., "Improving Text Embeddings with LLMs" (E5-Mistral), NAACL 2024
@@ -18,19 +18,19 @@ FoodCF-Encoder 三阶段微调训练脚本
   [5] Zheng et al., "LC-Rec", ICDE 2024
 
 用法:
-    # Stage 1: 生成 LLM 合成训练数据
+    # Stage1：生成LLM合成训练数据
     python -m app.ml.train_foodcf_encoder --generate-synthetic 5000
 
-    # Stage 2 + 3: 指令对比学习 + 多任务 Matryoshka 联合微调
+    # Stage2+3：指令对比学习+多任务Matryoshka联合微调
     python -m app.ml.train_foodcf_encoder --data ml_data/encoder_train.jsonl --epochs 10
 
-    # 完整管线 (生成数据 + 训练)
+    # 完整管线：生成数据+训练
     python -m app.ml.train_foodcf_encoder --generate-synthetic 5000 --epochs 10
 
-    # 仅 Stage 2 (对比学习)
+    # 仅Stage2：对比学习
     python -m app.ml.train_foodcf_encoder --stage2-only --epochs 5
 
-    # 仅 Stage 3 (多任务 Matryoshka)
+    # 仅Stage3：多任务 Matryoshka
     python -m app.ml.train_foodcf_encoder --stage3-only --epochs 5
 """
 
@@ -54,14 +54,14 @@ DATA_DIR = os.getenv("ML_DATA_DIR", os.path.join(ROOT_DIR, "ml_data"))
 MODEL_DIR = os.path.join(ROOT_DIR, "models")
 ENCODER_SAVE_DIR = os.path.join(MODEL_DIR, "foodcf_encoder")
 
-# 指令前缀 (E5-Mistral 风格, 与 foodcf_encoder.py 保持一致)
+# 指令前缀，E5-Mistral 风格， 与foodcf_encoder.py保持一致
 INSTRUCTION_USER = "判断该用户会在哪些外卖餐厅下单："
 INSTRUCTION_RESTAURANT = "描述这家外卖餐厅的特色："
 
-# Matryoshka 多维度 (128d/64d/32d)
+# Matryoshka多维度(128d/64d/32d)
 MATRYOSHKA_DIMS = [128, 64, 32]
 
-# 菜系 / 口味 / 价格 / 限制 词汇
+# 菜系/口味/价格/限制词汇
 CUISINE_VOCAB = [
     "川菜", "湘菜", "粤菜", "日料", "西餐", "火锅", "烧烤", "轻食",
     "沙拉", "面食", "粥", "快餐", "甜品", "奶茶", "炸鸡", "小龙虾",
@@ -93,13 +93,13 @@ def generate_synthetic_data(
     output_path: Optional[str] = None,
 ) -> str:
     """
-    生成 FoodCF-Encoder 训练用的合成三元组数据
+    生成FoodCF-Encoder训练用的合成三元组数据
 
-    E5-Mistral (NAACL 2024) 核心发现: 仅用 LLM 合成的训练数据微调嵌入模型,
+    E5-Mistral (NAACL 2024) 核心发现: 仅用LLM合成的训练数据微调嵌入模型,
     就可以在 MTEB 基准上超越所有用真实数据训练的模型。
 
-    本函数模拟该范式, 生成 (query, positive, hard_negative) 三元组:
-    - query: 用户画像描述 (RLMRec 风格)
+    本函数模拟该范式, 生成(query, positive, hard_negative)三元组:
+    - query: 用户画像描述(RLMRec风格)
     - positive: 匹配餐厅描述
     - hard_negative: 看似匹配但实际不适合的餐厅描述
 
@@ -133,9 +133,9 @@ def generate_synthetic_data(
 
 
 def _generate_one_triplet() -> Dict:
-    """生成一个 (query, positive, hard_negative) 三元组"""
+    """生成一个(query, positive, hard_negative)三元组"""
 
-    # 用户画像 (query)
+    # 用户画像(query)
     n_pref = random.randint(1, 3)
     user_cuisines = random.sample(CUISINE_VOCAB, n_pref)
     user_tastes = random.sample(TASTE_PREFS, random.randint(1, 3))
@@ -152,7 +152,7 @@ def _generate_one_triplet() -> Dict:
         query_parts.append(f"饮食限制: {restriction}")
     query = "; ".join(query_parts)
 
-    # Positive: 匹配用户偏好的餐厅
+    # Positive：匹配用户偏好的餐厅
     pos_cuisine = random.choice(user_cuisines)
     pos_price = random.randint(min_price, max_price)
     pos_rating = round(random.uniform(4.0, 5.0), 1)
@@ -162,7 +162,7 @@ def _generate_one_triplet() -> Dict:
     pos_parts.append(f"评分{pos_rating}")
     positive = "; ".join(pos_parts)
 
-    # Hard Negative: 看似匹配但有关键不匹配的餐厅
+    # Hard Negative：看似匹配但有关键不匹配的餐厅
     neg_type = random.choice(["price_mismatch", "cuisine_mismatch", "restriction_conflict"])
 
     if neg_type == "price_mismatch":
@@ -179,7 +179,7 @@ def _generate_one_triplet() -> Dict:
         neg_rating = round(random.uniform(3.0, 4.5), 1)
         neg_name = random.choice(RESTAURANT_NAMES) + neg_cuisine + random.choice(["馆", "店"])
     else:
-        # 饮食限制冲突 (如花生过敏但餐厅多用花生油)
+        # 饮食限制冲突：如花生过敏但餐厅多用花生油
         neg_cuisine = random.choice(user_cuisines)
         neg_price = random.randint(min_price, max_price)
         neg_rating = round(random.uniform(4.0, 5.0), 1)
@@ -190,7 +190,7 @@ def _generate_one_triplet() -> Dict:
     neg_parts.append(f"评分{neg_rating}")
     hard_negative = "; ".join(neg_parts)
 
-    # 生成匹配评分 (用于 T2 评分回归任务)
+    # 生成匹配评分，用于T2评分回归任务)
     rating = round(random.uniform(3.5, 5.0), 1)
 
     return {
@@ -203,7 +203,7 @@ def _generate_one_triplet() -> Dict:
 
 
 # ============================================================
-# Stage 2: 指令感知对比学习 (NV-Embed + E5-Mistral)
+# Stage2: 指令感知对比学习（NV-Embed + E5-Mistral）
 # ============================================================
 
 def _info_nce_loss(anchor, positive, negatives, temperature=0.07):
@@ -220,7 +220,7 @@ def _info_nce_loss(anchor, positive, negatives, temperature=0.07):
     pos_sim = F.cosine_similarity(anchor, positive, dim=-1) / temperature  # (batch,)
     neg_sim = F.cosine_similarity(anchor, negatives, dim=-1) / temperature  # (batch,)
 
-    # In-batch negatives: 使用批内其他样本作为额外负样本
+    # In-batch negatives：使用批内其他样本作为额外负样本
     # anchor @ positive^T → (batch, batch) 对角线为正样本
     logits_matrix = torch.mm(anchor, positive.t()) / temperature  # (batch, batch)
     labels = torch.arange(anchor.size(0), device=anchor.device)
@@ -229,7 +229,7 @@ def _info_nce_loss(anchor, positive, negatives, temperature=0.07):
     loss_a2p = F.cross_entropy(logits_matrix, labels)
     loss_p2a = F.cross_entropy(logits_matrix.t(), labels)
 
-    # 加入显式 hard negative
+    # 加入显式hard negative
     hard_neg_logits = torch.cat([
         pos_sim.unsqueeze(1),  # (batch, 1)
         neg_sim.unsqueeze(1),  # (batch, 1)
@@ -242,9 +242,9 @@ def _info_nce_loss(anchor, positive, negatives, temperature=0.07):
 
 def _matryoshka_info_nce_loss(anchor, positive, negatives, dims=None, temperature=0.07):
     """
-    Matryoshka 表示学习损失 (Kusupati et al., NeurIPS 2022)
+    Matryoshka表示学习损失(Kusupati et al., NeurIPS 2022)
 
-    在多个嵌入维度截断上同时施加 InfoNCE 损失:
+    在多个嵌入维度截断上同时施加InfoNCE损失:
     L_MRL = Σ_{d ∈ dims} w_d · L_InfoNCE(h[:d])
     """
     import torch.nn.functional as F
@@ -298,17 +298,17 @@ def train_foodcf_encoder(
     device: str = "cpu",
 ):
     """
-    FoodCF-Encoder 三阶段微调训练
+    FoodCF-Encoder三阶段微调训练
 
-    Stage 2: 指令感知对比学习
+    Stage2: 指令感知对比学习
       - GTE-Qwen2-1.5B 基座 + LoRA (rank=64)
       - Latent Attention Pooling (NV-Embed)
       - InfoNCE + in-batch negatives
 
-    Stage 3: 多任务 + Matryoshka 联合微调
-      - T1: 交互匹配 (InfoNCE)
-      - T2: 评分回归 (MSE)
-      - T3: Matryoshka 多维度正则 (128d/64d/32d 上的 InfoNCE)
+    Stage3: 多任务 + Matryoshka联合微调
+      - T1: 交互匹配(InfoNCE)
+      - T2: 评分回归(MSE)
+      - T3: Matryoshka多维度正则(128d/64d/32d 上的 InfoNCE)
       - 总损失: L = L_match + 0.3·L_rating + 0.1·L_MRL
     """
     import torch
@@ -321,27 +321,27 @@ def train_foodcf_encoder(
         save_dir = ENCODER_SAVE_DIR
     Path(save_dir).mkdir(parents=True, exist_ok=True)
 
-    # 1. 加载数据
+    # 加载数据
     records = load_encoder_data(data_path)
     if not records:
         logger.error("❌ 无训练数据")
         return None
 
-    # 2. 加载 GTE-Qwen2-1.5B 基座
+    # 加载GTE-Qwen2-1.5B基座
     model_name = "Alibaba-NLP/gte-Qwen2-1.5B-instruct"
     logger.info(f"🔄 加载基座模型: {model_name}")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     base_model = AutoModel.from_pretrained(model_name).to(device)
     hidden_dim = base_model.config.hidden_size
 
-    # 3. 构建 Latent Attention Pooling (NV-Embed)
+    # 构建Latent Attention Pooling（NV-Embed）
     from app.ml.foodcf_encoder import LatentAttentionPooling
     user_pooling = LatentAttentionPooling(hidden_dim, num_latent_tokens=4, output_dim=embed_dim)
     user_pool_module = user_pooling.build().to(device)
     rest_pooling = LatentAttentionPooling(hidden_dim, num_latent_tokens=4, output_dim=embed_dim)
     rest_pool_module = rest_pooling.build().to(device)
 
-    # 4. 应用 LoRA（如果 peft 可用）
+    # 应用LoRA
     lora_applied = False
     try:
         from peft import get_peft_model, LoraConfig, TaskType
@@ -366,14 +366,14 @@ def train_foodcf_encoder(
         for param in base_model.parameters():
             param.requires_grad = False
 
-    # 评分回归头 (T2 任务)
+    # T2任务：评分回归头
     rating_head = nn.Sequential(
         nn.Linear(embed_dim * 2, 64),
         nn.ReLU(),
         nn.Linear(64, 1),
     ).to(device)
 
-    # 5. 准备数据集
+    # 准备数据集
     class TripletDataset(Dataset):
         def __init__(self, records, tokenizer, max_length=256):
             self.records = records
@@ -425,7 +425,7 @@ def train_foodcf_encoder(
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_ds, batch_size=batch_size)
 
-    # 6. 优化器
+    # 优化器
     param_groups = [
         {"params": user_pool_module.parameters(), "lr": lr},
         {"params": rest_pool_module.parameters(), "lr": lr},
@@ -479,7 +479,7 @@ def train_foodcf_encoder(
 
             loss = torch.tensor(0.0, device=device, requires_grad=True)
 
-            # T1: 指令感知对比学习 (Stage 2)
+            # T1：指令感知对比学习（Stage2）
             if not stage3_only:
                 import torch.nn.functional as F
                 q_norm = F.normalize(q_embed, dim=-1)
@@ -488,14 +488,14 @@ def train_foodcf_encoder(
                 loss_match = _info_nce_loss(q_norm, p_norm, n_norm)
                 loss = loss + loss_match
 
-            # T2: 评分回归
+            # T2：评分回归
             if not stage2_only:
                 combined = torch.cat([q_embed, p_embed], dim=-1)
                 pred_rating = rating_head(combined).squeeze(-1)
                 loss_rating = mse_criterion(pred_rating, ratings)
                 loss = loss + 0.3 * loss_rating
 
-            # T3: Matryoshka 多维度正则 (Stage 3)
+            # T3：Matryoshka多维度正则（Stage3）
             if not stage2_only:
                 loss_mrl = _matryoshka_info_nce_loss(q_embed, p_embed, n_embed)
                 loss = loss + 0.1 * loss_mrl
@@ -557,14 +557,14 @@ def train_foodcf_encoder(
                 "rating_head": {k: v.clone() for k, v in rating_head.state_dict().items()},
             }
 
-    # 7. 保存模型
+    # 保存模型
     logger.info(f"💾 保存 FoodCF-Encoder 到 {save_dir} ...")
 
-    # 保存 LoRA adapter (或完整模型)
+    # 保存LoRA adapter或完整模型
     if lora_applied:
         base_model.save_pretrained(save_dir)
     else:
-        # 保存基座模型引用 (不复制全部权重以节省空间)
+        # 保存基座模型引用，不复制全部权重以节省空间
         config_info = {
             "base_model": "Alibaba-NLP/gte-Qwen2-1.5B-instruct",
             "embed_dim": embed_dim,
@@ -584,10 +584,10 @@ def train_foodcf_encoder(
         os.path.join(save_dir, "restaurant_pooling.pt"),
     )
 
-    # 保存 tokenizer (微调模型目录自包含)
+    # 保存tokenizer（微调模型目录自包含）
     tokenizer.save_pretrained(save_dir)
 
-    # 写入 config.json 标记此为微调模型
+    # 写入config.json标记此为微调模型
     config_path = os.path.join(save_dir, "config.json")
     if not os.path.exists(config_path):
         config = {
@@ -641,14 +641,14 @@ def main():
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-    # Stage 1: 合成数据生成
+    # Stage1：合成数据生成
     if args.generate_synthetic > 0:
         logger.info("=" * 60)
         logger.info("📝 Stage 1: LLM 合成数据增强 (E5-Mistral 范式)")
         logger.info("=" * 60)
         generate_synthetic_data(n_samples=args.generate_synthetic, output_path=args.data)
 
-    # Stage 2 + 3: 微调训练
+    # Stage2+3：微调训练
     if os.path.exists(args.data):
         logger.info("=" * 60)
         stage_desc = "Stage 2 (对比学习)" if args.stage2_only else \

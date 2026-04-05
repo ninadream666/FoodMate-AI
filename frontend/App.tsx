@@ -12,7 +12,7 @@ const AppTheme = {
   },
 };
 
-// 健康上下文 Provider
+// 健康上下文Provider
 import { HealthProvider } from './src/hooks/useHealthContext';
 import AdaptiveOverlay from './src/components/AdaptiveOverlay';
 
@@ -38,7 +38,7 @@ import MerchantOrdersScreen from './src/screens/merchant/MerchantOrdersScreen';
 import ServiceMarketplaceScreen from './src/screens/merchant/ServiceMarketplaceScreen';
 import SettlementDashboardScreen from './src/screens/merchant/SettlementDashboardScreen';
 import NutriVisionResultScreen from './src/screens/NutriVisionResultScreen';
-// 商家端页面 (注意路径包含 /merchant)
+// 商家端页面
 import MerchantDashboardScreen from './src/screens/merchant/MerchantDashboardScreen';
 import SmartPricingScreen from './src/screens/merchant/SmartPricingScreen';
 import MenuManagementScreen from './src/screens/merchant/MenuManagementScreen';
@@ -86,7 +86,7 @@ function App(): React.JSX.Element {
               options={{ headerShown: false }} // 全屏显示
             />
 
-            {/* 管理端 (PC端功能，App端保留入口) */}
+            {/* 管理端（PC端功能，App端保留入口） */}
             <Stack.Screen
               name="AdminDashboard"
               component={AdminDashboardScreen}
@@ -158,7 +158,7 @@ function App(): React.JSX.Element {
               options={{ title: '美食偏好', headerShown: false }}
             />
 
-            {/* 商家端 (集中管理，无重复) */}
+            {/* 商家端（集中管理，无重复） */}
             <Stack.Screen
               name="MerchantDashboard"
               component={MerchantDashboardScreen}

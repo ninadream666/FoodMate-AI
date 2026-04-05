@@ -1,6 +1,6 @@
 /**
- * 统一 API 客户端
- * 基于 API 文档配置，管理所有后端服务的请求
+ * 统一API客户端
+ * 基于API文档配置，管理所有后端服务的请求
  */
 
 // API 基础路径配置（通过 vite 代理转发）
@@ -36,7 +36,7 @@ export const isAuthenticated = () => !!getToken();
 
 /**
  * 统一请求方法
- * @param {string} url - 请求 URL
+ * @param {string} url - 请求URL
  * @param {object} options - 请求选项
  * @returns {Promise<any>} - 响应数据
  */
@@ -57,7 +57,7 @@ export const request = async (url, options = {}) => {
     try {
         const response = await fetch(url, config);
 
-        // 处理 401 未认证错误
+        // 处理401未认证错误
         if (response.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
@@ -82,7 +82,7 @@ export const request = async (url, options = {}) => {
             throw new Error(errorMessage);
         }
 
-        // 尝试解析 JSON，如果失败返回文本
+        // 尝试解析JSON，如果失败返回文本
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
             return await response.json();

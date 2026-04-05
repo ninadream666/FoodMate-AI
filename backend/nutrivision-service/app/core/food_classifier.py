@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class FoodClassifier:
     """
-    本地 CV 大模型推理类 (单例模式)
+    本地 CV 大模型推理类（单例模式）
     """
     _instance = None
 
@@ -26,12 +26,12 @@ class FoodClassifier:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         logger.info(f"正在初始化本地 CV 分类模型，使用设备: {self.device}")
 
-        # 动态获取模型绝对路径 (相对于当前文件所在目录)
+        # 动态获取模型绝对路径（相对于当前文件所在目录）
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         self.model_path = os.path.join(base_dir, "models", "efficientnet_b0_best.pth")
         self.classes_path = os.path.join(base_dir, "models", "class_names.txt")
 
-        # 1. 加载类别字典
+        # 加载类别字典
         self.class_names = []
         if os.path.exists(self.classes_path):
             with open(self.classes_path, 'r', encoding='utf-8') as f:
@@ -39,7 +39,7 @@ class FoodClassifier:
         else:
             logger.error(f"找不到类别字典文件: {self.classes_path}")
 
-        # 2. 加载模型架构与权重
+        # 加载模型架构与权重
         try:
             num_classes = len(self.class_names) if self.class_names else 101
             self.model = timm.create_model('efficientnet_b0', pretrained=False, num_classes=num_classes)
@@ -54,7 +54,7 @@ class FoodClassifier:
         except Exception as e:
             logger.error(f"初始化本地模型失败: {str(e)}")
 
-        # 3. 图像预处理流水线
+        # 图像预处理流水线
         self.transform = transforms.Compose([
             transforms.Resize(256),
             transforms.CenterCrop(224),
@@ -64,10 +64,10 @@ class FoodClassifier:
 
     def predict(self, base64_img: str) -> tuple:
         """
-        接收 Base64 图片，返回识别出的菜品名称和置信度 (food_name, confidence)
+        接收 Base64 图片，返回识别出的菜品名称和置信度（food_name, confidence）
         """
         try:
-            # 清理 base64 头
+            # 清理base64头
             clean_b64 = re.sub(r'^data:image/.+;base64,', '', base64_img)
             image_data = base64.b64decode(clean_b64)
             image = Image.open(BytesIO(image_data)).convert('RGB')
@@ -77,7 +77,7 @@ class FoodClassifier:
             
             with torch.no_grad():
                 outputs = self.model(img_tensor)
-                # 使用 softmax 获取各类别的概率
+                # 使用softmax获取各类别的概率
                 probabilities = torch.nn.functional.softmax(outputs[0], dim=0)
                 # 获取最大概率及其对应的索引
                 confidence, predicted = torch.max(probabilities, 0)
@@ -87,7 +87,6 @@ class FoodClassifier:
 
             if self.class_names and class_idx < len(self.class_names):
                 food_name = self.class_names[class_idx]
-                # 简单美化一下 Kaggle 的下划线命名法，如 apple_pie -> Apple Pie
                 food_name = food_name.replace('_', ' ').title()
                 logger.info(f"本地 CV 模型识别结果: {food_name}, 置信度: {confidence_score:.4f}")
                 return food_name, confidence_score

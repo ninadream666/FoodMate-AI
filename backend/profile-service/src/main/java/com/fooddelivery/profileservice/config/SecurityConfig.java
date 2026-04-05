@@ -29,11 +29,11 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                // 1. 启用 CORS (关键)
+                // 启用CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // ========== CORS 预检请求 (必须放行) ==========
+                        // ========== CORS预检请求 ==========
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // ========== 监控与文档 ==========
@@ -41,9 +41,9 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
 
                         // ========== 业务接口 ==========
-                        // Profile 服务通常包含用户画像、足迹等，大部分都需要登录
-                        // 兼容 /api 前缀，防止网关透传问题
-                        .requestMatchers("/api/profiles/internal/**", "/profiles/internal/**").permitAll() // 内部调用可能允许匿名(取决于架构，通常内部走内网)
+                        // Profile服务通常包含用户画像、足迹等，大部分都需要登录
+                        // 兼容/api前缀，防止网关透传问题
+                        .requestMatchers("/api/profiles/internal/**", "/profiles/internal/**").permitAll()
 
                         // 其他所有接口必须认证
                         .anyRequest().authenticated())
@@ -51,12 +51,12 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 2. 添加 CORS 配置 Bean
+    // 添加CORS配置Bean
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 允许跨域携带凭证 (Cookie/Token)
+        // 允许跨域携带凭证（Cookie/Token）
         configuration.setAllowCredentials(true);
         // 允许所有来源
         configuration.setAllowedOriginPatterns(List.of("*"));

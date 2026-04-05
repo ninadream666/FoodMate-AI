@@ -1,11 +1,11 @@
 """
-DeepFM CTR 模型训练脚本
+DeepFM CTR模型训练脚本
 
 功能:
-- 从 training_samples.jsonl 加载数据
-- 构建 DeepFM 模型（Wide 线性 + FM 二阶交叉 + Deep DNN）
+- 从training_samples.jsonl加载数据
+- 构建DeepFM模型（Wide 线性 + FM 二阶交叉 + Deep DNN）
 - 自动学习特征交叉（如"下雨×近距离"、"运动后×高蛋白菜系"）
-- 保存模型到 models/deepfm_ranking.pth
+- 保存模型到models/deepfm_ranking.pth
 
 用法:
     python -m app.ml.train_deepfm
@@ -70,25 +70,25 @@ class DeepFM(nn.Module):
         self.sparse_feature_names = list(sparse_feature_dims.keys())
         self.embedding_dim = embedding_dim
 
-        # ========== 一阶 Linear 部分 ==========
+        # ========== 一阶Linear部分 ==========
         # 连续特征的线性权重
         self.linear_dense = nn.Linear(num_numeric, 1, bias=True)
-        # 类别特征的一阶 embedding (每个特征 -> 1维)
+        # 类别特征的一阶embedding（每个特征 -> 1维）
         self.linear_sparse_embeddings = nn.ModuleDict({
             name: nn.Embedding(dim, 1, padding_idx=0)
             for name, dim in sparse_feature_dims.items()
         })
 
-        # ========== FM 二阶交叉部分 ==========
-        # 类别特征 -> embedding_dim 维
+        # ========== FM二阶交叉部分 ==========
+        # 类别特征 -> embedding_dim维
         self.fm_sparse_embeddings = nn.ModuleDict({
             name: nn.Embedding(dim, embedding_dim, padding_idx=0)
             for name, dim in sparse_feature_dims.items()
         })
-        # 连续特征也投影到 embedding_dim （可与类别 embedding 做交叉）
+        # 连续特征也投影到embedding_dim（可与类别 embedding 做交叉）
         self.fm_dense_proj = nn.Linear(num_numeric, len(sparse_feature_dims) * embedding_dim, bias=False)
 
-        # ========== Deep DNN 部分 ==========
+        # ========== Deep DNN部分 ==========
         total_embed_dim = (len(sparse_feature_dims) * 2) * embedding_dim + num_numeric
         layers = []
         prev_dim = total_embed_dim
@@ -108,14 +108,14 @@ class DeepFM(nn.Module):
     def forward(self, dense_input: torch.Tensor, sparse_input: torch.Tensor) -> torch.Tensor:
         batch_size = dense_input.size(0)
 
-        # ===== 1) Linear 部分 =====
+        # ===== 1) Linear部分 =====
         linear_out = self.linear_dense(dense_input)  # (B, 1)
         for i, name in enumerate(self.sparse_feature_names):
             idx = sparse_input[:, i]  # (B,)
             linear_out = linear_out + self.linear_sparse_embeddings[name](idx)  # (B, 1)
 
-        # ===== 2) FM 部分 =====
-        # 类别 embedding: list of (B, embed_dim)
+        # ===== 2) FM部分 =====
+        # 类别embedding: list of (B, embed_dim)
         sparse_embeds = []
         for i, name in enumerate(self.sparse_feature_names):
             idx = sparse_input[:, i]
@@ -128,12 +128,12 @@ class DeepFM(nn.Module):
 
         all_embeds = torch.stack(sparse_embeds, dim=1) + dense_embeds  # (B, n_cat, E)
 
-        # FM 公式: 0.5 * (sum^2 - sum_of_squares)
+        # FM公式：0.5 * (sum^2 - sum_of_squares)
         sum_of_embeds = all_embeds.sum(dim=1)  # (B, E)
         sum_of_squares = (all_embeds ** 2).sum(dim=1)  # (B, E)
         fm_out = 0.5 * (sum_of_embeds ** 2 - sum_of_squares).sum(dim=1, keepdim=True)  # (B, 1)
 
-        # ===== 3) Deep 部分 =====
+        # ===== 3) Deep部分 =====
         sparse_flat = torch.cat(sparse_embeds, dim=1)  # (B, n_cat * E)
         dense_flat = dense_proj  # (B, n_cat * E)
         dnn_input = torch.cat([dense_input, sparse_flat, dense_flat], dim=1)
@@ -163,7 +163,7 @@ def build_vocab_encoders():
 
 
 def load_and_prepare(data_path: str):
-    """加载数据并准备 DeepFM 的输入张量"""
+    """加载数据并准备DeepFM的输入张量"""
     records = []
     with open(data_path, "r", encoding="utf-8") as f:
         for line in f:
@@ -286,7 +286,7 @@ def train_deepfm(
         save_path = os.path.join(MODEL_DIR, "deepfm_ranking.pth")
     Path(os.path.dirname(save_path)).mkdir(parents=True, exist_ok=True)
 
-    # 保存模型权重 + 元数据
+    # 保存模型权重+元数据
     checkpoint = {
         "state_dict": best_state or model.state_dict(),
         "encoders": encoders,

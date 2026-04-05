@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-// 将 price-proposals 挂载在具体的 merchantId 下
+// 将price-proposals挂载在具体的merchantId下
 @RequestMapping("/merchants/{merchantId}/price-proposals")
 @RequiredArgsConstructor
 public class PriceChangeController {
@@ -32,7 +32,6 @@ public class PriceChangeController {
     // POST /merchants/{merchantId}/price-proposals/{proposalId}/approve
     @PostMapping("/{proposalId}/approve")
     public ResponseEntity<?> approveProposal(@PathVariable Long merchantId, @PathVariable Long proposalId) {
-        // 这里虽然方法里没用到 merchantId，但路径上带上它可以确保通过 Security 校验
         priceProposalService.approveProposal(proposalId);
         return ResponseEntity.ok(Map.of("message", "Proposal approved and price updated"));
     }

@@ -39,7 +39,7 @@ public class AddressService {
         address.setStreet(dto.getStreet());
         address.setDetail(dto.getDetail());
 
-        // 2自动处理默认地址逻辑：如果是第一条地址，自动设为默认
+        // 自动处理默认地址逻辑：如果是第一条地址，自动设为默认
         long count = addressRepository.countByUserId(user.getId());
         address.setIsDefault(count == 0);
 

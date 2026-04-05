@@ -14,7 +14,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useIsFocused } from '@react-navigation/native'; // 每次进入页面都刷新
 
 const AddressListScreen = ({ navigation, route }: any) => {
-    // mode: 'manage' (默认) 或 'select' (从购物车来)
+    // mode：'manage'（默认）或'select'（从购物车来）
     const { mode = 'manage' } = route.params || {};
 
     const [addresses, setAddresses] = useState<any[]>([]);
@@ -95,8 +95,8 @@ const AddressListScreen = ({ navigation, route }: any) => {
 
     const handleSelect = (address: any) => {
         if (mode === 'select') {
-            // 返回上一页 (CartScreen)，并带回 selectedAddress
-            // 使用 navigate merge 模式
+            // 返回上一页（CartScreen），并带回selectedAddress
+            // 使用navigate merge模式
             navigation.navigate({
                 name: 'Cart',
                 params: { selectedAddress: address },

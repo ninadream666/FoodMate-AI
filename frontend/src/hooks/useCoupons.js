@@ -1,6 +1,5 @@
 // src/hooks/useCoupons.js
 import { useState, useEffect, useCallback } from 'react';
-// 👇 修复点：使用解构导入，而不是 import * as
 import { walletService } from '../services/walletService';
 import * as couponUtils from '../utils/couponUtils';
 
@@ -30,13 +29,13 @@ export const useCoupons = (userId, orderAmount = null, merchantId = null) => {
         }
     }, [userId]);
 
-    // 获取可用优惠券 (前端过滤)
+    // 获取可用优惠券
     const fetchAvailableCoupons = useCallback(async () => {
         if (!userId) return;
         setLoading(true);
         try {
             const result = await walletService.getAllCoupons(userId);
-            // 简单的前端过滤逻辑
+            // 前端过滤
             const valid = result.filter(c => {
                 const now = new Date();
                 const isExpired = c.expiresAt && new Date(c.expiresAt) < now;

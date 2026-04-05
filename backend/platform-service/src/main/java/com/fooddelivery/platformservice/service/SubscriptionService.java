@@ -45,7 +45,7 @@ public class SubscriptionService {
     }
 
     /**
-     * 订阅服务 (修复版：优先复用已有记录，避免触发唯一索引冲突)
+     * 订阅服务 - 优先复用已有记录，避免触发唯一索引冲突
      */
     @Transactional
     public SubscriptionDTO subscribeService(Long merchantId, SubscribeServiceRequest request) {
@@ -71,7 +71,7 @@ public class SubscriptionService {
             subscription = record; // 拿到最新的一条作为复用目标
         }
 
-        // 如果完全没有历史，才进行 Insert
+        // 如果完全没有历史，才Insert
         if (subscription == null) {
             subscription = MerchantServiceSubscription.builder()
                     .merchantId(merchantId)
@@ -98,7 +98,7 @@ public class SubscriptionService {
     }
 
     /**
-     * 取消订阅 (终极修复版：强制先 Delete 再 Update，完美规避数据库约束碰撞)
+     * 取消订阅 - 强制先Delete再Update，规避数据库约束碰撞
      */
     @Transactional
     public void cancelSubscription(Long merchantId, Long subscriptionId, CancelSubscriptionRequest request) {
@@ -117,8 +117,7 @@ public class SubscriptionService {
             throw new BusinessException("基础服务不可取消");
         }
 
-        // === 防碰撞核心逻辑 ===
-        // 解决 Hibernate 默认先 Update 后 Delete 导致的 Unique 索引冲突
+        // 解决Hibernate默认先Update后Delete导致的Unique索引冲突
         List<MerchantServiceSubscription> existingRecords = subscriptionRepository
                 .findByMerchantIdAndServiceId(merchantId, subscription.getService().getId());
         
@@ -126,7 +125,7 @@ public class SubscriptionService {
             if (!oldRecord.getId().equals(subscriptionId) && oldRecord.getStatus() == SubscriptionStatus.CANCELLED) {
                 try {
                     subscriptionRepository.delete(oldRecord);
-                    subscriptionRepository.flush(); // 强制立刻执行 Delete SQL，为后面的更新腾出唯一索引空间
+                    subscriptionRepository.flush(); // 强制立刻执行Delete SQL，为后面的更新腾出唯一索引空间
                 } catch (Exception e) {
                     log.warn("无法物理删除旧订阅记录，转为软废弃: {}", e.getMessage());
                     oldRecord.setStatus(SubscriptionStatus.EXPIRED);

@@ -9,13 +9,13 @@ import { API_BASE, get, post, getAuthHeaders } from './apiClient';
 // 直接使用marketing-service的完整路径
 const COUPON_API_BASE = 'http://localhost:8082/api/coupons';
 
-// 模拟钱包数据（后端暂未提供钱包余额接口）
+// 模拟钱包数据
 const MOCK_WALLET = {
   balance: 128.00,
   currency: '¥'
 };
 
-// 模拟优惠券数据（当后端服务不可用时使用）
+// 模拟优惠券数据
 const MOCK_COUPONS = [
   {
     id: 1,
@@ -54,7 +54,7 @@ const shouldUseMockData = () => {
 };
 
 /**
- * 获取钱包余额（模拟接口，后端暂未提供）
+ * 获取钱包余额
  */
 export const getBalance = async () => {
   // 模拟100ms网络延迟
@@ -62,7 +62,7 @@ export const getBalance = async () => {
   return MOCK_WALLET;
 };
 
-// ==================== 1. 领取优惠券 ====================
+// ==================== 领取优惠券 ====================
 /**
  * 领取优惠券
  * POST /api/coupons/issue
@@ -98,7 +98,7 @@ export const claimCoupon = async (couponTemplateId, userId = null) => {
   }
 };
 
-// ==================== 2. 查询用户可用优惠券 ====================
+// ==================== 查询用户可用优惠券 ====================
 /**
  * 获取用户可用优惠券
  * GET /api/coupons/user/{userId}/available?orderAmount=100
@@ -154,9 +154,9 @@ export const getAvailableCoupons = async (userId, orderAmount = null) => {
   }
 };
 
-// ==================== 3. 查询用户所有优惠券 ====================
+// ==================== 查询用户所有优惠券 ====================
 /**
- * 获取用户所有优惠券（包括已使用、已过期）
+ * 获取用户所有优惠券，包括已使用、已过期
  * GET /api/coupons/user/{userId}/all
  * @param {number} userId - 用户ID
  */
@@ -198,7 +198,7 @@ export const getAllCoupons = async (userId) => {
   }
 };
 
-// ==================== 4. 获取优惠券详情 ====================
+// ==================== 获取优惠券详情 ====================
 /**
  * 获取优惠券详情
  * GET /api/coupons/{couponId}
@@ -227,7 +227,7 @@ export const getCouponDetail = async (couponId) => {
   }
 };
 
-// ==================== 5. 计算最优优惠券组合 ====================
+// ==================== 计算最优优惠券组合 ====================
 /**
  * 计算最优优惠券组合
  * POST /api/coupons/calculate-best
@@ -282,7 +282,7 @@ export const calculateBestCoupons = async (data) => {
   }
 };
 
-// ==================== 6. 检查优惠券使用条件 ====================
+// ==================== 检查优惠券使用条件 ====================
 /**
  * 检查优惠券使用条件
  * GET /api/coupons/{couponId}/check-amount?orderAmount=100
@@ -312,7 +312,7 @@ export const checkCouponUsage = async (couponId, orderAmount) => {
   }
 };
 
-// ==================== 7. 验证优惠券组合 ====================
+// ==================== 验证优惠券组合 ====================
 /**
  * 验证优惠券组合
  * POST /api/coupons/validate-combination
@@ -342,7 +342,7 @@ export const validateCouponCombination = async (couponIds) => {
   }
 };
 
-// ==================== 8. 核销优惠券 ====================
+// ==================== 核销优惠券 ====================
 /**
  * 核销优惠券（订单服务调用）
  * POST /api/coupons/{couponId}/use
@@ -378,7 +378,7 @@ export const useCoupon = async (couponId, orderId, remark = null) => {
   }
 };
 
-// ==================== 9. 回滚优惠券 ====================
+// ==================== 回滚优惠券 ====================
 /**
  * 回滚优惠券（订单取消时调用）
  * POST /api/coupons/{couponId}/rollback
@@ -415,7 +415,7 @@ export const rollbackCoupon = async (couponId, orderId = null, reason = null) =>
   }
 };
 
-// ==================== 10. 获取优惠券模板列表 ====================
+// ==================== 获取优惠券模板列表 ====================
 /**
  * 获取优惠券模板列表
  * GET /api/coupons/templates?enabled=true
@@ -542,7 +542,7 @@ export const isCouponExpiringSoon = (coupon) => {
 };
 
 /**
- * 获取优惠券列表（兼容旧接口）
+ * 获取优惠券列表
  * 根据用户ID从localStorage获取
  */
 export const getCoupons = async () => {

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-MCP over HTTP/SSE 服务器
+MCP over HTTP/SSE服务器
 
-支持远程 MCP 客户端通过 HTTP/SSE 协议连接。
-这样你可以把服务部署到服务器上，远程客户端也能调用 MCP 工具。
+支持远程MCP客户端通过HTTP/SSE协议连接。
+这样可以把服务部署到服务器上，远程客户端也能调用MCP工具。
 
 启动方式:
     python mcp_http_server.py
@@ -94,7 +94,7 @@ def init_services():
 
 
 # ============================================================================
-# MCP 工具定义
+# MCP工具定义
 # ============================================================================
 
 MCP_TOOLS = [
@@ -411,9 +411,9 @@ async def execute_smart_recommendations(args: Dict[str, Any]) -> Dict[str, Any]:
     智能推荐 - 完整流程
     
     流程：
-    1. 调用 amap_poi_service 获取附近餐厅
-    2. 调用 external_api 获取环境信息（天气/交通/日历）
-    3. LangGraph 编排 Agent 进行智能评分排序
+    1. 调用amap_poi_service获取附近餐厅
+    2. 调用external_api获取环境信息（天气/交通/日历）
+    3. LangGraph编排Agent进行智能评分排序
     4. 返回排序后的推荐结果
     """
     user_id = args.get("user_id", "anonymous")
@@ -431,7 +431,7 @@ async def execute_smart_recommendations(args: Dict[str, Any]) -> Dict[str, Any]:
         return {"error": "POI服务未初始化"}
     
     try:
-        # ========== Step 1: 通过高德API获取附近餐厅 ==========
+        # ========== Step1：通过高德API获取附近餐厅 ==========
         logger.info(f"[智能推荐] Step 1: 获取附近餐厅 - 位置: {location}, 坐标: ({latitude}, {longitude})")
         
         # 根据用户查询确定搜索关键词
@@ -459,8 +459,8 @@ async def execute_smart_recommendations(args: Dict[str, Any]) -> Dict[str, Any]:
                 "recommendation_reason": "未找到附近餐厅"
             }
         
-        # 转换餐厅数据为字典格式（供 orchestrator 使用）
-        # search_restaurants 已返回字典格式
+        # 转换餐厅数据为字典格式，供orchestrator使用
+        # search_restaurants已返回字典格式
         restaurants = [
             {
                 "id": str(r.get('id', f"poi_{i}")),
@@ -480,7 +480,7 @@ async def execute_smart_recommendations(args: Dict[str, Any]) -> Dict[str, Any]:
             for i, r in enumerate(restaurants_raw)
         ]
         
-        # ========== Step 2: 获取环境信息（天气/交通/日历） ==========
+        # ========== Step2：获取环境信息（天气/交通/日历） ==========
         logger.info("[智能推荐] Step 2: 获取环境信息")
         
         env_info = await execute_analyze_environment({
@@ -492,7 +492,7 @@ async def execute_smart_recommendations(args: Dict[str, Any]) -> Dict[str, Any]:
         logger.info(f"[智能推荐] 环境信息: 天气={env_info.get('weather', {}).get('condition', 'N/A')}, "
                    f"时段={env_info.get('temporal', {}).get('meal_time', 'N/A')}")
         
-        # ========== Step 3: LangGraph 编排 - 智能评分排序 ==========
+        # ========== Step3：LangGraph 编排 - 智能评分排序 ==========
         logger.info("[智能推荐] Step 3: LangGraph 编排智能评分")
         
         result = await orchestrator.orchestrate(
@@ -509,7 +509,7 @@ async def execute_smart_recommendations(args: Dict[str, Any]) -> Dict[str, Any]:
         
         logger.info(f"[智能推荐] 完成! 推荐 {len(recommendations)} 个餐厅")
         
-        # ========== Step 4: 构建返回结果 ==========
+        # ========== Step4：构建返回结果 ==========
         return {
             "user_id": user_id,
             "location": location,
@@ -532,7 +532,6 @@ async def execute_smart_recommendations(args: Dict[str, Any]) -> Dict[str, Any]:
         
     except Exception as e:
         logger.error(f"[智能推荐] 失败: {e}", exc_info=True)
-        # 降级到简单搜索
         logger.info("[智能推荐] 降级到简单餐厅搜索")
         return await execute_search_restaurants({
             "location": location,
@@ -545,8 +544,6 @@ async def execute_analyze_user_profile(args: Dict[str, Any]) -> Dict[str, Any]:
     user_id = args.get("user_id", "anonymous")
     query = args.get("query", "")
     
-    # 这里可以连接 profile-service 获取真实数据
-    # 目前返回模拟数据
     return {
         "user_id": user_id,
         "profile": {
@@ -709,7 +706,7 @@ TOOL_EXECUTORS = {
 
 
 # ============================================================================
-# FastAPI 应用
+# FastAPI应用
 # ============================================================================
 
 @asynccontextmanager
@@ -728,7 +725,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS 配置
+# CORS配置
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -739,11 +736,11 @@ app.add_middleware(
 
 
 # ============================================================================
-# MCP 协议端点
+# MCP协议端点
 # ============================================================================
 
 class MCPRequest(BaseModel):
-    """MCP 请求模型"""
+    """MCP请求模型"""
     jsonrpc: str = "2.0"
     id: Optional[int] = None
     method: str
@@ -751,7 +748,7 @@ class MCPRequest(BaseModel):
 
 
 class MCPResponse(BaseModel):
-    """MCP 响应模型"""
+    """MCP响应模型"""
     jsonrpc: str = "2.0"
     id: Optional[int] = None
     result: Optional[Any] = None
@@ -776,7 +773,7 @@ async def root():
 
 @app.get("/mcp/tools")
 async def list_tools():
-    """列出所有 MCP 工具"""
+    """列出所有MCP工具"""
     return {
         "tools": MCP_TOOLS
     }
@@ -784,7 +781,7 @@ async def list_tools():
 
 @app.post("/mcp/tools/{tool_name}")
 async def call_tool(tool_name: str, request: Request):
-    """调用指定 MCP 工具"""
+    """调用指定MCP工具"""
     if tool_name not in TOOL_EXECUTORS:
         raise HTTPException(status_code=404, detail=f"工具 '{tool_name}' 不存在")
     
@@ -809,7 +806,7 @@ async def mcp_rpc(request: MCPRequest):
     method = request.method
     params = request.params or {}
     
-    # 处理不同的 MCP 方法
+    # 处理不同的MCP方法
     if method == "initialize":
         return MCPResponse(
             id=request.id,
@@ -874,7 +871,7 @@ async def mcp_rpc(request: MCPRequest):
 
 @app.get("/mcp/sse")
 async def mcp_sse(request: Request):
-    """MCP SSE 端点 - 支持流式通信"""
+    """MCP SSE端点 - 支持流式通信"""
     
     async def event_generator():
         # 发送初始连接确认

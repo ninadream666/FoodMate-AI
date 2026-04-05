@@ -154,7 +154,7 @@ class AmapPOIService:
     
     async def search_restaurants_around(
         self,
-        location: str,  # 经纬度 "116.473168,39.993015"
+        location: str,  # 经纬度"116.473168,39.993015"
         radius: int = 20000,  # 半径，米
         keywords: str = None,
         types: str = None,
@@ -453,7 +453,7 @@ class AmapPOIService:
         limit: int = 30
     ) -> List[Dict[str, Any]]:
         """
-        统一的餐厅搜索接口（支持双重召回机制，防止精准查询无结果）
+        统一的餐厅搜索接口。支持双重召回机制，防止精准查询无结果
         """
         restaurants = []
         seen_ids = set()
@@ -486,7 +486,7 @@ class AmapPOIService:
             return all_results[:max_count]
 
         try:
-            # 1. 第一重召回：精准意图召回
+            # 第一重召回：精准意图召回
             actual_keyword = keywords if keywords and keywords.strip() else "餐厅"
             primary_results = await _fetch_pois(actual_keyword, limit)
             
@@ -495,7 +495,7 @@ class AmapPOIService:
                     seen_ids.add(poi.id)
                     restaurants.append(self._format_poi_to_dict(poi))
             
-            # 2. 第二重召回：广泛兜底召回
+            # 第二重召回：广泛兜底召回
             # 如果用户的关键词不是通用词，且第一重拉回来的数量不够，我们就用"餐厅"兜底
             if actual_keyword not in ["餐厅", "美食", "饭店"] and len(restaurants) < limit:
                 fallback_results = await _fetch_pois("餐厅", limit)

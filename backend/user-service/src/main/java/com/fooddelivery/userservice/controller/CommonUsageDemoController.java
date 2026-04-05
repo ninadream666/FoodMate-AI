@@ -11,14 +11,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 /**
- * 演示如何使用 food-platform-common 中的公共组件
+ * 演示如何使用food-platform-common中的公共组件
  */
 @RestController
 @RequestMapping("/api/demo")
 public class CommonUsageDemoController {
 
     /**
-     * 演示使用 ApiResponse 统一响应格式
+     * 演示使用ApiResponse统一响应格式
      */
     @GetMapping("/api-response")
     public ApiResponse<String> demoApiResponse() {
@@ -26,7 +26,7 @@ public class CommonUsageDemoController {
     }
 
     /**
-     * 演示使用 PageUtils 创建分页对象
+     * 演示使用PageUtils创建分页对象
      */
     @GetMapping("/pagination")
     public ApiResponse<PageResponse<String>> demoPagination(
@@ -43,7 +43,7 @@ public class CommonUsageDemoController {
     }
 
     /**
-     * 演示使用 SecurityUtils 获取当前用户信息
+     * 演示使用SecurityUtils获取当前用户信息
      */
     @GetMapping("/current-user")
     public ApiResponse<Object> demoCurrentUser() {
@@ -61,7 +61,7 @@ public class CommonUsageDemoController {
     }
 
     /**
-     * 演示使用 UserRole 枚举
+     * 演示使用UserRole枚举
      */
     @GetMapping("/roles")
     public ApiResponse<Object> demoUserRoles() {

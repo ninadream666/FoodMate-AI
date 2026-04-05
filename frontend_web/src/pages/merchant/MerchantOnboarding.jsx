@@ -4,8 +4,8 @@ import { merchantService } from '../../services/merchantService';
 
 /**
  * 商家入驻全屏引导页
- * Step 1: 创建店铺
- * Step 2: 添加首个菜品 (支持连续添加)
+ * Step1: 创建店铺
+ * Step2: 添加首个菜品，支持连续添加
  */
 export default function MerchantOnboarding() {
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ export default function MerchantOnboarding() {
     description: ''
   });
 
-  // Step 1: Create Shop
+  // Step1: Create Shop
   const handleCreateShop = async (e) => {
     e.preventDefault();
     if (!shopForm.name || !shopForm.address) return;
@@ -45,7 +45,7 @@ export default function MerchantOnboarding() {
     }
   };
 
-  // Step 2: Add Dish
+  // Step2: Add Dish
   const handleAddDish = async (action) => {
     // action: 'finish' | 'next'
     if (!dishForm.name || !dishForm.price || !dishForm.category) {
@@ -86,7 +86,7 @@ export default function MerchantOnboarding() {
     }
   };
 
-  // Render Step 1: Shop Info
+  // Render Step1: Shop Info
   const renderStep1 = () => (
     <div className="w-full max-w-[560px] bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-xl border border-orange-100 dark:border-slate-800 overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
       <div className="px-8 pt-8 pb-2">
@@ -143,7 +143,7 @@ export default function MerchantOnboarding() {
     </div>
   );
 
-  // Render Step 2: Add Dish
+  // Render Step2: Add Dish
   const renderStep2 = () => (
     <div className="w-full max-w-[640px] bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-xl border border-orange-100 dark:border-slate-800 overflow-hidden flex flex-col animate-in fade-in slide-in-from-right-8 duration-300">
       <div className="px-8 pt-8 pb-4">

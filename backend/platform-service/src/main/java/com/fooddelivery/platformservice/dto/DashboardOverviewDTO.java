@@ -43,7 +43,7 @@ public class DashboardOverviewDTO {
     private List<DailyStats> orderTrends;
     private List<DailyStats> revenueTrends;
 
-    // 热门商家（TOP 5）
+    // 热门商家（TOP5）
     private List<MerchantRanking> topMerchants;
 
     // 系统状态

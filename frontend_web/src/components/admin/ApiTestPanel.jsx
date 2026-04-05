@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { runApiTests, testOrderService, testPlatformService, validateEndpoints, diagnoseNetwork } from '../../services/admin/apiTester';
 
 /**
- * API 测试面板 - 基于API测试文件分析的接口测试工具
+ * API测试面板
  */
 const ApiTestPanel = () => {
     const [testResults, setTestResults] = useState(null);

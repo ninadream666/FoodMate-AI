@@ -143,7 +143,7 @@ function Sidebar({ isOpen, onClose, currentPath }) {
                 </div>
             </aside>
 
-            {/* 全局样式 - 使用标准 style 标签 */}
+            {/* 全局样式 - 使用标准style标签 */}
             <style dangerouslySetInnerHTML={{
                 __html: `
                     .font-variation-settings-fill-1 {

@@ -2,8 +2,8 @@ import axios from 'axios';
 
 class AuthService {
     /**
-     * 从 JWT Token 中解析用户信息
-     * JWT 格式: header.payload.signature
+     * 从JWT Token中解析用户信息
+     * JWT格式: header.payload.signature
      */
     parseTokenPayload(token) {
         try {
@@ -24,8 +24,6 @@ class AuthService {
         try {
             console.log('尝试连接后端服务...');
 
-            // 【修复核心】：弃用带有错误 baseURL 的 userApi，直接使用原生 axios
-            // 路径严格写为 /api/auth/login，精准触发 vite.config.js 的代理规则转发至 8083
             const response = await axios.post('/api/auth/login', {
                 username,
                 password,
@@ -37,13 +35,13 @@ class AuthService {
 
             // 存储认证信息
             if (data?.token) {
-                // 保存 Token
+                // 保存Token
                 localStorage.setItem('adminToken', data.token);
 
-                // 尝试从 JWT Token 中解析用户信息
+                // 尝试从JWT Token中解析用户信息
                 const tokenPayload = this.parseTokenPayload(data.token);
 
-                // 构建用户信息（优先使用响应数据，其次使用 JWT payload，最后使用默认值）
+                // 构建用户信息。优先使用响应数据，其次使用JWT payload，最后使用默认值
                 const userInfo = {
                     id: data.id || data.userId || tokenPayload?.userId || tokenPayload?.sub || 1,
                     username: data.username || tokenPayload?.username || tokenPayload?.sub || username,
@@ -58,7 +56,7 @@ class AuthService {
                 return { ...data, ...userInfo, token: data.token };
             }
 
-            // 如果没有 token，抛出错误
+            // 如果没有token，抛出错误
             throw new Error('登录响应中没有 token');
         } catch (error) {
             console.error('后端登录失败:', error);
@@ -83,7 +81,7 @@ class AuthService {
         }
     }
 
-    // 管理员注册 (用于初始化管理员账户)
+    // 管理员注册
     async register(userData) {
         try {
             const response = await axios.post('/api/auth/register', {
@@ -123,7 +121,7 @@ class AuthService {
         return !!(token && user && user.role === 'admin');
     }
 
-    // 检查Token是否过期 (简单的JWT解析)
+    // 检查Token是否过期
     isTokenExpired() {
         const token = this.getToken();
         if (!token) return true;
@@ -142,7 +140,7 @@ class AuthService {
     // 自动刷新Token
     async refreshToken() {
         try {
-            // 手动携带 Token 请求，绕过拦截器可能导致的路径错误
+            // 手动携带Token请求，绕过拦截器可能导致的路径错误
             const response = await axios.post('/api/auth/refresh', {}, {
                 headers: {
                     'Authorization': `Bearer ${this.getToken()}`
@@ -172,7 +170,7 @@ class AuthService {
         return user.role === requiredRole;
     }
 
-    // 验证具体权限 (可根据后端权限系统扩展)
+    // 验证具体权限
     hasPermission(permission) {
         const user = this.getCurrentUser();
         if (!user) return false;

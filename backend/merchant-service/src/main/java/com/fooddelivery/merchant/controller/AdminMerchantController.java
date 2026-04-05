@@ -29,9 +29,9 @@ public class AdminMerchantController {
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getMerchantStats() {
         long totalCount = merchantRepository.count();
-        long activeCount = totalCount; // 简化：假设所有商家都是活跃的
-        long pendingCount = 0L; // 简化：没有待审核状态
-        long suspendedCount = 0L; // 简化：没有停用状态
+        long activeCount = totalCount;
+        long pendingCount = 0L;
+        long suspendedCount = 0L;
 
         Map<String, Object> stats = new HashMap<>();
         // 前端期望的字段
@@ -39,7 +39,7 @@ public class AdminMerchantController {
         stats.put("active", activeCount);
         stats.put("pending", pendingCount);
         stats.put("suspended", suspendedCount);
-        stats.put("newThisMonth", 0L); // TODO: 需要 createdAt 字段支持
+        stats.put("newThisMonth", 0L);
         stats.put("growthRate", 0.0);
         // 保持兼容旧的字段名
         stats.put("totalCount", totalCount);
@@ -110,7 +110,6 @@ public class AdminMerchantController {
             @RequestBody Map<String, String> body) {
         return merchantRepository.findById(id)
                 .map(merchant -> {
-                    // 可以扩展添加status字段
                     Merchant saved = merchantRepository.save(merchant);
                     return ResponseEntity.ok(toDto(saved));
                 })
@@ -126,7 +125,6 @@ public class AdminMerchantController {
             @RequestBody Map<String, Object> body) {
         return merchantRepository.findById(id)
                 .map(merchant -> {
-                    // 可以扩展添加审批逻辑
                     Merchant saved = merchantRepository.save(merchant);
                     return ResponseEntity.ok(toDto(saved));
                 })

@@ -15,7 +15,7 @@ async function analyzeFieldMapping() {
 
     const results = {};
 
-    // 1. 测试Dashboard API
+    // 测试Dashboard API
     try {
         console.log('\n📊 测试Dashboard API...');
         const response = await fetch('http://localhost:8088/admin/dashboard/overview', {
@@ -39,7 +39,7 @@ async function analyzeFieldMapping() {
         console.error('❌ Dashboard API错误:', error);
     }
 
-    // 2. 测试Orders API
+    // 测试Orders API
     try {
         console.log('\n📦 测试Orders API...');
         const response = await fetch('http://localhost:8084/admin/orders/stats', {
@@ -63,7 +63,7 @@ async function analyzeFieldMapping() {
         console.error('❌ Orders API错误:', error);
     }
 
-    // 3. 测试Users API
+    // 测试Users API
     try {
         console.log('\n👥 测试Users API...');
         const response = await fetch('http://localhost:8083/admin/users/stats', {
@@ -87,7 +87,7 @@ async function analyzeFieldMapping() {
         console.error('❌ Users API错误:', error);
     }
 
-    // 4. 测试Merchants API
+    // 测试Merchants API
     try {
         console.log('\n🏪 测试Merchants API...');
         const response = await fetch('http://localhost:8081/admin/merchants/stats', {

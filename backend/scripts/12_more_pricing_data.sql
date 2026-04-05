@@ -13,7 +13,7 @@ DECLARE
     v_order_id BIGINT;
     i INT;
 BEGIN
-    -- 1. 添加更多菜品 (修正 available -> is_available, 去掉不存在的 created_at/updated_at)
+    -- 1. 添加更多菜品
     INSERT INTO menu_items (merchant_id, name, description, price, category, image_url, is_available) 
     VALUES (1, '至尊豪华汉堡', '双层牛肉，双层芝士，培根', 45.00, '主食', 'http://example.com/burger_deluxe.jpg', true)
     RETURNING id INTO v_burger_id;
@@ -34,9 +34,9 @@ BEGIN
     VALUES (1, '昂贵海鲜拼盘', '龙虾，鲍鱼，帝王蟹', 288.00, '主食', 'http://example.com/seafood.jpg', true)
     RETURNING id INTO v_seafood_id;
 
-    -- 2. 模拟销量数据 (插入 orders 和 order_items 表)
+    -- 2. 模拟销量数据
     
-    -- 2.1 畅销品：网红爆款奶茶 (60 单 -> 触发涨价)
+    -- 2.1 畅销品：网红爆款奶茶（60单 -> 触发涨价）
     FOR i IN 1..60 LOOP
         INSERT INTO orders (user_id, merchant_id, total_amount, status, created_at)
         VALUES (1, 1, 36.00, 'COMPLETED', NOW() - (random() * interval '7 days'))
@@ -46,7 +46,7 @@ BEGIN
         VALUES (v_order_id, v_milktea_id, 18.00, 2);
     END LOOP;
 
-    -- 2.2 滞销品：滞销蔬菜沙拉 (3 单 -> 触发降价)
+    -- 2.2 滞销品：滞销蔬菜沙拉（3单 -> 触发降价）
     FOR i IN 1..3 LOOP
         INSERT INTO orders (user_id, merchant_id, total_amount, status, created_at)
         VALUES (1, 1, 35.00, 'COMPLETED', NOW() - (random() * interval '7 days'))
@@ -56,7 +56,7 @@ BEGIN
         VALUES (v_order_id, v_salad_id, 35.00, 1);
     END LOOP;
 
-    -- 2.3 中等销量：至尊豪华汉堡 (15 单 -> 维持)
+    -- 2.3 中等销量：至尊豪华汉堡（15单 -> 维持）
     FOR i IN 1..15 LOOP
         INSERT INTO orders (user_id, merchant_id, total_amount, status, created_at)
         VALUES (1, 1, 45.00, 'COMPLETED', NOW() - (random() * interval '7 days'))
@@ -66,7 +66,7 @@ BEGIN
         VALUES (v_order_id, v_burger_id, 45.00, 1);
     END LOOP;
 
-    -- 2.4 销量尚可：普通炸薯条 (20 单 -> 维持或微调)
+    -- 2.4 销量尚可：普通炸薯条（20单 -> 维持或微调）
     FOR i IN 1..20 LOOP
         INSERT INTO orders (user_id, merchant_id, total_amount, status, created_at)
         VALUES (1, 1, 12.00, 'COMPLETED', NOW() - (random() * interval '7 days'))

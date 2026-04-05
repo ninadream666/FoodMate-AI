@@ -128,7 +128,6 @@ export default function Login({ initialRole = 'customer' }) {
             {/* 顶部弹性留白：吸收多余空间 */}
             <div className="flex-1 min-h-[1rem]"></div>
 
-            {/* 核心内容组：固定 gap，移除 transition-all 以实现“直接切换无弹动” */}
             <div className="flex flex-col gap-4 shrink-0 w-full">
               
               {/* 标题区 */}
@@ -141,7 +140,7 @@ export default function Login({ initialRole = 'customer' }) {
                 </p>
               </div>
 
-              {/* 登录/注册 切换 Toggle */}
+              {/* 登录/注册 切换Toggle */}
               <div className="flex h-11 w-full p-1 bg-background-section rounded-xl border border-border-light shadow-inner shrink-0 mt-1">
                 <button 
                   onClick={() => setIsLogin(true)} 
@@ -163,7 +162,6 @@ export default function Login({ initialRole = 'customer' }) {
 
               {/* 角色选择器 */}
               <div className="flex flex-col gap-2 shrink-0">
-                {/* 字体变大至 text-xs */}
                 <p className="text-xs font-black text-text-secondary uppercase tracking-wider ml-1">选择身份</p>
                 <div className="grid grid-cols-4 gap-2">
                   <RoleOption label="顾客" value="customer" currentRole={role} setRole={setRole} icon={<UserIcon size="22" />} />
@@ -173,11 +171,10 @@ export default function Login({ initialRole = 'customer' }) {
                 </div>
               </div>
 
-              {/* 输入表单：移除外层动态间距与过渡动画 */}
+              {/* 输入表单 */}
               <form className="flex flex-col gap-3.5 shrink-0" onSubmit={handleSubmit}>
                 
                 <div>
-                  {/* 字体变大至 text-xs */}
                   <label className="block text-xs font-black text-text-secondary uppercase tracking-wider mb-1.5 ml-1">用户名</label>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-text-tertiary group-focus-within:text-primary transition-colors">
@@ -239,7 +236,7 @@ export default function Login({ initialRole = 'customer' }) {
                   </div>
                 </div>
 
-                {/* 仅在登录模式下才渲染“忘记密码”相关的整个占位区块，完美解决注册时按钮间距过大的问题 */}
+                {/* 仅在登录模式下才渲染“忘记密码”相关的整个占位区块 */}
                 {isLogin && (
                   <div className="flex justify-end items-center h-3 shrink-0">
                     <button type="button" className="text-[11px] font-bold text-text-secondary hover:text-primary transition-colors">

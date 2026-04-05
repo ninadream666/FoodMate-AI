@@ -45,7 +45,7 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-// 商家行组件 (遵守北欧排版：首列左对齐，其余居中)
+// 商家行组件
 const MerchantRow = ({ merchant, onEdit, onToggleStatus, onViewDetails }) => (
     <tr className="hover:bg-surface-hover transition-colors border-b border-divider last:border-b-0">
         <td className="px-6 py-4 text-left">
@@ -344,7 +344,7 @@ const MerchantManagement = () => {
                 )}
             </div>
 
-            {/* 定制化弹窗 Modal */}
+            {/* 定制化弹窗Modal */}
             {dialog.isOpen && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-overlay backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-surface rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-border-light">

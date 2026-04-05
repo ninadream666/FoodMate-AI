@@ -52,7 +52,7 @@ public class SettlementStatsDTO {
     private BigDecimal paidAmount;
 
     /**
-     * 月增长率 (%)
+     * 月增长率（%）
      */
     private BigDecimal monthlyGrowthRate;
 

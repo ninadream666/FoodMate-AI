@@ -6,7 +6,7 @@ Base = declarative_base()
 
 class SalesHistory(Base):
     """
-    销售历史记录 - 从 OrderCompletedEvent 聚合而来
+    销售历史记录：从OrderCompletedEvent聚合而来
     """
     __tablename__ = "sales_history"
 
@@ -20,7 +20,7 @@ class SalesHistory(Base):
 
 class PricingProposal(Base):
     """
-    AI 生成的定价提案
+    AI生成的定价提案
     """
     __tablename__ = "pricing_proposals"
 

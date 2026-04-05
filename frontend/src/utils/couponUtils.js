@@ -1,7 +1,7 @@
 /**
  * 优惠券验证和计算工具
  * 用于前端验证优惠券可用性和计算优惠金额
- * 基于后端接口文档 v1.0 (2026-01-03) 完善
+ * 基于后端接口文档v1.0 (2026-01-03) 完善
  * React Native版本 - 使用JavaScript日期处理，移除date-fns依赖
  */
 
@@ -164,7 +164,7 @@ export const isCouponExpiringSoon = (coupon) => {
 
 /**
  * 生成优惠券智能推荐说明
- * @param {Object} result - calculateCouponsDiscount 的返回结果
+ * @param {Object} result - calculateCouponsDiscount的返回结果
  * @param {number} originalAmount - 原始订单金额
  * @returns {Object} 推荐说明 { title: string, description: string, savings: string }
  */
@@ -196,11 +196,11 @@ export const generateRecommendationDescription = (result, originalAmount) => {
     };
 };
 
-// ==================== 新增工具函数 (匹配后端接口) ====================
+// ==================== 工具函数 ====================
 
 /**
- * 检查优惠券是否过期（基于新的数据结构）
- * @param {Object} coupon - 用户优惠券对象 (UserCouponDTO)
+ * 检查优惠券是否过期
+ * @param {Object} coupon - 用户优惠券对象（UserCouponDTO）
  * @returns {boolean} 是否过期
  */
 export const isCouponExpired = (coupon) => {
@@ -209,8 +209,8 @@ export const isCouponExpired = (coupon) => {
 };
 
 /**
- * 检查优惠券是否可用于指定订单（基于新的数据结构）
- * @param {Object} coupon - 用户优惠券对象 (UserCouponDTO)
+ * 检查优惠券是否可用于指定订单
+ * @param {Object} coupon - 用户优惠券对象（UserCouponDTO）
  * @param {number} orderTotal - 订单总金额
  * @param {number} merchantId - 商户ID（可选）
  * @returns {Object} 验证结果 { valid: boolean, reason?: string }
@@ -251,8 +251,8 @@ export const isCouponApplicable = (coupon, orderTotal, merchantId = null) => {
 };
 
 /**
- * 计算单个优惠券的优惠金额（基于新的数据结构）
- * @param {Object} coupon - 用户优惠券对象 (UserCouponDTO)
+ * 计算单个优惠券的优惠金额
+ * @param {Object} coupon - 用户优惠券对象（UserCouponDTO）
  * @param {number} orderTotal - 订单总金额
  * @returns {number} 优惠金额
  */
@@ -272,7 +272,7 @@ export const calculateCouponDiscount = (coupon, orderTotal) => {
         // 满减券
         discount = template.discountValue;
     } else if (template.type === 'DISCOUNT') {
-        // 折扣券 (discountValue 是折扣率，如 0.8 表示8折)
+        // 折扣券 (discountValue是折扣率，如0.8表示8折)
         discount = orderTotal * (1 - template.discountValue);
     }
 
@@ -286,7 +286,7 @@ export const calculateCouponDiscount = (coupon, orderTotal) => {
 };
 
 /**
- * 格式化优惠券面值显示（基于新的数据结构）
+ * 格式化优惠券面值显示
  * @param {Object} couponTemplate - 优惠券模板对象
  * @returns {string} 格式化后的面值
  */
@@ -300,7 +300,7 @@ export const formatCouponValue = (couponTemplate) => {
 };
 
 /**
- * 格式化优惠券描述（基于新的数据结构）
+ * 格式化优惠券描述
  * @param {Object} couponTemplate - 优惠券模板对象
  * @returns {string} 格式化后的描述
  */

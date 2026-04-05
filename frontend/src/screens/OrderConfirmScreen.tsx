@@ -19,10 +19,10 @@ import api from '../services/apiClient';
 import { useIsFocused } from '@react-navigation/native';
 
 const OrderConfirmScreen = ({ route, navigation }: any) => {
-    // 1. 获取上一页传来的数据
+    // 获取上一页传来的数据
     const { cartItems, restaurant, subtotal, discount = 0, selectedCouponIds = [] } = route.params || {};
 
-    // 2. 状态管理
+    // 状态管理
     const [address, setAddress] = useState<any>(null);
     const [remark, setRemark] = useState('');
     const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
@@ -35,8 +35,8 @@ const OrderConfirmScreen = ({ route, navigation }: any) => {
     const [loading, setLoading] = useState(false);
     const [pageLoading, setPageLoading] = useState(true);
 
-    // 3. 计算最终费用
-    // 配送费：基础3元 + 每公里1元，最低3元，最高15元
+    // 计算最终费用
+    // 配送费：基础3元+每公里1元，最低3元，最高15元
     const distanceKm = (route.params?.distance || 2000) / 1000;
     const deliveryFee = Math.min(15, Math.max(3, 3 + Math.round(distanceKm)));
     const packagingFee = Math.ceil((route.params?.items?.length || 1) * 0.5); // 包装费：每件0.5元
@@ -44,7 +44,7 @@ const OrderConfirmScreen = ({ route, navigation }: any) => {
 
     const isFocused = useIsFocused();
 
-    // 4. 加载默认地址和可用优惠券
+    // 加载默认地址和可用优惠券
     useEffect(() => {
         if (isFocused) {
             loadDefaultAddress();
@@ -87,7 +87,7 @@ const OrderConfirmScreen = ({ route, navigation }: any) => {
         }
     };
 
-    // 5. 提交支付
+    // 提交支付
     const handlePay = async () => {
         if (!address) {
             Alert.alert('提示', '请添加收货地址');
@@ -126,7 +126,7 @@ const OrderConfirmScreen = ({ route, navigation }: any) => {
                     tokenLength: token.length
                 });
 
-                // 尝试解析token内容（简单解析，不验证签名）
+                // 尝试解析token内容
                 try {
                     const tokenParts = token.split('.');
                     if (tokenParts.length === 3) {
@@ -178,7 +178,7 @@ const OrderConfirmScreen = ({ route, navigation }: any) => {
                 }
             }
 
-            // 验证token格式 (简单检查)
+            // 验证token格式
             if (token && !token.startsWith('ey')) {
                 console.warn('Token格式可能异常:', token.substring(0, 10) + '...');
                 Alert.alert('登录已过期', 'Token格式异常，请重新登录', [
@@ -247,15 +247,14 @@ const OrderConfirmScreen = ({ route, navigation }: any) => {
                 }
                 return;
             }
-            // 构造订单数据 (匹配后端CreateOrderDto格式)
+            // 构造订单数据，匹配后端CreateOrderDto格式
             const orderData = {
-                merchantId: restaurant.id.toString(), // 后端期望 string 类型
+                merchantId: restaurant.id.toString(), // 后端期望string类型
                 items: cartItems.map((item: any) => ({
                     menuItemId: item.id,
                     price: parseFloat(item.price), // 确保price是数字格式
                     quantity: item.quantity
                 }))
-                // 注意：addressId、couponIds、remark 不在当前后端 CreateOrderDto 中，暂时移除
             };
 
             console.log('创建订单详细信息:', {
@@ -266,20 +265,20 @@ const OrderConfirmScreen = ({ route, navigation }: any) => {
                 orderData: orderData
             });
 
-            // 1. 创建订单
+            // 创建订单
             const createdOrder = await orderService.createOrder(orderData);
 
-            // 2. 核销优惠券
+            // 核销优惠券
             if (selectedCoupon?.id) {
                 await api.post('coupons', `/${selectedCoupon.id}/use`).catch((e: any) => {
                     console.warn('核销优惠券失败:', e);
                 });
             }
 
-            // 3. 支付订单
+            // 支付订单
             await orderService.payOrder(createdOrder.id);
 
-            // 3. 跳转成功页
+            // 跳转成功页
             navigation.replace('PaymentSuccess', {
                 order: {
                     id: createdOrder.id,

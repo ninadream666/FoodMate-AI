@@ -19,27 +19,27 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 全局限流过滤器（无 API Gateway 时的兜底方案）
+ * 全局限流过滤器（无API Gateway时的兜底方案）
  *
  * 策略：
- * 1. 全局 QPS 限制：单实例最多 500 req/s，超过则返回 429
- * 2. 单 IP QPS 限制：同一 IP 最多 100 req/s，防止单点刷接口
- * 3. 并发连接数限制：同时最多处理 300 个请求，超过直接拒绝
+ * 1. 全局QPS限制：单实例最多500 req/s，超过则返回429
+ * 2. 单IP QPS限制：同一IP最多 100 req/s，防止单点刷接口
+ * 3. 并发连接数限制：同时最多处理300个请求，超过直接拒绝
  *
- * 通过 rate-limit.enabled=true 开启（默认关闭，避免对现有环境产生影响）
+ * 通过rate-limit.enabled=true开启（默认关闭，避免对现有环境产生影响）
  */
 @Slf4j
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE + 10) // 优先级高，在 JWT 之前执行
+@Order(Ordered.HIGHEST_PRECEDENCE + 10) // 优先级高，在JWT之前执行
 @ConditionalOnProperty(name = "rate-limit.enabled", havingValue = "true", matchIfMissing = false)
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    // 全局 QPS 计数
+    // 全局QPS计数
     private final AtomicInteger globalCounter = new AtomicInteger(0);
     private final AtomicLong globalWindowStart = new AtomicLong(System.currentTimeMillis());
     private static final int GLOBAL_QPS_LIMIT = 500;
 
-    // 单 IP QPS 计数
+    // 单IP QPS计数
     private final Map<String, IpRateState> ipCounters = new ConcurrentHashMap<>();
     private static final int IP_QPS_LIMIT = 100;
 
@@ -47,14 +47,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final AtomicInteger activeRequests = new AtomicInteger(0);
     private static final int MAX_CONCURRENT_REQUESTS = 300;
 
-    // 清理间隔（每 60s 清理过期的 IP 计数器，防止内存泄漏）
+    // 清理间隔：每60s清理过期的IP计数器，防止内存泄漏
     private final AtomicLong lastCleanup = new AtomicLong(System.currentTimeMillis());
     private static final long CLEANUP_INTERVAL_MS = 60_000;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        // 健康检查 / Actuator 端点不限流
+        // 健康检查/Actuator端点不限流
         String path = request.getRequestURI();
         if (path.startsWith("/actuator") || path.equals("/health")) {
             filterChain.doFilter(request, response);
@@ -63,7 +63,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         String clientIp = getClientIp(request);
 
-        // 检查 1：并发连接数
+        // 检查1：并发连接数
         int current = activeRequests.incrementAndGet();
         if (current > MAX_CONCURRENT_REQUESTS) {
             activeRequests.decrementAndGet();
@@ -73,21 +73,21 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         try {
-            // 检查 2：全局 QPS
+            // 检查2：全局QPS
             if (!checkGlobalRate()) {
-                log.warn("[限流] 全局 QPS 超限: >{}/s, IP: {}, Path: {}", GLOBAL_QPS_LIMIT, clientIp, path);
+                log.warn("[限流] 全局QPS超限: >{}/s, IP: {}, Path: {}", GLOBAL_QPS_LIMIT, clientIp, path);
                 rejectRequest(response, "系统繁忙，请稍后重试");
                 return;
             }
 
-            // 检查 3：单 IP QPS
+            // 检查3：单IP QPS
             if (!checkIpRate(clientIp)) {
-                log.warn("[限流] IP QPS 超限: {} > {}/s, Path: {}", clientIp, IP_QPS_LIMIT, path);
+                log.warn("[限流]IP QPS超限: {} > {}/s, Path: {}", clientIp, IP_QPS_LIMIT, path);
                 rejectRequest(response, "请求过于频繁，请稍后重试");
                 return;
             }
 
-            // 定期清理过期 IP 计数器
+            // 定期清理过期IP计数器
             periodicCleanup();
 
             filterChain.doFilter(request, response);
@@ -128,7 +128,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         long now = System.currentTimeMillis();
         if (now - lastCleanup.get() > CLEANUP_INTERVAL_MS) {
             lastCleanup.set(now);
-            // 清理 5s 内无请求的 IP
+            // 清理5s内无请求的IP
             ipCounters.entrySet().removeIf(e -> now - e.getValue().windowStart.get() > 5000);
         }
     }

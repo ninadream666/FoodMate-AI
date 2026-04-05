@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class MerchantDto {
     private Long id;
-    private String externalId;  // 外部 ID（智能体/地图 API）
+    private String externalId;  // 外部ID（智能体/地图API）
     private Long ownerUserId;
     private String name;
     private String address;

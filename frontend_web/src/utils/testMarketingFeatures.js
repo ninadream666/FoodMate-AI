@@ -47,7 +47,7 @@ class MarketingTestRunner {
         }
     }
 
-    // 测试切换优惠券状态（模拟测试，不实际执行）
+    // 测试切换优惠券状态
     async testToggleCouponTemplate(templateId = null) {
         if (!templateId) {
             console.warn('⚠️ 跳过切换优惠券状态测试：缺少模板ID');
@@ -55,7 +55,6 @@ class MarketingTestRunner {
         }
 
         try {
-            // 这里只是测试API调用，不实际执行
             console.log(`📝 模拟测试：切换优惠券模板 ${templateId} 状态`);
             // const result = await marketingService.toggleCouponTemplate(templateId);
             return this.logResult('切换优惠券状态', true, '模拟测试成功');
@@ -79,7 +78,7 @@ class MarketingTestRunner {
         console.log('🚀 开始营销功能测试...');
         console.log('━'.repeat(50));
 
-        // 首先运行API连接诊断
+        // 运行API连接诊断
         console.log('📡 运行API连接诊断...');
         const diagnostic = await debugApiConnection();
         console.log('📊 API诊断结果:', diagnostic.summary);

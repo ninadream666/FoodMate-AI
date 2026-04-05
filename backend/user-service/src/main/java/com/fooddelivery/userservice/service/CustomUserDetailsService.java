@@ -21,7 +21,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        // 将我们的 User 实体转换为 Spring Security 理解的 UserDetails 对象
+        // 将User实体转换为Spring Security理解的UserDetails对象
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPasswordHash(), // 必须是加密后的密码

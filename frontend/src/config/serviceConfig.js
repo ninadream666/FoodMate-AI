@@ -3,9 +3,7 @@ import { Platform } from 'react-native';
 
 // 开发环境配置
 const DEVELOPMENT_CONFIG = {
-    // 根据平台设置API主机
-    // 使用 adb reverse 映射后，Android 模拟器可以直接通过 localhost 访问宿主机服务
-    // 真机测试时改为电脑的局域网IP地址。
+    // 使用adb reverse映射后，Android模拟器可以直接通过localhost访问宿主机服务
     API_HOST: Platform.select({
         android: 'http://127.0.0.1', 
         ios: 'http://127.0.0.1',

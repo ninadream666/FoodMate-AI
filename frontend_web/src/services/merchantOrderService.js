@@ -2,7 +2,7 @@ import apiClient from './apiClient';
 
 /**
  * 商家订单与退款服务
- * 已重构：统一使用 apiClient，并严格对齐后端 RefundApprovalDto
+ * 统一使用 apiClient，并严格对齐后端RefundApprovalDto
  */
 export const merchantOrderService = {
   
@@ -15,8 +15,8 @@ export const merchantOrderService = {
   // 商家批准或拒绝退款
   // 对应: PATCH /merchants/{merchantId}/orders/{orderId}/approve-cancel
   auditRefund: async (merchantId, orderId, approved, rejectReason) => {
-    // 严格遵循后端 order-service 提供的 RefundApprovalDto 结构
-    // 仅包含 orderId, approved, rejectReason
+    // 严格遵循后端order-service提供的RefundApprovalDto结构
+    // 仅包含orderId, approved, rejectReason
     const payload = {
       orderId: Number(orderId), 
       approved: Boolean(approved),

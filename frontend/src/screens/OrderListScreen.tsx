@@ -31,7 +31,7 @@ const OrderListScreen = ({ navigation }: any) => {
 
     useEffect(() => {
         if (isFocused) {
-            // 每次页面聚焦都重新拉取最新状态（确保商家审批后用户能及时看到变化）
+            // 每次页面聚焦都重新拉取最新状态，确保商家审批后用户能及时看到变化
             loadOrders(true);
         }
     }, [isFocused]);
@@ -55,13 +55,13 @@ const OrderListScreen = ({ navigation }: any) => {
             }
 
             const data = await orderService.getMyOrders();
-            // 兼容分页响应（Page 对象有 content 字段）和普通数组
+            // 兼容分页响应和普通数组
             const list = data?.content || (Array.isArray(data) ? data : []);
             const sorted = list.sort((a: any, b: any) =>
                 new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             );
 
-            // 批量解析商家名称（去重后并行查询）
+            // 批量解析商家名称，去重后并行查询
             const uniqueMerchantIds = [...new Set(sorted.map((o: any) => o.merchantId).filter(Boolean))];
             await Promise.all(
                 uniqueMerchantIds.map(async (mid: string) => {
@@ -176,7 +176,7 @@ const OrderListScreen = ({ navigation }: any) => {
 
                 {/* 底部：操作按钮 */}
                 <View style={styles.cardFooter}>
-                    {/* 取消按钮 (仅在允许状态显示) */}
+                    {/* 取消按钮，仅在允许状态显示 */}
                     {canCancel && (
                         <TouchableOpacity
                             style={[styles.btn, styles.cancelBtn]}

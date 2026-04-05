@@ -3,7 +3,7 @@ import { settlementService } from '../../services/settlementService';
 
 /**
  * 结算分成看板
- * 功能：展示收入统计、结算单列表、结算单详情处理 (北欧风重构版)
+ * 功能：展示收入统计、结算单列表、结算单详情处理
  */
 export default function SettlementDashboard() {
   const [stats, setStats] = useState({
@@ -116,7 +116,7 @@ export default function SettlementDashboard() {
             />
             <StatsCard 
               icon="hourglass_top" 
-              label="待结算金额 (预估)" 
+              label="待结算金额（预估）" 
               value={formatCurrency(stats.pendingCommission)} 
             />
             <StatsCard 

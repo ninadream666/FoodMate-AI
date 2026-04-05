@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * 商家服务内部接口
- * 供 AI Service 等内部服务调用，获取菜单数据，简化鉴权流程
+ * 供AI Service等内部服务调用，获取菜单数据，简化鉴权流程
  */
 @RestController
 @RequestMapping("/merchants/internal")
@@ -23,11 +23,11 @@ public class MerchantInternalController {
 
     /**
      * 获取商家的所有上架菜品（包含最新价格）
-     * 供 AI 定价引擎拉取当前基准价格
+     * 供AI定价引擎拉取当前基准价格
      */
     @GetMapping("/{merchantId}/menu-items")
     public ResponseEntity<List<MenuItemDto>> getMerchantMenuItems(@PathVariable Long merchantId) {
-        // 复用 service 层的 public 查询逻辑 (只查上架的)
+        // 复用service层的public查询逻辑 (只查上架的)
         return ResponseEntity.ok(menuService.getPublicMenu(merchantId));
     }
 

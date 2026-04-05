@@ -1,9 +1,9 @@
 -- ============================================================
--- 为 merchants 表添加外部 ID 支持
--- 用于支持智能体返回的真实餐厅 ID（如 B0LDM1F2K5）
+-- 为merchants表添加外部ID支持
+-- 用于支持智能体返回的真实餐厅ID，如B0LDM1F2K5
 -- ============================================================
 
--- 1. 添加外部 ID 字段
+-- 1. 添加外部ID字段
 ALTER TABLE merchants
 ADD COLUMN IF NOT EXISTS external_id VARCHAR(50) UNIQUE;
 
@@ -35,7 +35,7 @@ CREATE INDEX IF NOT EXISTS idx_merchants_external_id ON merchants (external_id);
 
 CREATE INDEX IF NOT EXISTS idx_merchants_source ON merchants (source);
 
--- 4. 为现有商家生成外部 ID（可选）
+-- 4. 为现有商家生成外部ID（可选）
 UPDATE merchants
 SET
     external_id = 'M' || LPAD(id::text, 9, '0')

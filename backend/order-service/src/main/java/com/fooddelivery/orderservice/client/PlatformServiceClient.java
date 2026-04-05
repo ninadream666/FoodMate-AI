@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.Map;
 
 /**
- * Platform Service Feign 客户端
+ * Platform Service Feign客户端
  * 用于调用平台服务的内部接口
  */
 @FeignClient(name = "platform-service", path = "/api/internal/commissions")

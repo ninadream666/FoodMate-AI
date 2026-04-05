@@ -111,7 +111,7 @@ public interface MerchantSettlementRepository extends JpaRepository<MerchantSett
                         @Param("endTime") LocalDateTime endTime);
 
         /**
-         * 统计已结算总金额 (PAID状态)
+         * 统计已结算总金额（PAID状态）
          */
         @Query("SELECT COALESCE(SUM(s.netIncome), 0) FROM MerchantSettlement s WHERE s.status = com.fooddelivery.platformservice.entity.SettlementStatus.PAID")
         java.math.BigDecimal sumSettledAmount();

@@ -2,7 +2,7 @@
 const API_URL = '/api/profile';
 
 export const profileService = {
-  // 获取我的完整画像（用于判断是否是新用户）
+  // 获取我的完整画像，用于判断是否是新用户
   getMyProfile: async () => {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('未登录');
@@ -21,7 +21,7 @@ export const profileService = {
     return await response.json();
   },
 
-  // 更新/初始化我的画像（提交问卷）
+  // 更新/初始化我的画像 - 提交问卷
   updateProfile: async (profileData) => {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('未登录');

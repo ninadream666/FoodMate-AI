@@ -150,8 +150,8 @@ public class MerchantOrderController {
     }
 
     /**
-     * 获取订单中实际使用的 merchantId
-     * 订单表中的 merchant_id 可能是外部ID（如高德POI ID），优先使用外部ID
+     * 获取订单中实际使用的merchantId
+     * 订单表中的merchant_id可能是外部ID（如高德POI ID），优先使用外部ID
      */
     private String resolveOrderMerchantId(Merchant merchant) {
         if (merchant.getExternalId() != null && !merchant.getExternalId().isBlank()) {

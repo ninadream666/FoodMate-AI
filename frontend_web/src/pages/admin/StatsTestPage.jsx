@@ -177,7 +177,7 @@ const StatsTestPage = () => {
                 </div>
             )}
 
-            {/* --- 弹窗 1：高级排障手册 (重构升级版) --- */}
+            {/* --- 弹窗1：排障手册 --- */}
             {showGuide && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-overlay backdrop-blur-md animate-in fade-in duration-300">
                     <div className="bg-surface rounded-[32px] shadow-2xl w-full max-w-2xl overflow-hidden border border-border-light animate-in zoom-in-95">

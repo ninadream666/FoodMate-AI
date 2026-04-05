@@ -11,7 +11,7 @@ class PlatformService {
         }
     }
 
-    // 获取所有平台服务 (别名，用于兼容)
+    // 获取所有平台服务
     async getServices(params = {}) {
         try {
             const { page = 0, size = 50, status, category, keyword } = params;
@@ -233,10 +233,9 @@ class PlatformService {
         }
     }
 
-    // ============== 分成统计 API ==============
-    // 根据后端设计: 分成 = 结算单的一部分，使用结算和订单API
+    // ============== 分成统计API ==============
 
-    // 获取分成统计概览 (使用结算统计API)
+    // 获取分成统计概览
     async getCommissionStats(params = {}) {
         try {
             const { startDate, endDate } = params;
@@ -265,10 +264,9 @@ class PlatformService {
         }
     }
 
-    // 获取分成趋势数据 (从仪表盘概览API获取)
+    // 获取分成趋势数据
     async getCommissionTrends(days = 7) {
         try {
-            // 后端接口: /api/admin/dashboard/overview 包含 orderTrends
             const response = await platformApi.get('/api/admin/dashboard/overview');
             const data = response.data;
 
@@ -288,15 +286,14 @@ class PlatformService {
         }
     }
 
-    // 获取商家分成贡献排名 (需后端添加此接口)
+    // 获取商家分成贡献排名
     async getTopMerchantContributions(limit = 5) {
         try {
-            // 注意: 后端暂未提供此接口，先尝试调用
             const response = await platformApi.get(`/api/admin/settlements/top-merchants?limit=${limit}`);
             return response.data;
         } catch (error) {
             console.error('Get top merchant contributions failed:', error);
-            // 如果接口不存在，返回空数组
+            // 如果不存在，返回空数组
             return [];
         }
     }
@@ -312,9 +309,6 @@ class PlatformService {
         }
     }
 
-    // 注意：分成规则管理已移除
-    // 后端使用平台服务订阅机制管理分成比例，而非独立的分成规则
-    // 如需修改分成比例，请使用 platform-services 相关API
 }
 
 const platformService = new PlatformService();

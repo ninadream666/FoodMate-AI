@@ -1,8 +1,8 @@
 """
 统一特征工程模块
 
-将 RestaurantArm + DecisionContext 转换为模型可用的特征向量。
-LightGBM 和 DeepFM 共用同一套特征定义，保证训练 / 推理一致性。
+将RestaurantArm+DecisionContext转换为模型可用的特征向量。
+LightGBM和DeepFM共用同一套特征定义，保证训练/推理一致性。
 """
 
 from typing import Dict, Any, List, Tuple
@@ -12,10 +12,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 # ============================================================
-# 特征 Schema 定义
+# 特征Schema定义
 # ============================================================
 
-# 连续特征（LightGBM 直接使用，DeepFM 走 DenseFeature）
+# 连续特征（LightGBM直接使用，DeepFM走DenseFeature）
 NUMERIC_FEATURES = [
     "distance",              # 餐厅到用户的距离（米）
     "rating",                # 餐厅评分 (1-5)
@@ -32,7 +32,7 @@ NUMERIC_FEATURES = [
     "mab_pulls",             # MAB 历史拉取次数
 ]
 
-# 类别特征（LightGBM 用 category dtype，DeepFM 走 SparseFeat embedding）
+# 类别特征（LightGBM用category dtype，DeepFM走SparseFeat embedding）
 CATEGORICAL_FEATURES = [
     "cuisine_type",          # 菜系类型
     "meal_period",           # 用餐时段: breakfast/lunch/dinner/afternoon_tea/night_snack
@@ -55,7 +55,7 @@ BINARY_FEATURES = [
 ALL_NUMERIC = NUMERIC_FEATURES + BINARY_FEATURES   # LightGBM 全部当数值
 ALL_FEATURES = ALL_NUMERIC + CATEGORICAL_FEATURES
 
-# 菜系词表（用于 DeepFM embedding，可按需扩展）
+# 菜系词表（用于DeepFM embedding，可按需扩展）
 CUISINE_VOCAB = [
     "川菜", "湘菜", "粤菜", "东北菜", "西北菜", "鲁菜", "浙菜", "苏菜",
     "火锅", "烧烤", "日料", "韩餐", "西餐", "快餐", "小吃", "面食",
@@ -246,7 +246,7 @@ def features_to_numpy(
     feature_dicts: List[Dict[str, Any]],
 ) -> Tuple[np.ndarray, List[str], Dict[str, List[str]]]:
     """
-    将多条特征字典转换为 numpy 数组（用于 LightGBM）。
+    将多条特征字典转换为numpy数组（用于LightGBM）。
 
     Returns
     -------
@@ -268,7 +268,7 @@ def features_to_numpy(
 
 
 def get_feature_names() -> List[str]:
-    """返回全部特征名（数值 + 类别），顺序固定。"""
+    """返回全部特征名（数值+类别），顺序固定。"""
     return list(ALL_FEATURES)
 
 

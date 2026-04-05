@@ -42,7 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = authHeader.substring(7);
             String username = jwtUtil.extractUsername(jwt);
-            // 确保与 Merchant/Order Service 解析逻辑一致
+            // 确保与Merchant/Order Service解析逻辑一致
             Long userId = jwtUtil.extractUserId(jwt); 
             String role = jwtUtil.extractClaim(jwt, claims -> claims.get("role", String.class));
 
@@ -62,7 +62,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (Exception e) {
             log.error("Authentication failed: {}", e.getMessage());
-            // 不抛出异常，让 SecurityChain 继续处理（最终返回 403/401）
+            // 不抛出异常，让SecurityChain继续处理（最终返回 403/401）
         }
 
         filterChain.doFilter(request, response);

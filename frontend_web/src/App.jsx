@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, ProtectedRoute } from './hooks/useAuth';
 
-// 用户端页面
+// 用户端
 import Login from './pages/user/Login';
 import Home from './pages/user/Home';
 import Profile from './pages/user/Profile';
@@ -16,7 +16,7 @@ import Address from './pages/user/Address';
 import Wallet from './pages/user/Wallet';
 import Survey from './pages/user/Survey';
 
-// 商家端组件导入
+// 商家端
 import MerchantLayout from './pages/merchant/MerchantLayout';
 import MenuManagement from './pages/merchant/MenuManagement';
 import ServiceMarketplace from './pages/merchant/ServiceMarketplace';
@@ -170,7 +170,7 @@ function App() {
             {/* 菜单管理 */}
             <Route path="menu" element={<MenuManagement />} />
             
-            {/* AI 智能定价 - 新增页面 */}
+            {/* AI智能定价 */}
             <Route path="ai-pricing" element={<SmartPricing />} />
             
             {/* 平台服务 */}

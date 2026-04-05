@@ -50,7 +50,7 @@ eureka:
     prefer-ip-address: true
     health-check-url-path: /actuator/health
 
-# JWT 配置必须保持一致
+# JWT配置必须保持一致
 jwt:
   secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
   expiration: ${JWT_EXPIRATION:86400000} # 1 day

@@ -28,7 +28,7 @@ public class JwtUtil {
     private long jwtExpiration;
 
     /**
-     * 生成Token - 兼容用户服务的方式（包含userId和role）
+     * 生成Token - 兼容用户服务的方式，包含userId和role
      */
     public String generateToken(String username, Long userId, String role) {
         Map<String, Object> claims = new HashMap<>();
@@ -95,7 +95,7 @@ public class JwtUtil {
     }
 
     /**
-     * 提取用户ID - 各服务常用方法
+     * 提取用户ID
      */
     public Long extractUserId(String token) {
         return extractClaim(token, claims -> claims.get("userId", Long.class));
