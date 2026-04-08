@@ -84,6 +84,11 @@ const proxies = {
     changeOrigin: true,
     pathRewrite: { '^/app-api/nutrivision': '' }
   },
+  '/app-api/images': {
+    target: 'http://localhost:8081',
+    changeOrigin: true,
+    pathRewrite: { '^/app-api/images': '/api/images' }
+  },
 
   // ========================================================================
   // Web端路由分发
