@@ -11,7 +11,7 @@ import java.util.List;
  * 商家服务Feign客户端
  * 用于order-service调用merchant-service获取菜品信息
  */
-@FeignClient(name = "merchant-service", path = "/merchants", url = "http://merchant-service:8081")
+@FeignClient(name = "merchant-service", path = "/merchants", url = "http://merchant-service:8080")
 public interface MerchantServiceClient {
 
     /**
