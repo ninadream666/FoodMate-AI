@@ -86,7 +86,7 @@ class VoiceInferenceService {
                 }
 
                 console.log(`📦 [LLM] 初次运行：正在通过 USB 物理隧道从电脑下载模型...`);
-                const downloadUrl = 'http://127.0.0.1:9099/models/model_1500_q8.gguf';
+                const downloadUrl = 'http://8.217.223.120:9099/models/model_1500_q8.gguf';
 
                 const downloadOptions = {
                     fromUrl: downloadUrl,
