@@ -5,13 +5,13 @@ const isDev = import.meta.env.DEV;
 
 const API_BASE_URLS = {
     // 各服务的API路径前缀
-    USER_SERVICE: isDev ? '/api' : 'http://localhost:8083', 
-    MERCHANT_SERVICE: isDev ? '' : 'http://localhost:8081',
-    ORDER_SERVICE: isDev ? '' : 'http://localhost:8084',
-    MARKETING_SERVICE: isDev ? '' : 'http://localhost:8082',
-    PLATFORM_SERVICE: isDev ? '' : 'http://localhost:8088',
-    PROFILE_SERVICE: isDev ? '' : 'http://localhost:8086',
-    RECOMMENDATION_SERVICE: isDev ? '' : 'http://localhost:8087'
+    USER_SERVICE: '/api', 
+    MERCHANT_SERVICE: '',
+    ORDER_SERVICE: '',
+    MARKETING_SERVICE: '',
+    PLATFORM_SERVICE: '',
+    PROFILE_SERVICE: '',
+    RECOMMENDATION_SERVICE: ''
 };
 
 // 统一的API响应状态码

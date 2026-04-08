@@ -2,13 +2,13 @@
 const config = {
     // API服务端点配置
     API_BASE_URLS: {
-        USER_SERVICE: process.env.REACT_APP_USER_SERVICE_URL || 'http://localhost:8083',
-        MERCHANT_SERVICE: process.env.REACT_APP_MERCHANT_SERVICE_URL || 'http://localhost:8081',
-        ORDER_SERVICE: process.env.REACT_APP_ORDER_SERVICE_URL || 'http://localhost:8084',
-        MARKETING_SERVICE: process.env.REACT_APP_MARKETING_SERVICE_URL || 'http://localhost:8082',
-        PLATFORM_SERVICE: process.env.REACT_APP_PLATFORM_SERVICE_URL || 'http://localhost:8088',
-        PROFILE_SERVICE: process.env.REACT_APP_PROFILE_SERVICE_URL || 'http://localhost:8086',
-        RECOMMENDATION_SERVICE: process.env.REACT_APP_RECOMMENDATION_SERVICE_URL || 'http://localhost:8087'
+        USER_SERVICE: process.env.REACT_APP_USER_SERVICE_URL || '',
+        MERCHANT_SERVICE: process.env.REACT_APP_MERCHANT_SERVICE_URL || '',
+        ORDER_SERVICE: process.env.REACT_APP_ORDER_SERVICE_URL || '',
+        MARKETING_SERVICE: process.env.REACT_APP_MARKETING_SERVICE_URL || '',
+        PLATFORM_SERVICE: process.env.REACT_APP_PLATFORM_SERVICE_URL || '',
+        PROFILE_SERVICE: process.env.REACT_APP_PROFILE_SERVICE_URL || '',
+        RECOMMENDATION_SERVICE: process.env.REACT_APP_RECOMMENDATION_SERVICE_URL || ''
     },
 
     // 分页配置
