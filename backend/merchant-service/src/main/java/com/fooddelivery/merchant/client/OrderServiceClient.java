@@ -11,7 +11,7 @@ import java.util.List;
  * 订单服务Feign客户端
  * 用于merchant-service调用order-service 的内部API
  */
-@FeignClient(name = "order-service", path = "/orders/internal")
+@FeignClient(name = "order-service", path = "/orders/internal", url = "http://order-service:8084")
 public interface OrderServiceClient {
 
     /**
