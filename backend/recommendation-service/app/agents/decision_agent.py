@@ -554,8 +554,8 @@ class ContextualBanditStrategy(MABStrategy):
             pure_query_lower = pure_query.lower()
             name_str = str(arm.name).lower()
             if pure_query_lower in name_str or pure_query_lower in cuisine_str:
-                context_bonus += 0.40  # 给极高分数加成，保证冲上榜首
-                logger.info(f"🎯 绝对意图命中: '{pure_query}' 匹配了餐厅 '{arm.name}'，获得一票否决级加分 0.40")
+                context_bonus += 1  # 给极高分数加成，保证冲上榜首
+                logger.info(f"🎯 绝对意图命中: '{pure_query}' 匹配了餐厅 '{arm.name}'，获得一票否决级加分 1")
 
         # 节日/周末影响
         temporal_ctx = env.get("temporal", {})
