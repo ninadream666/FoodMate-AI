@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView, Act
 import Feather from 'react-native-vector-icons/Feather';
 import { merchantService } from '../../services/merchantService';
 import { settlementService } from '../../services/settlementService';
+import { authService } from '../../services/authService';
 import { colors, spacing, borderRadius, fontSize, fontWeight } from '../../theme/NordicTheme';
 
 interface MerchantInfo {
@@ -46,6 +47,20 @@ const MerchantDashboardScreen = ({ navigation }: any) => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleLogout = () => {
+        Alert.alert('退出登录', '确定要退出当前账号吗？', [
+            { text: '取消', style: 'cancel' },
+            {
+                text: '确定',
+                style: 'destructive',
+                onPress: async () => {
+                    await authService.logout();
+                    navigation.replace('Login');
+                }
+            }
+        ]);
     };
 
     if (loading) {
@@ -179,6 +194,12 @@ const MerchantDashboardScreen = ({ navigation }: any) => {
                         <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>
                 </View>
+                
+                {/* 退出登录按钮 */}
+                <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+                    <Text style={styles.logoutText}>退出登录</Text>
+                </TouchableOpacity>
+
             </ScrollView>
         </SafeAreaView>
     );
@@ -364,6 +385,28 @@ const styles = StyleSheet.create({
         color: colors.primary,
         fontWeight: fontWeight.medium,
         marginLeft: spacing.sm,
+    },
+    
+    // 退出登录按钮样式
+    logoutBtn: {
+        backgroundColor: '#FFFFFF',
+        padding: spacing.md,
+        alignItems: 'center',
+        marginBottom: spacing.sm,
+        marginHorizontal: spacing.lg,
+        borderRadius: borderRadius.xl,
+        borderWidth: 1,
+        borderColor: '#E0DBD3',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    logoutText: {
+        color: colors.error,
+        fontSize: fontSize.md,
+        fontWeight: fontWeight.semibold,
     },
 });
 

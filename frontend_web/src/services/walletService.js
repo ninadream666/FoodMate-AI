@@ -7,7 +7,7 @@
 import { API_BASE, get, post, getAuthHeaders } from './apiClient';
 
 // 直接使用marketing-service的完整路径
-const COUPON_API_BASE = 'http://localhost:8082/api/coupons';
+const COUPON_API_BASE = 'api/coupons';
 
 // 模拟钱包数据
 const MOCK_WALLET = {

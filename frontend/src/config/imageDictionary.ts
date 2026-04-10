@@ -4,8 +4,7 @@
  * 引入图像标签池（Tag Pool）和哈希散列算法。
  */
 
-// 核心配置：使用merchantService作为图片代理
-const BACKEND_IMAGE_PROXY = 'http://127.0.0.1:8081/api/images/proxy';
+const BACKEND_IMAGE_PROXY = 'http://8.217.223.120/app-api/images/proxy';
 
 /**
  * 字符串一致性Hash函数

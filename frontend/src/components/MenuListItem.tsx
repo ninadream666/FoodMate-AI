@@ -17,21 +17,21 @@ const MenuListItem = memo(({ dish, onAdd, fallbackMerchantImage }: Props) => {
         // 兼容后端可能使用的多种图片字段名
         let finalUrl = dish.imageUrl || dish.image || dish.picture || '';
         
-        // 无论数据库里存了什么，只要没有明确包含代理接口'/api/images/proxy'
+        // 无论数据库里存了什么，只要没有明确包含代理接口'/app-api/images/proxy'
         // 就一律视为脏数据，强行拦截
-        const isBadUrl = !finalUrl || !finalUrl.includes('/api/images/proxy');
+        const isBadUrl = !finalUrl || !finalUrl.includes('/app-api/images/proxy');
 
         if (isBadUrl) {
             if (dish.name === '米饭' || dish.name === '白米饭') {
                 // 生成安全的hash确保后端不溢出
                 const safeHash = (dish.id ? String(dish.id).charCodeAt(0) : Math.floor(Math.random() * 1000)) % 2147483647;
-                finalUrl = `http://127.0.0.1:8081/api/images/proxy?tag=white,rice,bowl&width=200&height=200&hash=${safeHash}`;
+                finalUrl = `http://8.217.223.120/app-api/images/proxy?tag=white,rice,bowl&width=200&height=200&hash=${safeHash}`;
             } 
 
             // 将默认的例汤固定为视觉效果更好的西红柿汤
             else if (dish.name === '例汤' || dish.name.includes('番茄') || dish.name.includes('西红柿')) {
                 const safeHash = (dish.id ? String(dish.id).charCodeAt(0) : Math.floor(Math.random() * 1000)) % 2147483647;
-                finalUrl = `http://127.0.0.1:8081/api/images/proxy?tag=tomato,soup&width=200&height=200&hash=${safeHash}`;
+                finalUrl = `http://8.217.223.120/app-api/images/proxy?tag=tomato,soup&width=200&height=200&hash=${safeHash}`;
             } 
             else {
                 // 其他菜品正常走智能代理匹配，获取高清美食图

@@ -148,7 +148,7 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
         const hash = hashId(safeId); // 使用相同的hash函数锁定图片
         
         // 动态拼装走后端代理的 URL
-        return `http://127.0.0.1:8081/api/images/proxy?tag=restaurant,interior&width=800&height=400&hash=${hash}`;
+        return `http://8.217.223.120/app-api/images/proxy?tag=restaurant,interior&width=800&height=400&hash=${hash}`;
     })();
 
     if (loading) {
