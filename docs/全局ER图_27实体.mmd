@@ -1,0 +1,142 @@
+flowchart LR
+  %% =========================
+  %% Global Physical ER Diagram (27 entities)
+  %% Source of truth: backend/scripts/*.sql + profile-service UserProfile
+  %% =========================
+
+  %% ===== Modules =====
+  subgraph M1[用户与认证]
+    direction TB
+    users["users<br/>PK id<br/>username, email, role, credit_level"]
+    addresses["addresses<br/>PK id | FK user_id<br/>city, street, is_default, created_at"]
+    cancellation_records["cancellation_records<br/>PK id | FK user_id, order_id<br/>cancelled_at"]
+  end
+
+  subgraph M2[商家与菜单]
+    direction TB
+    merchants["merchants<br/>PK id | FK owner_user_id<br/>name, external_id, enable_dynamic_pricing, enable_auto_approval"]
+    menu_items["menu_items<br/>PK id | FK merchant_id<br/>name, price, category, is_available, is_dynamic"]
+    merchant_notifications["merchant_notifications<br/>PK id | FK* merchant_id<br/>title, type, is_read, created_at"]
+    price_change_proposals["price_change_proposals<br/>PK id | FK* merchant_id, menu_item_id<br/>current_price, suggested_price, status, external_proposal_id"]
+  end
+
+  subgraph M3[定价分析]
+    direction TB
+    pricing_strategies["pricing_strategies<br/>PK id | FK merchant_id<br/>strategy_name, strategy_type, ai_enabled, status"]
+    menu_item_costs["menu_item_costs<br/>PK id | FK menu_item_id<br/>cost_category, cost_amount, cost_date, supplier"]
+    pricing_history["pricing_history<br/>PK id | FK menu_item_id, merchant_id<br/>old_price, new_price, change_reason, changed_at"]
+    price_elasticity["price_elasticity<br/>PK id | FK menu_item_id, merchant_id<br/>elasticity_coefficient, confidence_score, optimal_price_min, optimal_price_max"]
+    discount_recommendations["discount_recommendations<br/>PK id | FK merchant_id, menu_item_id<br/>recommended_discount, recommended_price, status, expires_at"]
+    pricing_ab_tests["pricing_ab_tests<br/>PK id | FK merchant_id, menu_item_id<br/>test_name, test_group_a_price, test_group_b_price, winner, status"]
+  end
+
+  subgraph M4[订单管理]
+    direction TB
+    orders["orders<br/>PK id | FK* user_id, merchant_id<br/>total_amount, status, created_at, paid_at, payment_method"]
+    order_items["order_items<br/>PK id | FK order_id | FK* menu_item_id<br/>price, quantity"]
+    order_status_history["order_status_history<br/>PK id | FK order_id<br/>old_status, new_status, status_changed_at"]
+  end
+
+  subgraph M5[营销优惠]
+    direction TB
+    coupon_templates["coupon_templates<br/>PK id<br/>name, type, discount_value, valid_from, valid_until"]
+    user_coupons["user_coupons<br/>PK id | FK coupon_template_id | FK* user_id, order_id<br/>status, obtained_at, used_at, expires_at"]
+    auto_issuance_rules["auto_issuance_rules<br/>PK id | FK* coupon_template_id, created_by<br/>trigger_type, frequency, priority, enabled"]
+    auto_issuance_history["auto_issuance_history<br/>PK id | FK rule_id | FK* user_id, user_coupon_id<br/>trigger_type, successful, issued_at"]
+  end
+
+  subgraph M6[平台运营与结算]
+    direction TB
+    platform_services["platform_services<br/>PK id<br/>service_code, category, fee_type, fee_value, status"]
+    merchant_service_subscriptions["merchant_service_subscriptions<br/>PK id | FK merchant_id, service_id<br/>status, subscribed_at, expires_at"]
+    merchant_settlements["merchant_settlements<br/>PK id | FK merchant_id<br/>settlement_no, period_label, total_commission, net_income, status"]
+    commission_records["commission_records<br/>PK id | FK merchant_id, service_id, settlement_id | FK* order_id<br/>order_amount, commission_amount, status, created_at"]
+  end
+
+  subgraph AIDB[AI 定价数据库（独立库）]
+    direction TB
+    sales_history["sales_history<br/>PK id | FK* order_id, menu_item_id, merchant_id<br/>quantity, unit_price, transaction_time"]
+    pricing_proposals["pricing_proposals<br/>PK id | FK* merchant_id, menu_item_id<br/>current_price, suggested_price, status, strategy_type"]
+  end
+
+  subgraph MONGO[MongoDB 用户画像（独立区域）]
+    direction TB
+    user_profiles["user_profiles (collection)<br/>PK _id | FK* username -> users.username<br/>preferences, tags, allergies, favoriteMerchantIds, stats"]
+  end
+
+  %% ===== Actual FK relationships (solid) =====
+  users -->|"1:N (FK)"| addresses
+  users -->|"1:N (FK)"| cancellation_records
+  users -->|"1:N (FK)"| merchants
+
+  merchants -->|"1:N (FK)"| pricing_strategies
+  merchants -->|"1:N (FK)"| menu_items
+
+  orders -->|"1:N (FK)"| order_items
+  orders -->|"1:N (FK)"| order_status_history
+  orders -->|"1:N (FK)"| cancellation_records
+
+  menu_items -->|"1:N (FK)"| menu_item_costs
+  menu_items -->|"1:N (FK)"| pricing_history
+  menu_items -->|"1:N (FK)"| price_elasticity
+  menu_items -->|"1:N (FK)"| discount_recommendations
+  menu_items -->|"1:N (FK)"| pricing_ab_tests
+
+  merchants -->|"1:N (FK)"| pricing_history
+  merchants -->|"1:N (FK)"| price_elasticity
+  merchants -->|"1:N (FK)"| discount_recommendations
+  merchants -->|"1:N (FK)"| pricing_ab_tests
+
+  coupon_templates -->|"1:N (FK)"| user_coupons
+  auto_issuance_rules -->|"1:N (FK)"| auto_issuance_history
+
+  platform_services -->|"1:N (FK)"| merchant_service_subscriptions
+  merchants -->|"1:N (FK)"| merchant_service_subscriptions
+  merchants -->|"1:N (FK)"| merchant_settlements
+
+  merchants -->|"1:N (FK)"| commission_records
+  platform_services -->|"1:N (FK)"| commission_records
+  merchant_settlements -->|"1:N (FK)"| commission_records
+
+  %% ===== Logical FK relationships (dashed) =====
+  users -.->|"1:N (逻辑FK)"| orders
+  merchants -.->|"1:N (逻辑FK)"| orders
+  menu_items -.->|"1:N (逻辑FK)"| order_items
+
+  users -.->|"1:N (逻辑FK)"| user_coupons
+  orders -.->|"1:N (逻辑FK)"| user_coupons
+
+  coupon_templates -.->|"1:N (逻辑FK)"| auto_issuance_rules
+  users -.->|"1:N (逻辑FK)"| auto_issuance_rules
+  users -.->|"1:N (逻辑FK)"| auto_issuance_history
+  user_coupons -.->|"1:N (逻辑FK)"| auto_issuance_history
+
+  merchants -.->|"1:N (逻辑FK)"| merchant_notifications
+  merchants -.->|"1:N (逻辑FK)"| price_change_proposals
+  menu_items -.->|"1:N (逻辑FK)"| price_change_proposals
+  orders -.->|"1:N (逻辑FK)"| commission_records
+
+  %% ===== Cross-DB logical references (dashed + note) =====
+  orders -.->|"跨库逻辑引用"| sales_history
+  menu_items -.->|"跨库逻辑引用"| sales_history
+  merchants -.->|"跨库逻辑引用"| sales_history
+
+  merchants -.->|"跨库逻辑引用"| pricing_proposals
+  menu_items -.->|"跨库逻辑引用"| pricing_proposals
+  pricing_proposals -.->|"跨库逻辑引用"| price_change_proposals
+
+  users -.->|"跨库逻辑引用 (username)"| user_profiles
+  merchants -.->|"跨库逻辑引用 (favoriteMerchantIds)"| user_profiles
+
+  %% ===== Styles =====
+  style M1 fill:#E6F0FF,stroke:#4B89FF,stroke-width:2px
+  style M2 fill:#FFE9D6,stroke:#FF9B3D,stroke-width:2px
+  style M3 fill:#FFF7CC,stroke:#E8C500,stroke-width:2px
+  style M4 fill:#E5F8EA,stroke:#38A169,stroke-width:2px
+  style M5 fill:#F2E7FF,stroke:#8B5CF6,stroke-width:2px
+  style M6 fill:#FFE5E5,stroke:#E53E3E,stroke-width:2px
+  style AIDB fill:#EEEEEE,stroke:#7A7A7A,stroke-width:2px
+  style MONGO fill:#E3E3E3,stroke:#666666,stroke-width:2px
+
+  classDef entity fill:#FFFFFF,stroke:#333333,stroke-width:1px,color:#111111
+  class users,addresses,cancellation_records,merchants,menu_items,merchant_notifications,price_change_proposals,pricing_strategies,menu_item_costs,pricing_history,price_elasticity,discount_recommendations,pricing_ab_tests,orders,order_items,order_status_history,coupon_templates,user_coupons,auto_issuance_rules,auto_issuance_history,platform_services,merchant_service_subscriptions,merchant_settlements,commission_records,sales_history,pricing_proposals,user_profiles entity
