@@ -3,6 +3,7 @@ import traceback
 import time
 import asyncio
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import ValidationError
 from .models.schemas import VisionAnalysisRequest, SingleFoodAnalysisRequest, VisionAnalysisResponse
@@ -23,6 +24,17 @@ app = FastAPI(title=settings.PROJECT_NAME)
 
 # GZip压缩：响应体>500字节时自动压缩，减少50-80%的传输体积
 app.add_middleware(GZipMiddleware, minimum_size=500)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:9099", 
+        "http://localhost:3000"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # 请求体大小限制：最大10MB (Base64图片+JSON开销)
 MAX_REQUEST_BODY_SIZE = 10 * 1024 * 1024

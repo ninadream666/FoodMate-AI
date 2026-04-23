@@ -489,6 +489,29 @@ services:
       - grafana_data:/var/lib/grafana
     profiles: [ "monitoring", "enhanced" ]
 
+  # === 接口文档聚合展示 ===
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: food-platform-swagger-ui
+    restart: unless-stopped
+    ports:
+      - "9099:8080" # 你可以通过 localhost:8099 访问聚合的 Swagger 页面
+    environment:
+      # 配置下拉菜单，聚合所有微服务的 OpenAPI 数据源
+      # 注意：这里的 localhost 是指你真机浏览器的 localhost，因为 Swagger UI 是在浏览器端发起请求的
+      URLS: >-
+        [
+          { "url": "http://localhost:8083/v3/api-docs", "name": "User-Service" },
+          { "url": "http://localhost:8081/v3/api-docs", "name": "Merchant-Service" },
+          { "url": "http://localhost:8084/v3/api-docs", "name": "Order-Service" },
+          { "url": "http://localhost:8082/v3/api-docs", "name": "Marketing-Service" },
+          { "url": "http://localhost:8086/v3/api-docs", "name": "Profile-Service" },
+          { "url": "http://localhost:8088/api-docs", "name": "Platform-Service" },
+          { "url": "http://localhost:8087/openapi.json", "name": "Recommendation-Service" },
+          { "url": "http://localhost:8089/openapi.json", "name": "AIPricing-Service" },
+          { "url": "http://localhost:8090/openapi.json", "name": "Nutrivision-Service" }
+        ]
+
 # === 数据卷配置 ===
 volumes:
   postgres_data:
