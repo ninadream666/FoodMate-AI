@@ -1,0 +1,46 @@
+[MAIN]
+ignore=__pycache__,.venv,venv,migrations,node_modules
+recursive=yes
+jobs=4
+persistent=no
+
+[MESSAGES CONTROL]
+# 关闭与本项目编码风格冲突或噪声较大的检查项
+disable=
+    C0114,  # missing-module-docstring
+    C0115,  # missing-class-docstring
+    C0116,  # missing-function-docstring
+    C0301,  # line-too-long (中文+表情符号导致虚高)
+    R0903,  # too-few-public-methods
+    R0913,  # too-many-arguments
+    R0914,  # too-many-locals
+    W1203,  # logging-fstring-interpolation
+    W0212,  # protected-access
+    W0613,  # unused-argument
+    W0703,  # broad-except
+    R0902,  # too-many-instance-attributes
+    R0912,  # too-many-branches
+    R0915,  # too-many-statements
+    R0911,  # too-many-return-statements
+    R0801,  # duplicate-code
+
+[FORMAT]
+max-line-length=120
+indent-string='    '
+
+[REPORTS]
+reports=yes
+score=yes
+output-format=text
+
+[BASIC]
+good-names=i,j,k,e,r,p,t,id,_
+
+[DESIGN]
+max-args=12
+max-locals=30
+max-branches=20
+max-statements=80
+
+[SIMILARITIES]
+min-similarity-lines=8

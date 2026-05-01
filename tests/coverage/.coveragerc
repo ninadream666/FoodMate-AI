@@ -1,0 +1,30 @@
+[run]
+branch = True
+source =
+    backend/recommendation-service/app
+    backend/ai-pricing-service/app
+    backend/nutrivision-service/app
+omit =
+    */__pycache__/*
+    */tests/*
+    */migrations/*
+    */node_modules/*
+parallel = False
+relative_files = True
+
+[report]
+show_missing = True
+skip_covered = False
+precision = 2
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+
+[html]
+directory = tests/coverage/html
+title = FoodMate-AI Python Coverage
+
+[xml]
+output = tests/coverage/coverage.xml

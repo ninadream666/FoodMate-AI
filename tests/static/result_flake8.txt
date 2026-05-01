@@ -1,0 +1,321 @@
+backend/ai-pricing-service/app\clients.py:11:1: E302 expected 2 blank lines, found 1
+backend/ai-pricing-service/app\clients.py:75:1: E305 expected 2 blank lines after class or function definition, found 1
+backend/ai-pricing-service/app\clients.py:75:33: W292 no newline at end of file
+backend/ai-pricing-service/app\config.py:4:1: E302 expected 2 blank lines, found 1
+backend/ai-pricing-service/app\config.py:30:1: E305 expected 2 blank lines after class or function definition, found 1
+backend/ai-pricing-service/app\config.py:30:22: W292 no newline at end of file
+backend/ai-pricing-service/app\deepseek_agent.py:9:1: E302 expected 2 blank lines, found 1
+backend/ai-pricing-service/app\deepseek_agent.py:102:1: E305 expected 2 blank lines after class or function definition, found 1
+backend/ai-pricing-service/app\deepseek_agent.py:102:35: W292 no newline at end of file
+backend/ai-pricing-service/app\events.py:19:1: E302 expected 2 blank lines, found 1
+backend/ai-pricing-service/app\events.py:32:1: E302 expected 2 blank lines, found 1
+backend/ai-pricing-service/app\events.py:56:1: E302 expected 2 blank lines, found 1
+backend/ai-pricing-service/app\events.py:90:1: E302 expected 2 blank lines, found 1
+backend/ai-pricing-service/app\events.py:107:49: E261 at least two spaces before inline comment
+backend/ai-pricing-service/app\events.py:133:41: E261 at least two spaces before inline comment
+backend/ai-pricing-service/app\events.py:190:1: E302 expected 2 blank lines, found 1
+backend/ai-pricing-service/app\events.py:211:64: W292 no newline at end of file
+backend/ai-pricing-service/app\main.py:15:1: E302 expected 2 blank lines, found 1
+backend/ai-pricing-service/app\main.py:51:1: E302 expected 2 blank lines, found 1
+backend/ai-pricing-service/app\main.py:55:1: E302 expected 2 blank lines, found 1
+backend/ai-pricing-service/app\main.py:63:37: W292 no newline at end of file
+backend/ai-pricing-service/app\models.py:1:1: F401 'sqlalchemy.Boolean' imported but unused
+backend/ai-pricing-service/app\models.py:1:1: F401 'sqlalchemy.JSON' imported but unused
+backend/ai-pricing-service/app\models.py:7:1: E302 expected 2 blank lines, found 1
+backend/ai-pricing-service/app\models.py:21:1: E302 expected 2 blank lines, found 1
+backend/ai-pricing-service/app\models.py:41:49: W292 no newline at end of file
+backend/nutrivision-service/app\core\config.py:4:1: E302 expected 2 blank lines, found 1
+backend/nutrivision-service/app\core\config.py:16:1: E305 expected 2 blank lines after class or function definition, found 1
+backend/nutrivision-service/app\core\config.py:16:22: W292 no newline at end of file
+backend/nutrivision-service/app\core\food_classifier.py:13:1: E302 expected 2 blank lines, found 1
+backend/nutrivision-service/app\core\food_classifier.py:101:1: E305 expected 2 blank lines after class or function definition, found 1
+backend/nutrivision-service/app\core\food_classifier.py:101:35: W292 no newline at end of file
+backend/nutrivision-service/app\core\gpt_vision.py:9:1: E302 expected 2 blank lines, found 1
+backend/nutrivision-service/app\core\gpt_vision.py:246:42: E701 multiple statements on one line (colon)
+backend/nutrivision-service/app\core\gpt_vision.py:274:1: E305 expected 2 blank lines after class or function definition, found 1
+backend/nutrivision-service/app\core\gpt_vision.py:274:36: W292 no newline at end of file
+backend/nutrivision-service/app\main.py:30:1: E302 expected 2 blank lines, found 1
+backend/nutrivision-service/app\main.py:38:64: E226 missing whitespace around arithmetic operator
+backend/nutrivision-service/app\main.py:45:1: E302 expected 2 blank lines, found 1
+backend/nutrivision-service/app\main.py:59:1: E302 expected 2 blank lines, found 1
+backend/nutrivision-service/app\main.py:92:5: F841 local variable 've' is assigned to but never used
+backend/nutrivision-service/app\main.py:161:5: F841 local variable 've' is assigned to but never used
+backend/nutrivision-service/app\models\schemas.py:4:1: E302 expected 2 blank lines, found 1
+backend/nutrivision-service/app\models\schemas.py:11:1: E302 expected 2 blank lines, found 1
+backend/nutrivision-service/app\models\schemas.py:18:1: E302 expected 2 blank lines, found 1
+backend/nutrivision-service/app\models\schemas.py:28:1: E302 expected 2 blank lines, found 1
+backend/nutrivision-service/app\models\schemas.py:35:64: W292 no newline at end of file
+backend/recommendation-service/app\__init__.py:1:10: W292 no newline at end of file
+backend/recommendation-service/app\agents\base_agent.py:95:27: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\base_agent.py:113:21: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\collaborative_agent.py:26:1: F401 'typing.Optional' imported but unused
+backend/recommendation-service/app\agents\context_agent.py:15:1: F401 'typing.Optional' imported but unused
+backend/recommendation-service/app\agents\context_agent.py:124:13: F841 local variable 'location' is assigned to but never used
+backend/recommendation-service/app\agents\context_agent.py:182:33: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\agents\context_agent.py:183:33: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\agents\context_agent.py:284:37: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\agents\context_agent.py:285:37: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\agents\context_agent.py:564:25: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:15:1: F401 'typing.Optional' imported but unused
+backend/recommendation-service/app\agents\decision_agent.py:15:1: F401 'typing.Tuple' imported but unused
+backend/recommendation-service/app\agents\decision_agent.py:313:9: F841 local variable 'is_hot_food' is assigned to but never used
+backend/recommendation-service/app\agents\decision_agent.py:346:13: E722 do not use bare 'except'
+backend/recommendation-service/app\agents\decision_agent.py:386:37: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:415:33: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:417:30: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:425:32: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:434:34: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:449:33: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:451:30: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:459:31: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:478:25: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:480:27: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:488:31: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:505:34: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:511:31: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:517:27: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:519:29: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:535:27: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:537:25: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:616:74: E226 missing whitespace around arithmetic operator
+backend/recommendation-service/app\agents\decision_agent.py:769:33: F541 f-string is missing placeholders
+backend/recommendation-service/app\agents\decision_agent.py:787:33: F541 f-string is missing placeholders
+backend/recommendation-service/app\agents\decision_agent.py:971:36: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:1067:40: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:1116:9: F841 local variable 'hour' is assigned to but never used
+backend/recommendation-service/app\agents\decision_agent.py:1134:9: F841 local variable 'blood_oxygen' is assigned to but never used
+backend/recommendation-service/app\agents\decision_agent.py:1267:36: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:1317:17: E722 do not use bare 'except'
+backend/recommendation-service/app\agents\decision_agent.py:1355:36: F541 f-string is missing placeholders
+backend/recommendation-service/app\agents\decision_agent.py:1357:36: F541 f-string is missing placeholders
+backend/recommendation-service/app\agents\decision_agent.py:1417:21: E226 missing whitespace around arithmetic operator
+backend/recommendation-service/app\agents\decision_agent.py:1502:38: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:1503:38: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:1504:38: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:1518:9: F841 local variable 'is_bad_weather' is assigned to but never used
+backend/recommendation-service/app\agents\decision_agent.py:1648:50: W504 line break after binary operator
+backend/recommendation-service/app\agents\decision_agent.py:1649:67: W504 line break after binary operator
+backend/recommendation-service/app\agents\decision_agent.py:1655:36: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:1656:36: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:1657:36: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:1673:9: F841 local variable 'humidity' is assigned to but never used
+backend/recommendation-service/app\agents\decision_agent.py:1678:9: F841 local variable 'hour' is assigned to but never used
+backend/recommendation-service/app\agents\decision_agent.py:1712:72: E226 missing whitespace around arithmetic operator
+backend/recommendation-service/app\agents\decision_agent.py:1712:75: E226 missing whitespace around arithmetic operator
+backend/recommendation-service/app\agents\decision_agent.py:1792:36: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:1801:39: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:1845:30: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:1846:30: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:1934:26: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\decision_agent.py:1936:47: W292 no newline at end of file
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:18:1: F401 'typing.Annotated' imported but unused
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:19:1: F401 'dataclasses.dataclass' imported but unused
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:19:1: F401 'dataclasses.field' imported but unused
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:21:1: F401 'enum.Enum' imported but unused
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:24:1: F401 'operator' imported but unused
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:25:1: F401 'os' imported but unused
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:26:1: F401 'sys' imported but unused
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:38:1: F401 '.context_agent.ContextAgent' imported but unused
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:39:1: F401 '.profiler_agent.ProfilerAgent' imported but unused
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:40:1: F401 '.decision_agent.DecisionAgent' imported but unused
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:41:1: F401 '.collaborative_agent.CollaborativeAgent' imported but unused
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:362:9: F841 local variable 'environment' is assigned to but never used
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:379:9: F841 local variable 'profile' is assigned to but never used
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:398:26: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:399:26: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:400:26: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:401:26: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:402:26: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:403:26: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:404:26: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:405:26: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\langgraph_orchestrator.py:406:26: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\parallel_orchestrator.py:39:1: F401 'dataclasses.dataclass' imported but unused
+backend/recommendation-service/app\agents\parallel_orchestrator.py:43:1: F401 'os' imported but unused
+backend/recommendation-service/app\agents\profiler_agent.py:15:1: F401 'typing.Optional' imported but unused
+backend/recommendation-service/app\agents\profiler_agent.py:17:1: F401 'asyncio' imported but unused
+backend/recommendation-service/app\agents\profiler_agent.py:19:1: F401 'random' imported but unused
+backend/recommendation-service/app\agents\profiler_agent.py:69:1: E302 expected 2 blank lines, found 0
+backend/recommendation-service/app\agents\profiler_agent.py:536:26: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\agents\reasoning_agent.py:16:1: F401 'typing.Optional' imported but unused
+backend/recommendation-service/app\agents\reasoning_agent.py:19:1: F401 'asyncio' imported but unused
+backend/recommendation-service/app\agents\reasoning_agent.py:21:1: F401 'json' imported but unused
+backend/recommendation-service/app\agents\reasoning_agent.py:22:1: F401 'os' imported but unused
+backend/recommendation-service/app\api\__init__.py:1:7: W292 no newline at end of file
+backend/recommendation-service/app\api\health.py:8:1: F401 'typing.Dict' imported but unused
+backend/recommendation-service/app\api\health.py:8:1: F401 'typing.Any' imported but unused
+backend/recommendation-service/app\api\health.py:9:1: F401 'asyncio' imported but unused
+backend/recommendation-service/app\api\health.py:17:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\api\health.py:34:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\api\health.py:68:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\api\health.py:91:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\api\health.py:131:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\api\health.py:214:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\api\health.py:231:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\api\health.py:268:10: W292 no newline at end of file
+backend/recommendation-service/app\api\mcp_api.py:13:1: F401 'fastapi.BackgroundTasks' imported but unused
+backend/recommendation-service/app\api\mcp_api.py:16:1: F401 'asyncio' imported but unused
+backend/recommendation-service/app\api\mcp_api.py:18:1: F401 '..models.schemas.LocationRequest' imported but unused
+backend/recommendation-service/app\api\mcp_api.py:24:1: F401 '..services.mcp_integrated_service.mcp_recommendation_service' imported but unused
+backend/recommendation-service/app\api\mcp_api.py:24:1: F401 '..services.mcp_integrated_service.create_mcp_recommendation_service' imported but unused
+backend/recommendation-service/app\api\mcp_api.py:397:5: F824 `global _mcp_service` is unused: name is never assigned in scope
+backend/recommendation-service/app\api\ml_api.py:18:1: F401 'typing.Optional' imported but unused
+backend/recommendation-service/app\api\ml_api.py:20:1: F401 'pathlib.Path' imported but unused
+backend/recommendation-service/app\api\ml_api.py:75:5: F824 `global _training_status` is unused: name is never assigned in scope
+backend/recommendation-service/app\api\multi_agent_api.py:11:1: F401 'typing.List' imported but unused
+backend/recommendation-service/app\api\multi_agent_api.py:12:1: F401 'asyncio' imported but unused
+backend/recommendation-service/app\api\multi_agent_api.py:18:1: F401 '..models.schemas.LocationRequest' imported but unused
+backend/recommendation-service/app\api\multi_agent_api.py:350:6: W292 no newline at end of file
+backend/recommendation-service/app\config.py:8:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\config.py:81:1: E305 expected 2 blank lines after class or function definition, found 1
+backend/recommendation-service/app\config.py:81:18: W292 no newline at end of file
+backend/recommendation-service/app\main.py:10:1: F401 'fastapi.HTTPException' imported but unused
+backend/recommendation-service/app\main.py:17:1: F401 'os' imported but unused
+backend/recommendation-service/app\main.py:74:5: E722 do not use bare 'except'
+backend/recommendation-service/app\main.py:169:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\main.py:177:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\main.py:226:1: E305 expected 2 blank lines after class or function definition, found 1
+backend/recommendation-service/app\main.py:234:6: W292 no newline at end of file
+backend/recommendation-service/app\ml\ensemble_strategy.py:13:1: F401 'typing.List' imported but unused
+backend/recommendation-service/app\ml\ensemble_strategy.py:13:1: F401 'typing.Optional' imported but unused
+backend/recommendation-service/app\ml\feature_engineering.py:182:78: W504 line break after binary operator
+backend/recommendation-service/app\ml\foodcf_encoder.py:24:1: F401 'typing.Dict' imported but unused
+backend/recommendation-service/app\ml\foodcf_encoder.py:24:1: F401 'typing.Any' imported but unused
+backend/recommendation-service/app\ml\foodcf_encoder.py:24:1: F401 'typing.Tuple' imported but unused
+backend/recommendation-service/app\ml\foodcf_encoder.py:220:9: F401 'torch' imported but unused
+backend/recommendation-service/app\ml\inference_engine.py:15:1: F401 'typing.Tuple' imported but unused
+backend/recommendation-service/app\ml\inference_engine.py:19:1: F401 '.feature_engineering.extract_features' imported but unused
+backend/recommendation-service/app\ml\ncf_model.py:33:1: F401 'typing.Dict' imported but unused
+backend/recommendation-service/app\ml\ncf_model.py:33:1: F401 'typing.Any' imported but unused
+backend/recommendation-service/app\ml\ncf_model.py:33:1: F401 'typing.List' imported but unused
+backend/recommendation-service/app\ml\train_deepfm.py:21:1: F401 'typing.Any' imported but unused
+backend/recommendation-service/app\ml\train_deepfm.py:21:1: F401 'typing.List' imported but unused
+backend/recommendation-service/app\ml\train_deepfm.py:22:1: F401 'collections.OrderedDict' imported but unused
+backend/recommendation-service/app\ml\train_foodcf_encoder.py:44:1: F401 'typing.Tuple' imported but unused
+backend/recommendation-service/app\ml\train_foodcf_encoder.py:46:1: F401 'numpy as np' imported but unused
+backend/recommendation-service/app\ml\train_foodcf_encoder.py:537:17: F402 import 'F' from line 484 shadowed by loop variable
+backend/recommendation-service/app\ml\train_foodcf_encoder.py:607:17: F541 f-string is missing placeholders
+backend/recommendation-service/app\ml\train_foodcf_encoder.py:608:17: F541 f-string is missing placeholders
+backend/recommendation-service/app\ml\train_foodcf_encoder.py:610:21: F541 f-string is missing placeholders
+backend/recommendation-service/app\ml\train_lightgbm.py:23:1: F401 'typing.Dict' imported but unused
+backend/recommendation-service/app\ml\train_lightgbm.py:23:1: F401 'typing.Any' imported but unused
+backend/recommendation-service/app\ml\train_lightgbm.py:25:1: F401 'numpy as np' imported but unused
+backend/recommendation-service/app\ml\train_lightgbm.py:32:1: F401 'app.ml.feature_engineering.extract_features' imported but unused
+backend/recommendation-service/app\ml\train_lightgbm.py:73:5: F401 'lightgbm as lgb' imported but unused
+backend/recommendation-service/app\ml\train_lightgbm.py:121:31: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\ml\train_lightgbm.py:122:31: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\ml\train_lightgbm.py:180:5: F401 'sklearn.model_selection.GroupShuffleSplit' imported but unused
+backend/recommendation-service/app\ml\train_lightgbm.py:188:31: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\ml\train_lightgbm.py:189:31: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\models\__init__.py:1:8: W292 no newline at end of file
+backend/recommendation-service/app\models\schemas.py:7:1: F401 'typing.Dict' imported but unused
+backend/recommendation-service/app\models\schemas.py:7:1: F401 'typing.Any' imported but unused
+backend/recommendation-service/app\models\schemas.py:189:62: W292 no newline at end of file
+backend/recommendation-service/app\services\amap_poi_service.py:6:1: F401 'requests' imported but unused
+backend/recommendation-service/app\services\amap_poi_service.py:13:1: F401 'json' imported but unused
+backend/recommendation-service/app\services\amap_poi_service.py:18:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\amap_poi_service.py:47:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\amap_poi_service.py:340:17: E722 do not use bare 'except'
+backend/recommendation-service/app\services\amap_poi_service.py:534:10: W292 no newline at end of file
+backend/recommendation-service/app\services\api_monitor.py:7:1: F401 'asyncio' imported but unused
+backend/recommendation-service/app\services\api_monitor.py:8:1: F401 'time' imported but unused
+backend/recommendation-service/app\services\api_monitor.py:19:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\api_monitor.py:26:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\api_monitor.py:37:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\api_monitor.py:51:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\api_monitor.py:60:24: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\api_monitor.py:61:24: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\api_monitor.py:62:24: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\api_monitor.py:63:24: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\api_monitor.py:64:24: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\api_monitor.py:65:24: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\api_monitor.py:121:24: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\api_monitor.py:270:1: E305 expected 2 blank lines after class or function definition, found 1
+backend/recommendation-service/app\services\api_monitor.py:270:33: W292 no newline at end of file
+backend/recommendation-service/app\services\external_api.py:6:1: F401 'requests' imported but unused
+backend/recommendation-service/app\services\external_api.py:10:1: F401 'json' imported but unused
+backend/recommendation-service/app\services\external_api.py:13:1: F401 'datetime.timedelta' imported but unused
+backend/recommendation-service/app\services\external_api.py:22:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\external_api.py:31:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\external_api.py:38:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\external_api.py:49:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\external_api.py:59:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\external_api.py:68:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\external_api.py:85:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\external_api.py:102:32: F541 f-string is missing placeholders
+backend/recommendation-service/app\services\external_api.py:259:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\external_api.py:272:9: F841 local variable 'start_time' is assigned to but never used
+backend/recommendation-service/app\services\external_api.py:419:42: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:420:42: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:430:29: E226 missing whitespace around arithmetic operator
+backend/recommendation-service/app\services\external_api.py:430:70: E226 missing whitespace around arithmetic operator
+backend/recommendation-service/app\services\external_api.py:519:22: E261 at least two spaces before inline comment
+backend/recommendation-service/app\services\external_api.py:611:17: F811 redefinition of unused 'json' from line 10
+backend/recommendation-service/app\services\external_api.py:760:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\external_api.py:982:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\external_api.py:1061:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\external_api.py:1122:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\external_api.py:1129:43: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:1130:43: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:1131:43: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:1132:43: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:1191:44: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:1192:44: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:1233:9: F841 local variable 'hour' is assigned to but never used
+backend/recommendation-service/app\services\external_api.py:1280:43: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:1281:43: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:1282:43: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:1288:9: F841 local variable 'district' is assigned to but never used
+backend/recommendation-service/app\services\external_api.py:1371:35: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:1372:35: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:1373:35: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:1428:35: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:1429:35: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:1430:35: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\external_api.py:1452:9: F841 local variable 'weather_condition' is assigned to but never used
+backend/recommendation-service/app\services\external_api.py:1478:39: W292 no newline at end of file
+backend/recommendation-service/app\services\jwt_service.py:12:1: E302 expected 2 blank lines, found 1
+backend/recommendation-service/app\services\jwt_service.py:73:19: F541 f-string is missing placeholders
+backend/recommendation-service/app\services\jwt_service.py:241:92: W292 no newline at end of file
+backend/recommendation-service/app\services\mcp_integrated_service.py:20:1: F401 'subprocess' imported but unused
+backend/recommendation-service/app\services\mcp_integrated_service.py:127:25: F541 f-string is missing placeholders
+backend/recommendation-service/app\services\mcp_integrated_service.py:211:25: F541 f-string is missing placeholders
+backend/recommendation-service/app\services\mcp_integrated_service.py:397:21: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\mcp_integrated_service.py:648:13: E722 do not use bare 'except'
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:8:1: F401 'asyncio' imported but unused
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:12:1: F401 'json' imported but unused
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:22:1: F401 '..models.schemas.LocationRequest' imported but unused
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:44:1: F401 '.profile_service_client.ProfileServiceAdapter' imported but unused
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:345:27: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:401:21: F841 local variable 'steps' is assigned to but never used
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:484:30: F541 f-string is missing placeholders
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:535:82: W504 line break after binary operator
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:536:95: W504 line break after binary operator
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:537:149: W504 line break after binary operator
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:538:80: W504 line break after binary operator
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:539:143: W504 line break after binary operator
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:540:79: W504 line break after binary operator
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:546:13: F841 local variable 'mab_stats' is assigned to but never used
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:557:21: E128 continuation line under-indented for visual indent
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:608:13: F841 local variable 'hour' is assigned to but never used
+backend/recommendation-service/app\services\multi_agent_recommendation_service.py:791:71: W292 no newline at end of file
+backend/recommendation-service/app\services\profile_service_client.py:181:35: E127 continuation line over-indented for visual indent
+backend/recommendation-service/app\services\profile_service_client.py:308:42: E261 at least two spaces before inline comment
+backend/recommendation-service/app\services\profile_service_client.py:326:50: E261 at least two spaces before inline comment
+20    E127 continuation line over-indented for visual indent
+60    E128 continuation line under-indented for visual indent
+7     E226 missing whitespace around arithmetic operator
+5     E261 at least two spaces before inline comment
+53    E302 expected 2 blank lines, found 1
+9     E305 expected 2 blank lines after class or function definition, found 1
+1     E701 multiple statements on one line (colon)
+5     E722 do not use bare 'except'
+77    F401 'sqlalchemy.Boolean' imported but unused
+1     F402 import 'F' from line 484 shadowed by loop variable
+12    F541 f-string is missing placeholders
+1     F811 redefinition of unused 'json' from line 10
+2     F824 `global _mcp_service` is unused: name is never assigned in scope
+18    F841 local variable 've' is assigned to but never used
+24    W292 no newline at end of file
+9     W504 line break after binary operator
+304
