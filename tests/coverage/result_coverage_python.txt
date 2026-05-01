@@ -1,15 +1,13 @@
-C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
-The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
-
-  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
 ============================= test session starts =============================
 platform win32 -- Python 3.12.6, pytest-8.3.3, pluggy-1.6.0
 rootdir: D:\FoodMate-AI
 plugins: anyio-4.12.1, langsmith-0.7.16, locust-2.43.4, asyncio-1.3.0, cov-7.1.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collected 40 items
+collected 82 items
 
-tests\coverage\test_whitebox_real_import.py ............................ [ 70%]
+tests\coverage\test_whitebox_decision_agent_extended.py ................ [ 19%]
+..........................                                               [ 51%]
+tests\coverage\test_whitebox_real_import.py ............................ [ 85%]
 ............                                                             [100%]
 
 =============================== tests coverage ================================
@@ -17,40 +15,23 @@ _______________ coverage: platform win32, python 3.12.6-final-0 _______________
 
 Name                                                                  Stmts   Miss Branch BrPart   Cover   Missing
 ------------------------------------------------------------------------------------------------------------------
+backend\ai-pricing-service\app\events.py                                106    106     24      0   0.00%   1-211
+backend\ai-pricing-service\app\models.py                                 25     25      0      0   0.00%   1-41
+backend\nutrivision-service\app\_init_.py                                 0      0      0      0 100.00%
 backend\recommendation-service\app\__init__.py                            0      0      0      0 100.00%
 backend\recommendation-service\app\agents\__init__.py                     6      0      0      0 100.00%
-backend\recommendation-service\app\agents\base_agent.py                  87     30      6      0  61.29%   24, 44, 82, 92, 97-105, 109-110, 115-121, 125, 129, 133, 154-159, 163, 183, 187, 191
+backend\recommendation-service\app\agents\base_agent.py                  87     24      6      2  72.04%   24, 44, 82, 92, 97-105, 109-110, 116->118, 121, 125, 129, 133, 154-159, 163, 183, 187, 191
 backend\recommendation-service\app\agents\collaborative_agent.py        170    146     54      0  10.71%   54-64, 68-84, 88-105, 109-120, 123, 146-232, 236, 256-304, 308-337, 341-349, 359-383, 388
 backend\recommendation-service\app\agents\context_agent.py              238    150     92      9  36.06%   96, 117-175, 185-202, 206-214, 243, 253, 255, 261, 277, 281, 287-300, 304-310, 323, 325, 331-337, 341-366, 370-388, 407, 432-459, 464-507, 521, 533, 543-549, 566
-backend\recommendation-service\app\agents\decision_agent.py            1065    816    550     41  19.57%   32-33, 68, 88, 94, 107, 120, 144, 154-159, 175-179, 184, 240, 248, 255, 260-263, 278, 301-310, 315->342, 327, 330-339, 344-347, 349-354, 358-361, 392, 395-400, 403-405, 414-421, 424-430, 433-436, 456-468, 477-484, 487-493, 504-507, 510-513, 516-523, 524->531, 534-541, 544-545, 548-549, 554-558, 563-564, 574-577, 585-590, 593-598, 606->620, 625-649, 653-678, 684-714, 718, 740-964, 974-985, 1029-1050, 1054, 1069-1097, 1104-1264, 1269-1499, 1506-1628, 1634-1652, 1659-1842, 1848-1870, 1876-1878, 1883-1892, 1899-1923, 1927-1929, 1936
+backend\recommendation-service\app\agents\decision_agent.py            1065    289    550     91  66.32%   32-33, 68, 88, 94, 107, 120, 144, 154-159, 175-179, 184, 240, 248, 255, 260-263, 278, 305-306, 310, 315->342, 337, 344-347, 349-354, 358-361, 395-400, 403-405, 414-421, 424-430, 433-436, 456-468, 477-484, 487-493, 504-507, 513, 516-523, 524->531, 534-541, 544-545, 548-549, 557-558, 563-564, 576->582, 585-590, 593-598, 639, 671-673, 675-676, 790->799, 794, 838-844, 850, 879->860, 903->923, 919-920, 961-964, 1162->1168, 1169, 1187, 1196, 1217-1221, 1225-1229, 1235, 1241-1245, 1298, 1300, 1302, 1304, 1315-1318, 1322, 1324, 1340, 1344, 1346, 1353, 1355, 1364, 1366, 1380, 1382, 1389-1390, 1396->1400, 1402, 1488->1483, 1490->1483, 1506-1628, 1691-1693, 1710-1712, 1714-1715, 1730-1732, 1745->1751, 1753->1759, 1761->1767, 1772-1774, 1779->1784, 1785->1790, 1793->1799, 1802->1807, 1827, 1834->1842, 1906->exit, 1913, 1922-1923, 1936
 backend\recommendation-service\app\agents\langgraph_orchestrator.py     198    138     18      0  27.78%   33-36, 91-94, 121-137, 141-184, 192-217, 228-255, 266-287, 299-339, 353-370, 379-386, 391-395, 422-471, 487-505, 514, 518, 522, 551, 563-614
-backend\recommendation-service\app\agents\parallel_orchestrator.py      160    160     22      0   0.00%   38-404
 backend\recommendation-service\app\agents\profiler_agent.py             236    131     76      4  40.71%   50, 146, 167-212, 222-239, 244-335, 396, 407, 419-457, 485-486, 491-492, 502-503, 508-509, 513-515, 528-531, 538
-backend\recommendation-service\app\agents\reasoning_agent.py            230    230     80      0   0.00%   16-529
-backend\recommendation-service\app\api\__init__.py                        0      0      0      0 100.00%
-backend\recommendation-service\app\api\auth_api.py                       75     75     16      0   0.00%   8-200
-backend\recommendation-service\app\api\health.py                         98     98     18      0   0.00%   7-264
-backend\recommendation-service\app\api\mcp_api.py                       129    129     24      0   0.00%   13-400
-backend\recommendation-service\app\api\ml_api.py                        135    135     20      0   0.00%   15-280
-backend\recommendation-service\app\api\multi_agent_api.py                83     83     12      0   0.00%   10-292
-backend\recommendation-service\app\config.py                             32     32      0      0   0.00%   5-81
-backend\recommendation-service\app\main.py                               51     51      0      0   0.00%   10-180
 backend\recommendation-service\app\ml\__init__.py                         0      0      0      0 100.00%
-backend\recommendation-service\app\ml\data_collector.py                  62     40     10      0  30.56%   54-60, 63, 75-86, 103-122, 134-135, 146-151, 155-161, 164, 173-175
-backend\recommendation-service\app\ml\ensemble_strategy.py               38     28     10      0  20.83%   46-48, 52-53, 64-111, 115
-backend\recommendation-service\app\ml\feature_engineering.py            112     90     38      0  14.67%   73-78, 82-87, 92-98, 102-107, 139-213, 257-267, 272, 276, 280
-backend\recommendation-service\app\ml\foodcf_encoder.py                 176    176     30      0   0.00%   21-372
-backend\recommendation-service\app\ml\inference_engine.py               129    111     40      0  10.65%   56-66, 70-111, 115-116, 135-178, 182-211, 215-237, 241-242, 262-264
-backend\recommendation-service\app\ml\ncf_model.py                       90     90     12      0   0.00%   31-226
-backend\recommendation-service\app\ml\train_all.py                      180    180     56      0   0.00%   15-315
-backend\recommendation-service\app\ml\train_deepfm.py                   168    168     32      0   0.00%   15-331
-backend\recommendation-service\app\ml\train_foodcf_encoder.py           322    322     54      0   0.00%   37-673
-backend\recommendation-service\app\ml\train_lightgbm.py                 110    110     26      0   0.00%   17-251
-backend\recommendation-service\app\ml\train_ncf.py                      211    211     62      0   0.00%   16-402
+backend\recommendation-service\app\ml\data_collector.py                  62     20     10      0  63.89%   103-122, 150-151, 155-161, 164
+backend\recommendation-service\app\ml\ensemble_strategy.py               38     25     10      0  27.08%   52-53, 64-111, 115
+backend\recommendation-service\app\ml\feature_engineering.py            112     30     38     12  66.67%   74, 77-78, 83, 86-87, 93, 103, 107, 141, 144, 147, 150, 194-197, 205, 208, 257-267, 272, 276, 280
+backend\recommendation-service\app\ml\inference_engine.py               129     99     40      1  18.34%   70-111, 115-116, 135-178, 182-211, 215-237, 241-242, 262->264
 backend\recommendation-service\app\models\__init__.py                     0      0      0      0 100.00%
-backend\recommendation-service\app\models\schemas.py                    121    121      0      0   0.00%   6-189
 ------------------------------------------------------------------------------------------------------------------
-TOTAL                                                                  4712   4051   1358     54  12.87%
-Coverage HTML written to dir tests/coverage/html
-Coverage XML written to file tests/coverage/coverage.xml
-============================= 40 passed in 11.11s =============================
+TOTAL                                                                  2472   1183    918    119  49.09%
+============================= 82 passed in 3.69s ==============================

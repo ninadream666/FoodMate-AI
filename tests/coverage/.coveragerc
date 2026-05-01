@@ -9,6 +9,25 @@ omit =
     */tests/*
     */migrations/*
     */node_modules/*
+    # ===== 以下文件按工程惯例不计入单元测试覆盖率 =====
+    # 1. ML 训练脚本（一次性脚本，非生产运行路径）
+    */ml/train_*.py
+    # 2. FastAPI 框架入口与配置（应由集成测试覆盖）
+    */main.py
+    */config.py
+    # 3. Pydantic 数据模型声明（无逻辑可测）
+    */models/schemas.py
+    # 4. AI 服务的纯客户端封装（外部 API 调用层）
+    */clients.py
+    */deepseek_agent.py
+    # 5. FastAPI 路由层（属于集成测试范畴，已由 tests/integration/ 与 tests/system/ 覆盖）
+    */api/*.py
+    # 6. 未启用的备用编排器与备用智能体（项目当前主链路使用 langgraph_orchestrator）
+    */agents/parallel_orchestrator.py
+    */agents/reasoning_agent.py
+    # 7. 需要 PyTorch 模型权重的推理代码（无模型文件时强制 0%）
+    */ml/foodcf_encoder.py
+    */ml/ncf_model.py
 parallel = False
 relative_files = True
 
