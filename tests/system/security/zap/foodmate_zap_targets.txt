@@ -1,0 +1,28 @@
+# FoodMate-AI ZAP 扫描目标 URL 列表
+# 每行一个 URL，#开头为注释
+# 与 Sites Tree → Spider → 一键扫描配合使用
+
+# ===== Java 微服务 =====
+http://localhost:8081/merchants
+http://localhost:8081/merchants/1
+http://localhost:8082/coupons
+http://localhost:8083/auth/register
+http://localhost:8083/auth/login
+http://localhost:8083/users/me
+http://localhost:8084/orders
+http://localhost:8084/orders/my-orders
+http://localhost:8086/profiles/1
+http://localhost:8088/commissions
+
+# ===== Python AI 微服务 =====
+http://localhost:8087/api/v2/agents/recommend
+http://localhost:8087/api/v2/mcp/recommend
+http://localhost:8087/health
+http://localhost:8089/pricing/suggest
+http://localhost:8089/health
+http://localhost:8090/vision/analyze
+http://localhost:8090/health
+
+# ===== 基础设施 =====
+http://localhost:8761/                    # Eureka Dashboard
+http://localhost:15672/                   # RabbitMQ Management
