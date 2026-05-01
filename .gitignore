@@ -57,4 +57,11 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 
-.claude/
+# Python 测试缓存
+tests/coverage/__pycache__/
+tests/requirement/__pycache__/
+tests/usability/__pycache__/
+
+# 可用性测试的个人原始数据需要保护隐私（含被试 ID/反馈）
+tests/usability/data_U*.json
+
