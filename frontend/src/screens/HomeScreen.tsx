@@ -897,13 +897,24 @@ const HomeScreen = ({ navigation }: any) => {
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={styles.userName}>{user?.username || user?.nickname || '朋友'}</Text>
                     <View style={styles.searchContainer}>
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="搜索..."
-                            placeholderTextColor="#999999"
-                            value={searchText}
-                            onChangeText={setSearchText}
-                        />
+                        <View style={styles.searchInputWrapper}>
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder="搜索..."
+                                placeholderTextColor="#999999"
+                                value={searchText}
+                                onChangeText={setSearchText}
+                            />
+                            {searchText.length > 0 && (
+                                <TouchableOpacity
+                                    activeOpacity={0.7}
+                                    onPress={() => { setSearchText(''); setActiveSearchKeyword(''); }}
+                                    style={{ position: 'absolute', right: 10, padding: 4 }}
+                                >
+                                    <Feather name="x-circle" size={15} color="#999" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
                         <TouchableOpacity activeOpacity={0.7} onPress={() => { setActiveSearchKeyword(searchText.trim()); }}>
                             <LinearGradient
                                 colors={['#F2784B', '#D9613A']}
@@ -1603,17 +1614,24 @@ const styles = StyleSheet.create({
         flex: 1,
         marginLeft: spacing.md,
     },
-    searchInput: {
+    searchInputWrapper: {
         flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: '#F0EDE8',
         borderRadius: borderRadius.full,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-        height: 38,
         borderWidth: 1,
         borderColor: '#D5D0C8',
+        height: 38,
+    },
+    searchInput: {
+        flex: 1,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        paddingRight: 32,
         fontSize: fontSize.sm,
         color: colors.textPrimary,
+        height: 38,
     },
     searchButton: {
         width: 36,

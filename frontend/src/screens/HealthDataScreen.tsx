@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Feather from 'react-native-vector-icons/Feather';
+import { useFocusEffect } from '@react-navigation/native';
 import { profileService } from '../services/profileService';
 import { useHealthContext } from '../hooks/useHealthContext';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../theme/NordicTheme';
@@ -27,10 +28,13 @@ const HealthDataScreen = ({ navigation }: any) => {
         '痛风忌高嘌呤', '高血压忌高钠', '糖尿病忌高糖',
     ];
 
-    useEffect(() => {
-        loadRecords();
-        loadAllergies();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            setLoading(true);
+            loadRecords();
+            loadAllergies();
+        }, [])
+    );
 
     const loadAllergies = async () => {
         try {

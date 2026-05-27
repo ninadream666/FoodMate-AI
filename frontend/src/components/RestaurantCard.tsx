@@ -114,7 +114,7 @@ const RestaurantCard = memo(({ restaurant, onPress }: Props) => {
                 {/* 推荐理由 - 北欧风格磨砂卡片 */}
                 {recommendationReason ? (
                     <View style={styles.reasonContainer}>
-                        <Text style={styles.reasonText} numberOfLines={2}>
+                        <Text style={styles.reasonText} numberOfLines={3}>
                             {recommendationReason}
                         </Text>
                     </View>

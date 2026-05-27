@@ -64,15 +64,46 @@ export const recommendationService = {
                 max_results: Number(params.maxResults) || 10,
             };
 
-            // 添加健康上下文
+            // 添加健康上下文（透传全部字段给后端 DecisionAgent）
             if (params.healthContext) {
                 const hc = params.healthContext;
                 body.health_context = {
-                    daily_steps: hc.dailySteps ?? hc.daily_steps ?? 0,
-                    recent_steps_30min: hc.recentSteps30min ?? hc.recent_steps_30min ?? 0,
-                    heart_rate: hc.heartRate ?? hc.heart_rate ?? 75,
-                    activity_status: hc.activityStatus ?? hc.activity_status ?? 'still',
-                    is_post_workout: hc.isPostWorkout ?? hc.is_post_workout ?? false,
+                    daily_steps: hc.daily_steps ?? hc.dailySteps ?? 0,
+                    recent_steps_30min: hc.recent_steps_30min ?? hc.recentSteps30min ?? 0,
+                    daily_distance: hc.daily_distance ?? hc.dailyDistance ?? 0,
+                    daily_calories: hc.daily_calories ?? hc.dailyCalories ?? 0,
+                    heart_rate: hc.heart_rate ?? hc.heartRate ?? 75,
+                    resting_heart_rate: hc.resting_heart_rate ?? hc.restingHeartRate ?? 65,
+                    avg_heart_rate: hc.avg_heart_rate ?? hc.avgHeartRate ?? 75,
+                    max_heart_rate: hc.max_heart_rate ?? hc.maxHeartRate ?? 0,
+                    min_heart_rate: hc.min_heart_rate ?? hc.minHeartRate ?? 0,
+                    activity_status: hc.activity_status ?? hc.activityStatus ?? 'still',
+                    is_post_workout: hc.is_post_workout ?? hc.isPostWorkout ?? false,
+                    recent_workout_duration: hc.recent_workout_duration ?? hc.recentWorkoutDuration ?? 0,
+                    recent_workout_calories: hc.recent_workout_calories ?? hc.recentWorkoutCalories ?? 0,
+                    recent_workout_type: hc.recent_workout_type ?? hc.recentWorkoutType ?? '',
+                    pressure_value: hc.pressure_value ?? hc.pressureValue ?? 50,
+                    avg_pressure: hc.avg_pressure ?? hc.avgPressure ?? 50,
+                    pressure_level: hc.pressure_level ?? hc.pressureLevel ?? '正常',
+                    last_sleep_duration: hc.last_sleep_duration ?? hc.lastSleepDuration ?? 0,
+                    last_sleep_duration_hours: hc.last_sleep_duration_hours ?? hc.lastSleepDurationHours ?? 0,
+                    last_sleep_score: hc.last_sleep_score ?? hc.lastSleepScore ?? 0,
+                    sleep_quality: hc.sleep_quality ?? hc.sleepQuality ?? '无数据',
+                    last_deep_sleep_duration: hc.last_deep_sleep_duration ?? hc.lastDeepSleepDuration ?? 0,
+                    last_light_sleep_duration: hc.last_light_sleep_duration ?? hc.lastLightSleepDuration ?? 0,
+                    last_rem_sleep_duration: hc.last_rem_sleep_duration ?? hc.lastRemSleepDuration ?? 0,
+                    blood_oxygen: hc.blood_oxygen ?? hc.bloodOxygen ?? 98,
+                    avg_blood_oxygen: hc.avg_blood_oxygen ?? hc.avgBloodOxygen ?? 98,
+                    blood_oxygen_status: hc.blood_oxygen_status ?? hc.bloodOxygenStatus ?? '正常',
+                    today_relax_duration: hc.today_relax_duration ?? hc.todayRelaxDuration ?? 0,
+                    light_lux: hc.light_lux ?? hc.lightLux ?? 300,
+                    light_level: hc.light_level ?? hc.lightLevel ?? 'normal',
+                    overall_health_status: hc.overall_health_status ?? hc.overallHealthStatus ?? '无数据',
+                    activity_level: hc.activity_level ?? hc.activityLevel ?? '无数据',
+                    needs_rest: hc.needs_rest ?? hc.needsRest ?? false,
+                    is_well_rested: hc.is_well_rested ?? hc.isWellRested ?? false,
+                    has_wearable_device: hc.has_wearable_device ?? hc.hasWearableDevice ?? false,
+                    device_type: hc.device_type ?? hc.deviceType ?? '',
                 };
             }
 
