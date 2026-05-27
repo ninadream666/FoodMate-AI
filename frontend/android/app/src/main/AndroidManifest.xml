@@ -1,5 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- OPPO健康APP包可见性声明（Android 11+） -->
+    <queries>
+        <package android:name="com.heytap.health" />
+        <intent>
+            <action android:name="com.heytap.health.auth.broadcast" />
+        </intent>
+        <provider android:authorities="com.heytap.health.sporthealthprovider" />
+    </queries>
+
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />

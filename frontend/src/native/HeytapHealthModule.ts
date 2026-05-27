@@ -11,7 +11,19 @@ import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
 
 // ==================== 原生模块 ====================
 
-const { HeytapHealthModule } = NativeModules;
+const _module = NativeModules?.HeytapHealthModule;
+
+// 在新架构下 NativeModules 可能返回 Proxy 对象，看起来非 null 但方法调不通
+// 通过检查是否有 initialize 方法来验证模块真正可用
+const HeytapHealthModule = (Platform.OS === 'android' && _module && typeof _module.initialize === 'function')
+    ? _module
+    : null;
+
+if (Platform.OS === 'android') {
+    console.warn('[HeytapHealthModule] _module:', _module ? 'exists' : 'null',
+        'typeof initialize:', _module ? typeof _module.initialize : 'N/A',
+        'final:', HeytapHealthModule ? 'available' : 'null');
+}
 
 // 检查模块是否可用
 export const isHeytapHealthAvailable = (): boolean => {

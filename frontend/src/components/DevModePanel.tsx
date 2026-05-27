@@ -217,9 +217,9 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose, onRefresh
                                     <Text style={styles.statusUnit}>{health.pressureLevel}</Text>
                                 </View>
                                 <View style={styles.statusGridItem}>
-                                    <Text style={styles.statusLabel}>血氧</Text>
-                                    <Text style={styles.statusValue}>{health.bloodOxygen}%</Text>
-                                    <Text style={styles.statusUnit}>{health.bloodOxygenStatus}</Text>
+                                    <Text style={styles.statusLabel}>卡路里</Text>
+                                    <Text style={styles.statusValue}>{health.dailyCalories}</Text>
+                                    <Text style={styles.statusUnit}>kcal</Text>
                                 </View>
                                 <View style={styles.statusGridItem}>
                                     <Text style={styles.statusLabel}>睡眠</Text>

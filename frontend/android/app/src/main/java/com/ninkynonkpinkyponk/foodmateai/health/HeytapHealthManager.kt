@@ -74,8 +74,9 @@ class HeytapHealthManager(private val context: Context) {
      */
     fun initialize(enableLogging: Boolean = false) {
         HeytapHealthApi.setLoggable(enableLogging)
+        HeytapHealthApi.init(context)
         isInitialized = true
-        Log.i(TAG, "HeytapHealthManager initialized, logging: $enableLogging")
+        Log.w(TAG, "HeytapHealthManager initialized, logging: $enableLogging")
     }
 
     /**
@@ -96,23 +97,32 @@ class HeytapHealthManager(private val context: Context) {
      * 请求授权
      */
     fun requestAuthorization(activity: Activity, callback: HealthCallback<AuthResult>) {
+        Log.w(TAG, "requestAuthorization: start, activity=$activity")
         if (!isHealthAppInstalled()) {
+            Log.e(TAG, "requestAuthorization: health app not installed")
             callback.onFailure(ERR_HEALTH_APP_NOT_INSTALLED, "OPPO健康APP未安装")
             return
         }
 
-        HeytapHealthApi.getInstance().authorityApi().request(activity, object : HResponse<AuthResult> {
-            override fun onSuccess(result: AuthResult) {
-                isAuthorized = true
-                Log.i(TAG, "Authorization successful")
-                callback.onSuccess(result)
-            }
+        try {
+            Log.w(TAG, "requestAuthorization: calling authorityApi().request()...")
+            HeytapHealthApi.getInstance().authorityApi().request(activity, object : HResponse<AuthResult> {
+                override fun onSuccess(result: AuthResult) {
+                    isAuthorized = true
+                    Log.w(TAG, "requestAuthorization: SUCCESS")
+                    callback.onSuccess(result)
+                }
 
-            override fun onFailure(errorCode: Int) {
-                Log.e(TAG, "Authorization failed: $errorCode")
-                callback.onFailure(errorCode, getErrorMessage(errorCode))
-            }
-        })
+                override fun onFailure(errorCode: Int) {
+                    Log.e(TAG, "requestAuthorization: FAILED code=$errorCode msg=${getErrorMessage(errorCode)}")
+                    callback.onFailure(errorCode, getErrorMessage(errorCode))
+                }
+            })
+            Log.w(TAG, "requestAuthorization: SDK call completed (async)")
+        } catch (e: Exception) {
+            Log.e(TAG, "requestAuthorization: EXCEPTION", e)
+            callback.onFailure(-1, e.message ?: "Unknown error")
+        }
     }
 
     /**
@@ -123,7 +133,7 @@ class HeytapHealthManager(private val context: Context) {
             override fun onSuccess(scopes: List<String>) {
                 authorizedScopes = scopes
                 isAuthorized = scopes.isNotEmpty()
-                Log.i(TAG, "Auth scopes: $scopes")
+                Log.w(TAG, "Auth scopes: $scopes")
                 callback.onSuccess(scopes)
             }
 
@@ -142,7 +152,7 @@ class HeytapHealthManager(private val context: Context) {
             override fun onSuccess(result: List<Any>) {
                 isAuthorized = false
                 authorizedScopes = emptyList()
-                Log.i(TAG, "Authorization revoked")
+                Log.w(TAG, "Authorization revoked")
                 callback.onSuccess(true)
             }
 
@@ -217,7 +227,7 @@ class HeytapHealthManager(private val context: Context) {
                 dataSet.dataPoints.forEach { point ->
                     result.add(HeartRateData(
                         timestamp = point.startTimeStamp,
-                        heartRate = point.getValue(Element.ELEMENT_HEART_RATE) as? Int ?: 0
+                        heartRate = safeGetValue(point,Element.ELEMENT_HEART_RATE) as? Int ?: 0
                     ))
                 }
             }
@@ -240,10 +250,10 @@ class HeytapHealthManager(private val context: Context) {
                 dataSet.dataPoints.forEach { point ->
                     result.add(HeartRateCountData(
                         date = point.timeStamp,
-                        maxHeartRate = (point.getValue(Element.ELEMENT_MAX) as? Number)?.toInt() ?: 0,
-                        minHeartRate = (point.getValue(Element.ELEMENT_MIN) as? Number)?.toInt() ?: 0,
-                        avgHeartRate = (point.getValue(Element.ELEMENT_AVERAGE) as? Number)?.toInt() ?: 0,
-                        restingHeartRate = (point.getValue(Element.ELEMENT_REST_HR) as? Number)?.toInt() ?: 0
+                        maxHeartRate = (safeGetValue(point,Element.ELEMENT_MAX) as? Number)?.toInt() ?: 0,
+                        minHeartRate = (safeGetValue(point,Element.ELEMENT_MIN) as? Number)?.toInt() ?: 0,
+                        avgHeartRate = (safeGetValue(point,Element.ELEMENT_AVERAGE) as? Number)?.toInt() ?: 0,
+                        restingHeartRate = (safeGetValue(point,Element.ELEMENT_REST_HR) as? Number)?.toInt() ?: 0
                     ))
                 }
             }
@@ -263,13 +273,20 @@ class HeytapHealthManager(private val context: Context) {
         readData(request, callback) { dataSets ->
             val result = mutableListOf<DailyActivityData>()
             dataSets.forEach { dataSet ->
-                dataSet.dataPoints.forEach { point ->
+                dataSet.dataPoints.forEachIndexed { idx, point ->
+                    if (idx == 0) {
+                        Log.w(TAG, "DailyActivity point[0]: toString=${point.toString().take(200)}")
+                        Log.w(TAG, "DailyActivity point[0]: startTime=${point.startTimeStamp} endTime=${point.timeStamp}")
+                        try { Log.w(TAG, "DailyActivity STEP raw=${point.getValue(Element.ELEMENT_STEP)}") } catch(e: Exception) { Log.w(TAG, "DailyActivity STEP error: ${e.javaClass.simpleName}: ${e.message}") }
+                        try { Log.w(TAG, "DailyActivity DISTANCE raw=${point.getValue(Element.ELEMENT_DISTANCE)}") } catch(e: Exception) { Log.w(TAG, "DailyActivity DISTANCE error: ${e.javaClass.simpleName}: ${e.message}") }
+                        try { Log.w(TAG, "DailyActivity CALORIE raw=${point.getValue(Element.ELEMENT_CALORIE)}") } catch(e: Exception) { Log.w(TAG, "DailyActivity CALORIE error: ${e.javaClass.simpleName}: ${e.message}") }
+                    }
                     result.add(DailyActivityData(
                         startTimestamp = point.startTimeStamp,
                         endTimestamp = point.timeStamp,
-                        steps = point.getValue(Element.ELEMENT_STEP) as? Int ?: 0,
-                        distance = point.getValue(Element.ELEMENT_DISTANCE) as? Int ?: 0,
-                        calories = point.getValue(Element.ELEMENT_CALORIE) as? Int ?: 0
+                        steps = safeGetValue(point,Element.ELEMENT_STEP) as? Int ?: 0,
+                        distance = safeGetValue(point,Element.ELEMENT_DISTANCE) as? Int ?: 0,
+                        calories = safeGetValue(point,Element.ELEMENT_CALORIE) as? Int ?: 0
                     ))
                 }
             }
@@ -292,9 +309,9 @@ class HeytapHealthManager(private val context: Context) {
                 dataSet.dataPoints.forEach { point ->
                     result.add(DailyActivityCountData(
                         date = point.timeStamp,
-                        totalSteps = point.getValue(Element.ELEMENT_STEP) as? Int ?: 0,
-                        totalDistance = point.getValue(Element.ELEMENT_DISTANCE) as? Int ?: 0,
-                        totalCalories = point.getValue(Element.ELEMENT_CALORIE) as? Int ?: 0
+                        totalSteps = safeGetValue(point,Element.ELEMENT_STEP) as? Int ?: 0,
+                        totalDistance = safeGetValue(point,Element.ELEMENT_DISTANCE) as? Int ?: 0,
+                        totalCalories = safeGetValue(point,Element.ELEMENT_CALORIE) as? Int ?: 0
                     ))
                 }
             }
@@ -317,7 +334,7 @@ class HeytapHealthManager(private val context: Context) {
                 dataSet.dataPoints.forEach { point ->
                     result.add(PressureData(
                         timestamp = point.startTimeStamp,
-                        pressureValue = point.getValue(Element.ELEMENT_PRESSURE) as? Int ?: 0
+                        pressureValue = safeGetValue(point,Element.ELEMENT_PRESSURE) as? Int ?: 0
                     ))
                 }
             }
@@ -340,9 +357,9 @@ class HeytapHealthManager(private val context: Context) {
                 dataSet.dataPoints.forEach { point ->
                     result.add(PressureCountData(
                         date = point.timeStamp,
-                        maxPressure = (point.getValue(Element.ELEMENT_MAX) as? Number)?.toFloat() ?: 0f,
-                        minPressure = (point.getValue(Element.ELEMENT_MIN) as? Number)?.toFloat() ?: 0f,
-                        avgPressure = (point.getValue(Element.ELEMENT_AVERAGE) as? Number)?.toFloat() ?: 0f
+                        maxPressure = (safeGetValue(point,Element.ELEMENT_MAX) as? Number)?.toFloat() ?: 0f,
+                        minPressure = (safeGetValue(point,Element.ELEMENT_MIN) as? Number)?.toFloat() ?: 0f,
+                        avgPressure = (safeGetValue(point,Element.ELEMENT_AVERAGE) as? Number)?.toFloat() ?: 0f
                     ))
                 }
             }
@@ -366,19 +383,19 @@ class HeytapHealthManager(private val context: Context) {
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
                     // 睡眠数据主要通过 sleepDetailJson 解析
-                    val sleepJson = point.getValue(Element.ELEMENT_SLEEP_DAY_FRAGS) as? String ?: ""
+                    val sleepJson = safeGetValue(point,Element.ELEMENT_SLEEP_DAY_FRAGS) as? String ?: ""
 
                     // 尝试从各个元素获取数据，如果SDK不支持则从JSON解析
                     result.add(SleepData(
-                        sleepInTime = (point.getValue(Element.ELEMENT_FALL_ASLEEP) as? Number)?.toLong() ?: 0L,
-                        sleepOutTime = (point.getValue(Element.ELEMENT_SLEEP_OUT) as? Number)?.toLong() ?: 0L,
-                        totalSleepTime = (point.getValue(Element.ELEMENT_DURATION) as? Number)?.toInt() ?: 0,
-                        totalDeepSleepTime = (point.getValue(Element.ELEMENT_TOTAL_DEEP_SLEEP_TIME) as? Number)?.toInt() ?: 0,
-                        totalLightSleepTime = (point.getValue(Element.ELEMENT_TOTAL_LIGHTLY_SLEEP_TIME) as? Number)?.toInt() ?: 0,
+                        sleepInTime = (safeGetValue(point,Element.ELEMENT_FALL_ASLEEP) as? Number)?.toLong() ?: 0L,
+                        sleepOutTime = (safeGetValue(point,Element.ELEMENT_SLEEP_OUT) as? Number)?.toLong() ?: 0L,
+                        totalSleepTime = (safeGetValue(point,Element.ELEMENT_DURATION) as? Number)?.toInt() ?: 0,
+                        totalDeepSleepTime = (safeGetValue(point,Element.ELEMENT_TOTAL_DEEP_SLEEP_TIME) as? Number)?.toInt() ?: 0,
+                        totalLightSleepTime = (safeGetValue(point,Element.ELEMENT_TOTAL_LIGHTLY_SLEEP_TIME) as? Number)?.toInt() ?: 0,
                         totalRemSleepTime = 0, // 从 sleepDetailJson 解析
-                        totalWakeTime = (point.getValue(Element.ELEMENT_TOTAL_WAKE_UP_TIME) as? Number)?.toInt() ?: 0,
+                        totalWakeTime = (safeGetValue(point,Element.ELEMENT_TOTAL_WAKE_UP_TIME) as? Number)?.toInt() ?: 0,
                         wakeCount = 0, // 从 sleepDetailJson 解析
-                        sleepScore = (point.getValue(Element.ELEMENT_SLEEP_SCORE) as? Number)?.toInt() ?: 0,
+                        sleepScore = (safeGetValue(point,Element.ELEMENT_SLEEP_SCORE) as? Number)?.toInt() ?: 0,
                         sleepDetailJson = sleepJson
                     ))
                 }
@@ -402,8 +419,8 @@ class HeytapHealthManager(private val context: Context) {
                 dataSet.dataPoints.forEach { point ->
                     result.add(SleepCountData(
                         date = point.timeStamp,
-                        avgSleepTime = (point.getValue(Element.ELEMENT_AVERAGE) as? Number)?.toInt() ?: 0,
-                        avgSleepScore = (point.getValue(Element.ELEMENT_SLEEP_SCORE) as? Number)?.toInt() ?: 0
+                        avgSleepTime = (safeGetValue(point,Element.ELEMENT_AVERAGE) as? Number)?.toInt() ?: 0,
+                        avgSleepScore = (safeGetValue(point,Element.ELEMENT_SLEEP_SCORE) as? Number)?.toInt() ?: 0
                     ))
                 }
             }
@@ -426,8 +443,8 @@ class HeytapHealthManager(private val context: Context) {
                 dataSet.dataPoints.forEach { point ->
                     result.add(BloodOxygenData(
                         timestamp = point.startTimeStamp,
-                        bloodOxygenValue = point.getValue(Element.ELEMENT_BLOOD_OXYGEN) as? Int ?: 0,
-                        bloodOxygenType = point.getValue(Element.ELEMENT_TYPE) as? Int ?: 0
+                        bloodOxygenValue = safeGetValue(point,Element.ELEMENT_BLOOD_OXYGEN) as? Int ?: 0,
+                        bloodOxygenType = safeGetValue(point,Element.ELEMENT_TYPE) as? Int ?: 0
                     ))
                 }
             }
@@ -450,9 +467,9 @@ class HeytapHealthManager(private val context: Context) {
                 dataSet.dataPoints.forEach { point ->
                     result.add(BloodOxygenCountData(
                         date = point.timeStamp,
-                        maxBloodOxygen = (point.getValue(Element.ELEMENT_MAX) as? Number)?.toFloat() ?: 0f,
-                        minBloodOxygen = (point.getValue(Element.ELEMENT_MIN) as? Number)?.toFloat() ?: 0f,
-                        avgBloodOxygen = (point.getValue(Element.ELEMENT_AVERAGE) as? Number)?.toFloat() ?: 0f
+                        maxBloodOxygen = (safeGetValue(point,Element.ELEMENT_MAX) as? Number)?.toFloat() ?: 0f,
+                        minBloodOxygen = (safeGetValue(point,Element.ELEMENT_MIN) as? Number)?.toFloat() ?: 0f,
+                        avgBloodOxygen = (safeGetValue(point,Element.ELEMENT_AVERAGE) as? Number)?.toFloat() ?: 0f
                     ))
                 }
             }
@@ -476,8 +493,8 @@ class HeytapHealthManager(private val context: Context) {
                     result.add(EcgData(
                         startTimestamp = point.startTimeStamp,
                         endTimestamp = point.timeStamp,
-                        avgHeartRate = point.getValue(Element.ELEMENT_HEART_RATE) as? Int ?: 0,
-                        expertInterpretation = point.getValue(Element.ELEMENT_ECG_EXPERT_INTERPRETATION) as? String ?: ""
+                        avgHeartRate = safeGetValue(point,Element.ELEMENT_HEART_RATE) as? Int ?: 0,
+                        expertInterpretation = safeGetValue(point,Element.ELEMENT_ECG_EXPERT_INTERPRETATION) as? String ?: ""
                     ))
                 }
             }
@@ -500,14 +517,14 @@ class HeytapHealthManager(private val context: Context) {
             dataSets.forEach { dataSet ->
                 dataSet.dataPoints.forEach { point ->
                     result.add(SportMetadata(
-                        startTimestamp = (point.getValue(Element.ELEMENT_START_TIMESTAMP) as? Number)?.toLong()?.times(1000) ?: 0L,
-                        endTimestamp = (point.getValue(Element.ELEMENT_END_TIMESTAMP) as? Number)?.toLong()?.times(1000) ?: 0L,
-                        sportMode = point.getValue(Element.ELEMENT_SPORT_MODE) as? Int ?: 0,
-                        avgHeartRate = point.getValue(Element.ELEMENT_AVG_HEART_RATE) as? Int ?: 0,
-                        calories = point.getValue(Element.ELEMENT_CALORIE) as? Int ?: 0,
-                        duration = point.getValue(Element.ELEMENT_DURATION) as? Int ?: 0,
-                        distance = point.getValue(Element.ELEMENT_DISTANCE) as? Int ?: 0,
-                        deviceCategory = point.getValue(Element.ELEMENT_DEVICE_CATEGORY) as? String ?: ""
+                        startTimestamp = (safeGetValue(point,Element.ELEMENT_START_TIMESTAMP) as? Number)?.toLong()?.times(1000) ?: 0L,
+                        endTimestamp = (safeGetValue(point,Element.ELEMENT_END_TIMESTAMP) as? Number)?.toLong()?.times(1000) ?: 0L,
+                        sportMode = safeGetValue(point,Element.ELEMENT_SPORT_MODE) as? Int ?: 0,
+                        avgHeartRate = safeGetValue(point,Element.ELEMENT_AVG_HEART_RATE) as? Int ?: 0,
+                        calories = safeGetValue(point,Element.ELEMENT_CALORIE) as? Int ?: 0,
+                        duration = safeGetValue(point,Element.ELEMENT_DURATION) as? Int ?: 0,
+                        distance = safeGetValue(point,Element.ELEMENT_DISTANCE) as? Int ?: 0,
+                        deviceCategory = safeGetValue(point,Element.ELEMENT_DEVICE_CATEGORY) as? String ?: ""
                     ))
                 }
             }
@@ -530,8 +547,8 @@ class HeytapHealthManager(private val context: Context) {
                 dataSet.dataPoints.forEach { point ->
                     result.add(HearingHealthData(
                         timestamp = point.startTimeStamp,
-                        hearingValue = (point.getValue(Element.ELEMENT_HEARING_HEALTH) as? Number)?.toFloat() ?: 0f,
-                        duration = (point.getValue(Element.ELEMENT_DURATION) as? Number)?.toLong() ?: 0L
+                        hearingValue = (safeGetValue(point,Element.ELEMENT_HEARING_HEALTH) as? Number)?.toFloat() ?: 0f,
+                        duration = (safeGetValue(point,Element.ELEMENT_DURATION) as? Number)?.toLong() ?: 0L
                     ))
                 }
             }
@@ -554,10 +571,10 @@ class HeytapHealthManager(private val context: Context) {
                 dataSet.dataPoints.forEach { point ->
                     result.add(RelaxData(
                         timestamp = point.startTimeStamp,
-                        type = point.getValue(Element.ELEMENT_TYPE) as? Int ?: 0,
-                        subType = point.getValue(Element.ELEMENT_SUB_TYPE) as? Int ?: 0,
-                        pressureValue = point.getValue(Element.ELEMENT_PRESSURE) as? Int ?: 0,
-                        duration = (point.getValue(Element.ELEMENT_DURATION) as? Number)?.toLong() ?: 0L
+                        type = safeGetValue(point,Element.ELEMENT_TYPE) as? Int ?: 0,
+                        subType = safeGetValue(point,Element.ELEMENT_SUB_TYPE) as? Int ?: 0,
+                        pressureValue = safeGetValue(point,Element.ELEMENT_PRESSURE) as? Int ?: 0,
+                        duration = (safeGetValue(point,Element.ELEMENT_DURATION) as? Number)?.toLong() ?: 0L
                     ))
                 }
             }
@@ -580,10 +597,10 @@ class HeytapHealthManager(private val context: Context) {
                 dataSet.dataPoints.forEach { point ->
                     result.add(HearingHealthCountData(
                         date = point.timeStamp,
-                        maxHearing = (point.getValue(Element.ELEMENT_MAX) as? Number)?.toFloat() ?: 0f,
-                        minHearing = (point.getValue(Element.ELEMENT_MIN) as? Number)?.toFloat() ?: 0f,
-                        avgHearing = (point.getValue(Element.ELEMENT_AVERAGE) as? Number)?.toFloat() ?: 0f,
-                        totalDuration = (point.getValue(Element.ELEMENT_DURATION) as? Number)?.toLong() ?: 0L
+                        maxHearing = (safeGetValue(point,Element.ELEMENT_MAX) as? Number)?.toFloat() ?: 0f,
+                        minHearing = (safeGetValue(point,Element.ELEMENT_MIN) as? Number)?.toFloat() ?: 0f,
+                        avgHearing = (safeGetValue(point,Element.ELEMENT_AVERAGE) as? Number)?.toFloat() ?: 0f,
+                        totalDuration = (safeGetValue(point,Element.ELEMENT_DURATION) as? Number)?.toLong() ?: 0L
                     ))
                 }
             }
@@ -606,7 +623,7 @@ class HeytapHealthManager(private val context: Context) {
                 dataSet.dataPoints.forEach { point ->
                     result.add(RelaxCountData(
                         date = point.timeStamp,
-                        totalDuration = (point.getValue(Element.ELEMENT_DURATION) as? Number)?.toLong() ?: 0L
+                        totalDuration = (safeGetValue(point,Element.ELEMENT_DURATION) as? Number)?.toLong() ?: 0L
                     ))
                 }
             }
@@ -623,7 +640,12 @@ class HeytapHealthManager(private val context: Context) {
     ) {
         HeytapHealthApi.getInstance().dataApi().read(request, object : HResponse<List<DataSet>> {
             override fun onSuccess(dataSets: List<DataSet>) {
-                onSuccess(dataSets)
+                try {
+                    onSuccess(dataSets)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Data parse error: ${e.message}", e)
+                    callback.onFailure(-1, "数据解析错误: ${e.message}")
+                }
             }
 
             override fun onFailure(errorCode: Int) {
@@ -665,6 +687,30 @@ class HeytapHealthManager(private val context: Context) {
     }
 
     // ==================== 辅助方法 ====================
+
+    private fun safeGetValue(point: com.heytap.databaseengine.apiv3.data.DataPoint, element: Element): Any? {
+        try {
+            val targetName = element.getName()
+            val elements = point.getDataType().getElements()
+            val values = point.getValues()
+            val index = elements.indexOfFirst { it.getName() == targetName }
+            if (index >= 0 && index < values.size) {
+                val value = values[index]
+                val actualFormat = elements[index].getFormat()
+                return when (actualFormat) {
+                    Element.INTEGER -> value.asInt()
+                    Element.FLOAT -> value.asFloat()
+                    Element.STRING -> value.asString()
+                    else -> value.asInt()
+                }
+            }
+            Log.w(TAG, "safeGetValue: '${targetName}' not found in elements: ${elements.map { it.getName() }}")
+            return null
+        } catch (e: Exception) {
+            Log.w(TAG, "safeGetValue error for ${element.getName()}: ${e.javaClass.simpleName}: ${e.message}")
+            return null
+        }
+    }
 
     fun isAuthorized(): Boolean = isAuthorized
 

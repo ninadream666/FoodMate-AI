@@ -24,19 +24,28 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
         const val EVENT_DATA_UPDATE = "onHealthDataUpdate"
     }
 
+    init {
+        Log.w(TAG, ">>> HeytapHealthModule CREATED <<<")
+    }
+
     private val healthManager: HeytapHealthManager by lazy {
         HeytapHealthManager.getInstance(reactApplicationContext)
     }
 
-    override fun getName(): String = MODULE_NAME
+    override fun getName(): String {
+        Log.w(TAG, ">>> getName called, returning $MODULE_NAME <<<")
+        return MODULE_NAME
+    }
 
     /**
      * 初始化SDK
      */
     @ReactMethod
     fun initialize(enableLogging: Boolean, promise: Promise) {
+        Log.w(TAG, "initialize called, enableLogging=$enableLogging")
         try {
             healthManager.initialize(enableLogging)
+            Log.w(TAG, "initialize success")
             promise.resolve(true)
         } catch (e: Exception) {
             Log.e(TAG, "Initialize failed", e)
@@ -49,10 +58,13 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
      */
     @ReactMethod
     fun isHealthAppInstalled(promise: Promise) {
+        Log.w(TAG, "isHealthAppInstalled called")
         try {
             val installed = healthManager.isHealthAppInstalled()
+            Log.w(TAG, "isHealthAppInstalled result: $installed")
             promise.resolve(installed)
         } catch (e: Exception) {
+            Log.e(TAG, "isHealthAppInstalled error", e)
             promise.reject("CHECK_ERROR", e.message)
         }
     }
@@ -72,14 +84,18 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
      */
     @ReactMethod
     fun requestAuthorization(promise: Promise) {
+        Log.w(TAG, "requestAuthorization called")
         val activity = getCurrentActivity()
         if (activity == null) {
+            Log.e(TAG, "requestAuthorization: NO_ACTIVITY")
             promise.reject("NO_ACTIVITY", "当前没有可用的Activity")
             return
         }
+        Log.w(TAG, "requestAuthorization: activity found, calling SDK...")
 
         healthManager.requestAuthorization(activity, object : HeytapHealthManager.HealthCallback<AuthResult> {
             override fun onSuccess(data: AuthResult) {
+                Log.w(TAG, "requestAuthorization: SUCCESS")
                 val result = Arguments.createMap().apply {
                     putBoolean("success", true)
                 }
@@ -88,6 +104,7 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
             }
 
             override fun onFailure(errorCode: Int, message: String) {
+                Log.e(TAG, "requestAuthorization: FAILED code=$errorCode msg=$message")
                 promise.reject(errorCode.toString(), message)
                 val errorMap = Arguments.createMap().apply {
                     putInt("errorCode", errorCode)
@@ -103,8 +120,10 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
      */
     @ReactMethod
     fun checkAuthorization(promise: Promise) {
+        Log.w(TAG, "checkAuthorization called")
         healthManager.checkAuthorization(object : HeytapHealthManager.HealthCallback<List<String>> {
             override fun onSuccess(data: List<String>) {
+                Log.w(TAG, "checkAuthorization SUCCESS, scopes=$data")
                 val result = Arguments.createMap().apply {
                     putBoolean("isAuthorized", data.isNotEmpty())
                     putArray("scopes", Arguments.fromList(data))
@@ -113,6 +132,7 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
             }
 
             override fun onFailure(errorCode: Int, message: String) {
+                Log.e(TAG, "checkAuthorization FAILED: code=$errorCode msg=$message")
                 promise.reject(errorCode.toString(), message)
             }
         })
@@ -473,6 +493,7 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
      */
     @ReactMethod
     fun getComprehensiveHealthState(promise: Promise) {
+        Log.w(TAG, "getComprehensiveHealthState called")
         val now = System.currentTimeMillis()
         val todayStart = getTodayStartTime()
         val yesterdayStart = todayStart - 24 * 60 * 60 * 1000L
@@ -483,7 +504,9 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
 
         fun checkComplete() {
             completedRequests++
+            Log.w(TAG, "checkComplete: $completedRequests/$totalRequests")
             if (completedRequests >= totalRequests) {
+                Log.w(TAG, "ALL DATA COMPLETE: steps=${state.dailySteps} hr=${state.currentHeartRate} pressure=${state.currentPressure} sleep=${state.lastSleepDuration} spo2=${state.currentBloodOxygen}")
                 promise.resolve(state.toWritableMap())
             }
         }
@@ -491,17 +514,23 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
         // 1. 获取今日活动数据
         healthManager.readDailyActivity(todayStart, now, object : HeytapHealthManager.HealthCallback<List<DailyActivityData>> {
             override fun onSuccess(data: List<DailyActivityData>) {
+                Log.w(TAG, "dailyActivity: count=${data.size}")
                 if (data.isNotEmpty()) {
-                    val latest = data.last()
+                    val totalSteps = data.sumOf { it.steps }
+                    val totalDistance = data.sumOf { it.distance }
+                    val totalCaloriesRaw = data.sumOf { it.calories }
+                    val totalCalories = totalCaloriesRaw / 1000
+                    Log.w(TAG, "dailyActivity: totalSteps=$totalSteps totalDist=$totalDistance totalCal=$totalCalories")
                     state = state.copy(
-                        dailySteps = latest.steps,
-                        dailyDistance = latest.distance,
-                        dailyCalories = latest.calories
+                        dailySteps = totalSteps,
+                        dailyDistance = totalDistance,
+                        dailyCalories = totalCalories
                     )
                 }
                 checkComplete()
             }
             override fun onFailure(errorCode: Int, message: String) {
+                Log.w(TAG, "getComprehensive onFailure: code=$errorCode msg=$message")
                 checkComplete()
             }
         })
@@ -524,6 +553,7 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
                 checkComplete()
             }
             override fun onFailure(errorCode: Int, message: String) {
+                Log.w(TAG, "getComprehensive onFailure: code=$errorCode msg=$message")
                 checkComplete()
             }
         })
@@ -542,6 +572,7 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
                 checkComplete()
             }
             override fun onFailure(errorCode: Int, message: String) {
+                Log.w(TAG, "getComprehensive onFailure: code=$errorCode msg=$message")
                 checkComplete()
             }
         })
@@ -561,6 +592,7 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
                 checkComplete()
             }
             override fun onFailure(errorCode: Int, message: String) {
+                Log.w(TAG, "getComprehensive onFailure: code=$errorCode msg=$message")
                 checkComplete()
             }
         })
@@ -579,6 +611,7 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
                 checkComplete()
             }
             override fun onFailure(errorCode: Int, message: String) {
+                Log.w(TAG, "getComprehensive onFailure: code=$errorCode msg=$message")
                 checkComplete()
             }
         })
@@ -601,6 +634,7 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
                 checkComplete()
             }
             override fun onFailure(errorCode: Int, message: String) {
+                Log.w(TAG, "getComprehensive onFailure: code=$errorCode msg=$message")
                 checkComplete()
             }
         })

@@ -114,6 +114,7 @@ export const useOppoHealth = (): UseOppoHealthResult => {
      * 初始化SDK
      */
     const initialize = useCallback(async (): Promise<boolean> => {
+        console.log('[OppoHealth] initialize called, isAvailable:', isAvailable);
         if (!isAvailable) {
             setError('OPPO健康SDK不可用（仅支持Android OPPO设备）');
             return false;
@@ -123,37 +124,56 @@ export const useOppoHealth = (): UseOppoHealthResult => {
             setIsLoading(true);
             setError(null);
 
-            // 检查健康APP是否安装
+            console.log('[OppoHealth] checking isHealthAppInstalled...');
             const appInstalled = await HeytapHealth.isHealthAppInstalled();
+            console.log('[OppoHealth] isHealthAppInstalled:', appInstalled);
             if (!appInstalled) {
                 setError('请先安装OPPO健康APP');
                 return false;
             }
 
-            // 初始化SDK
+            console.log('[OppoHealth] calling SDK initialize...');
             const success = await HeytapHealth.initialize(true);
+            console.log('[OppoHealth] SDK initialize result:', success);
             if (success) {
                 setIsInitialized(true);
 
-                // 检查授权状态
-                const authStatus = await HeytapHealth.checkAuthorization();
-                setIsAuthorized(authStatus.isAuthorized);
+                try {
+                    console.log('[OppoHealth] checking authorization...');
+                    const authStatus = await HeytapHealth.checkAuthorization();
+                    console.log('[OppoHealth] authStatus:', JSON.stringify(authStatus));
+                    setIsAuthorized(authStatus.isAuthorized);
 
-                if (authStatus.isAuthorized) {
-                    // 获取设备信息
-                    const deviceList = await HeytapHealth.queryBoundDevices();
-                    setDevices(deviceList);
-
-                    // 获取健康数据
-                    await fetchHealthData();
+                    if (authStatus.isAuthorized) {
+                        try {
+                            const deviceList = await HeytapHealth.queryBoundDevices();
+                            setDevices(deviceList);
+                        } catch (e: any) {
+                            console.warn('[OppoHealth] queryBoundDevices failed:', e.message);
+                        }
+                        try {
+                            console.log('[OppoHealth] fetching health data directly...');
+                            const state = await HeytapHealth.getComprehensiveHealthState();
+                            if (state) {
+                                console.log('[OppoHealth] health data received:', JSON.stringify(state).substring(0, 200));
+                                setHealthState(state);
+                            }
+                        } catch (e: any) {
+                            console.warn('[OppoHealth] fetchHealthData failed:', e.message);
+                        }
+                    }
+                } catch (authErr: any) {
+                    console.log('[OppoHealth] checkAuthorization failed (expected if not yet authorized):', authErr.message);
+                    setIsAuthorized(false);
                 }
 
                 console.log('✅ OPPO健康SDK初始化成功');
                 return true;
             }
+            console.log('[OppoHealth] SDK initialize returned false');
             return false;
         } catch (e: any) {
-            console.error('❌ OPPO健康SDK初始化失败:', e);
+            console.error('❌ OPPO健康SDK初始化失败:', e.message, e);
             setError(e.message || '初始化失败');
             return false;
         } finally {
@@ -165,9 +185,14 @@ export const useOppoHealth = (): UseOppoHealthResult => {
      * 请求授权
      */
     const requestAuth = useCallback(async (): Promise<boolean> => {
+        console.log('[OppoHealth] requestAuth called, isInitialized:', isInitialized);
         if (!isInitialized) {
-            setError('请先初始化SDK');
-            return false;
+            console.log('[OppoHealth] requestAuth: not initialized, trying to initialize first...');
+            const initResult = await initialize();
+            if (!initResult) {
+                setError('SDK初始化失败');
+                return false;
+            }
         }
 
         try {
@@ -177,13 +202,25 @@ export const useOppoHealth = (): UseOppoHealthResult => {
             const result = await HeytapHealth.requestAuthorization();
             if (result.success) {
                 setIsAuthorized(true);
+                setError(null);
 
                 // 获取设备信息
-                const deviceList = await HeytapHealth.queryBoundDevices();
-                setDevices(deviceList);
+                try {
+                    const deviceList = await HeytapHealth.queryBoundDevices();
+                    setDevices(deviceList);
+                } catch (e: any) {
+                    console.warn('[OppoHealth] queryBoundDevices failed:', e.message);
+                }
 
                 // 获取健康数据
-                await fetchHealthData();
+                try {
+                    const state = await HeytapHealth.getComprehensiveHealthState();
+                    if (state) {
+                        setHealthState(state);
+                    }
+                } catch (e: any) {
+                    console.warn('[OppoHealth] fetchHealthData failed:', e.message);
+                }
 
                 console.log('✅ OPPO健康授权成功');
                 return true;
@@ -191,12 +228,26 @@ export const useOppoHealth = (): UseOppoHealthResult => {
             return false;
         } catch (e: any) {
             console.error('❌ OPPO健康授权失败:', e);
+            // 授权可能通过广播异步返回，检查一下当前状态
+            try {
+                const authStatus = await HeytapHealth.checkAuthorization();
+                if (authStatus.isAuthorized) {
+                    setIsAuthorized(true);
+                    setError(null);
+
+                    const state = await HeytapHealth.getComprehensiveHealthState();
+                    if (state) {
+                        setHealthState(state);
+                    }
+                    return true;
+                }
+            } catch (_) {}
             setError(e.message || '授权失败');
             return false;
         } finally {
             setIsLoading(false);
         }
-    }, [isInitialized]);
+    }, [isInitialized, initialize]);
 
     /**
      * 取消授权
@@ -280,7 +331,9 @@ export const useOppoHealth = (): UseOppoHealthResult => {
 
     // 自动初始化
     useEffect(() => {
+        console.log('[OppoHealth] useEffect: isAvailable=', isAvailable, 'isInitialized=', isInitialized);
         if (isAvailable && !isInitialized) {
+            console.log('[OppoHealth] triggering auto-initialize...');
             initialize();
         }
     }, [isAvailable, isInitialized, initialize]);
@@ -307,7 +360,9 @@ export const useOppoHealth = (): UseOppoHealthResult => {
         const authSuccessListener = heytapHealthEmitter.addListener(
             'onAuthSuccess',
             () => {
+                console.log('[OppoHealth] auth broadcast: SUCCESS');
                 setIsAuthorized(true);
+                setError(null);
                 fetchHealthData();
             }
         );
