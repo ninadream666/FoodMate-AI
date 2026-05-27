@@ -511,26 +511,24 @@ class HeytapHealthModule(reactContext: ReactApplicationContext) :
             }
         }
 
-        // 1. 获取今日活动数据
-        healthManager.readDailyActivity(todayStart, now, object : HeytapHealthManager.HealthCallback<List<DailyActivityData>> {
-            override fun onSuccess(data: List<DailyActivityData>) {
-                Log.w(TAG, "dailyActivity: count=${data.size}")
+        // 1. 获取今日活动统计数据（全天汇总，与健康APP一致）
+        healthManager.readDailyActivityCount(todayStart, now, object : HeytapHealthManager.HealthCallback<List<DailyActivityCountData>> {
+            override fun onSuccess(data: List<DailyActivityCountData>) {
+                Log.w(TAG, "dailyActivityCount: count=${data.size}")
                 if (data.isNotEmpty()) {
-                    val totalSteps = data.sumOf { it.steps }
-                    val totalDistance = data.sumOf { it.distance }
-                    val totalCaloriesRaw = data.sumOf { it.calories }
-                    val totalCalories = totalCaloriesRaw / 1000
-                    Log.w(TAG, "dailyActivity: totalSteps=$totalSteps totalDist=$totalDistance totalCal=$totalCalories")
+                    val latest = data.last()
+                    val caloriesKcal = latest.totalCalories / 1000
+                    Log.w(TAG, "dailyActivityCount: steps=${latest.totalSteps} dist=${latest.totalDistance} cal=${caloriesKcal}kcal")
                     state = state.copy(
-                        dailySteps = totalSteps,
-                        dailyDistance = totalDistance,
-                        dailyCalories = totalCalories
+                        dailySteps = latest.totalSteps,
+                        dailyDistance = latest.totalDistance,
+                        dailyCalories = caloriesKcal
                     )
                 }
                 checkComplete()
             }
             override fun onFailure(errorCode: Int, message: String) {
-                Log.w(TAG, "getComprehensive onFailure: code=$errorCode msg=$message")
+                Log.w(TAG, "getComprehensive dailyActivityCount onFailure: code=$errorCode msg=$message")
                 checkComplete()
             }
         })

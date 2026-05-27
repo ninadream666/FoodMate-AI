@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class BrowseRecord {
     private String recordId;
-    private Long merchantId;
+    private String merchantId;
     private String merchantName; // 冗余存一个名字，方便前端展示
     private LocalDateTime timestamp;
 }

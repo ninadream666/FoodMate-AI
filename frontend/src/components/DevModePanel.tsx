@@ -168,17 +168,13 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose, onRefresh
                         <View style={styles.sdkStatusBox}>
                             <Text style={styles.sdkStatusTitle}>OPPO健康SDK状态</Text>
                             <View style={styles.sdkStatusRow}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
-                                    <Feather name={health.isOppoHealthAvailable ? 'check-circle' : 'x-circle'} size={14} color={health.isOppoHealthAvailable ? colors.success : colors.error} />
-                                    <Text style={[styles.sdkStatusItem, { marginLeft: 4 }]}>可用</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                                    <Feather name={health.isOppoHealthAvailable ? 'check-circle' : 'x-circle'} size={16} color={health.isOppoHealthAvailable ? colors.success : colors.error} />
+                                    <Text style={[styles.sdkStatusItem, { marginLeft: 6 }]}>SDK可用</Text>
                                 </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
-                                    <Feather name={health.isOppoHealthAuthorized ? 'check-circle' : 'x-circle'} size={14} color={health.isOppoHealthAuthorized ? colors.success : colors.error} />
-                                    <Text style={[styles.sdkStatusItem, { marginLeft: 4 }]}>已授权</Text>
-                                </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    <Feather name={health.hasWearableDevice ? 'watch' : 'x-circle'} size={14} color={health.hasWearableDevice ? colors.success : colors.error} />
-                                    <Text style={[styles.sdkStatusItem, { marginLeft: 4 }]}>穿戴设备</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                                    <Feather name={health.isOppoHealthAuthorized ? 'check-circle' : 'x-circle'} size={16} color={health.isOppoHealthAuthorized ? colors.success : colors.error} />
+                                    <Text style={[styles.sdkStatusItem, { marginLeft: 6 }]}>数据授权</Text>
                                 </View>
                             </View>
                             {health.oppoHealthError && (
@@ -199,7 +195,23 @@ const DevModePanel: React.FC<DevModePanelProps> = ({ visible, onClose, onRefresh
 
                         {/* 当前状态显示 */}
                         <View style={styles.statusBox}>
-                            <Text style={styles.statusTitle}>当前健康状态</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Text style={styles.statusTitle}>当前健康状态</Text>
+                                <TouchableOpacity
+                                    style={{
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        paddingHorizontal: 10,
+                                        paddingVertical: 4,
+                                        borderRadius: 12,
+                                        backgroundColor: 'rgba(74, 144, 226, 0.1)',
+                                    }}
+                                    onPress={health.refreshOppoHealthData}
+                                >
+                                    <Feather name="refresh-cw" size={13} color={colors.primary} />
+                                    <Text style={{ fontSize: 12, color: colors.primary, marginLeft: 4 }}>刷新</Text>
+                                </TouchableOpacity>
+                            </View>
                             <View style={styles.statusGrid}>
                                 <View style={styles.statusGridItem}>
                                     <Text style={styles.statusLabel}>心率</Text>

@@ -272,11 +272,9 @@ export const useOppoHealth = (): UseOppoHealthResult => {
     }, []);
 
     /**
-     * 获取健康数据
+     * 获取健康数据（不检查 isAuthorized，避免闭包问题）
      */
     const fetchHealthData = useCallback(async () => {
-        if (!isAuthorized) return;
-
         try {
             const state = await HeytapHealth.getComprehensiveHealthState();
             if (state) {
@@ -285,21 +283,24 @@ export const useOppoHealth = (): UseOppoHealthResult => {
         } catch (e: any) {
             console.warn('获取健康数据失败:', e);
         }
-    }, [isAuthorized]);
+    }, []);
 
     /**
-     * 刷新数据
+     * 强制刷新数据（不检查状态，直接调 SDK）
      */
     const refresh = useCallback(async () => {
-        if (!isAuthorized) return;
-
         setIsLoading(true);
         try {
-            await fetchHealthData();
+            const state = await HeytapHealth.getComprehensiveHealthState();
+            if (state) {
+                setHealthState(state);
+            }
+        } catch (e: any) {
+            console.warn('刷新健康数据失败:', e);
         } finally {
             setIsLoading(false);
         }
-    }, [isAuthorized, fetchHealthData]);
+    }, []);
 
     /**
      * 获取详细历史数据
