@@ -32,15 +32,17 @@ public class MerchantCommissionController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) CommissionStatus status,
+            @RequestParam(required = false) Long merchantId,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
+        Long effectiveMerchantId = merchantId != null ? merchantId : user.merchantId();
         Pageable pageable = PageRequest.of(page, size);
         Page<CommissionRecordDTO> records;
 
         if (status != null) {
-            records = commissionService.getMerchantCommissionsByStatus(user.merchantId(), status, pageable);
+            records = commissionService.getMerchantCommissionsByStatus(effectiveMerchantId, status, pageable);
         } else {
-            records = commissionService.getMerchantCommissions(user.merchantId(), pageable);
+            records = commissionService.getMerchantCommissions(effectiveMerchantId, pageable);
         }
 
         return ResponseEntity.ok(records);
@@ -61,27 +63,31 @@ public class MerchantCommissionController {
     @GetMapping("/summary/today")
     @Operation(summary = "获取今日分成汇总")
     public ResponseEntity<CommissionSummaryDTO> getTodaySummary(
+            @RequestParam(required = false) Long merchantId,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
+        Long effectiveMerchantId = merchantId != null ? merchantId : user.merchantId();
         LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
         LocalDateTime endOfDay = startOfDay.plusDays(1);
 
         CommissionSummaryDTO summary = commissionService
-                .getMerchantCommissionSummary(user.merchantId(), startOfDay, endOfDay);
+                .getMerchantCommissionSummary(effectiveMerchantId, startOfDay, endOfDay);
         return ResponseEntity.ok(summary);
     }
 
     @GetMapping("/summary/this-month")
     @Operation(summary = "获取本月分成汇总")
     public ResponseEntity<CommissionSummaryDTO> getThisMonthSummary(
+            @RequestParam(required = false) Long merchantId,
             @AuthenticationPrincipal AuthenticatedUser user) {
 
+        Long effectiveMerchantId = merchantId != null ? merchantId : user.merchantId();
         LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1)
                 .withHour(0).withMinute(0).withSecond(0);
         LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
 
         CommissionSummaryDTO summary = commissionService
-                .getMerchantCommissionSummary(user.merchantId(), startOfMonth, endOfMonth);
+                .getMerchantCommissionSummary(effectiveMerchantId, startOfMonth, endOfMonth);
         return ResponseEntity.ok(summary);
     }
 

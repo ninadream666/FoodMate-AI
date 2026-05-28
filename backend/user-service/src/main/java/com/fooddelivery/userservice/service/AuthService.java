@@ -51,14 +51,20 @@ public class AuthService {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 如果前端指定了角色，检查是否与数据库一致（可选验证）
+        // 一个账号支持多种身份：顾客、商家。前端指定 role 时直接使用，否则用 user 表里的默认 role
+        // 商家身份允许通过关联的 merchants 表存在性自动获得，不再强制要求 user.role=merchant
         String requestedRole = request.getRole();
-        if (requestedRole != null && !requestedRole.isEmpty() && !requestedRole.equals(user.getRole())) {
-            throw new RuntimeException("Role mismatch! You are registered as " + user.getRole());
+        String effectiveRole;
+        if (requestedRole != null && !requestedRole.isEmpty()) {
+            // 前端指定了角色，直接使用（不再做强校验）
+            // 这样同一账号可以以 customer / merchant 多个身份登录
+            effectiveRole = requestedRole;
+        } else {
+            effectiveRole = user.getRole();
         }
 
-        // 生成Token，包含role信息
-        String token = jwtUtil.generateToken(user.getUsername(), user.getId(), user.getRole());
+        // 生成 Token，role 字段反映本次登录的身份
+        String token = jwtUtil.generateToken(user.getUsername(), user.getId(), effectiveRole);
 
         // 返回完整的用户信息
         return AuthResponse.builder()
@@ -67,7 +73,7 @@ public class AuthService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
-                .role(user.getRole())
+                .role(effectiveRole)
                 .avatarUrl(user.getAvatarUrl())
                 .phone(user.getPhone())
                 .build();

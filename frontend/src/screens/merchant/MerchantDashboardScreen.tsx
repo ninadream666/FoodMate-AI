@@ -32,7 +32,7 @@ const MerchantDashboardScreen = ({ navigation }: any) => {
                 navigation.replace('MerchantOnboarding');
             } else if (merchants.length === 1) {
                 setMerchant(merchants[0]);
-                settlementService.getTodaySummary().then(setTodayEarnings).catch(() => {});
+                settlementService.getTodaySummary(merchants[0].id).then(setTodayEarnings).catch(() => {});
             } else {
                 // 多个店铺，显示选择界面
                 setShowSelector(true);
@@ -178,7 +178,7 @@ const MerchantDashboardScreen = ({ navigation }: any) => {
                         <Text style={styles.menuTitle}>财务结算</Text>
                         <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.menuItem, styles.menuItemLast]} onPress={() => navigation.navigate('ServiceMarketplace')}>
+                    <TouchableOpacity style={[styles.menuItem, styles.menuItemLast]} onPress={() => navigation.navigate('ServiceMarketplace', { merchantId: merchant?.id, merchantName: merchant?.name })}>
                         <Text style={styles.menuTitle}>服务市场</Text>
                         <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>
