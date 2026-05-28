@@ -3,19 +3,20 @@ import { View, Text, FlatList, StyleSheet, SafeAreaView, ScrollView, TouchableOp
 import LinearGradient from 'react-native-linear-gradient';
 import { settlementService } from '../../services/settlementService';
 
-const SettlementDashboardScreen = () => {
+const SettlementDashboardScreen = ({ route }: any) => {
+    const merchantId = route?.params?.merchantId;
     const [stats, setStats] = useState({ netIncome: 0, pendingCommission: 0 });
     const [list, setList] = useState([]);
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [merchantId]);
 
     const loadData = async () => {
         try {
             const [s, l] = await Promise.all([
-                settlementService.getThisMonthSummary(),
-                settlementService.getSettlements(0, 20)
+                settlementService.getThisMonthSummary(merchantId),
+                settlementService.getSettlements(0, 20, null, merchantId)
             ]);
             setStats(s);
             setList(l.content || []);

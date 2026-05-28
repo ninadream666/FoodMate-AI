@@ -29,8 +29,10 @@ public class MerchantPlatformServiceController {
     @GetMapping
     @Operation(summary = "获取所有可用服务", description = "获取平台提供的所有服务列表，含订阅状态")
     public ResponseEntity<List<PlatformServiceDTO>> getAvailableServices(
+            @RequestParam(required = false) Long merchantId,
             @AuthenticationPrincipal AuthenticatedUser user) {
-        List<PlatformServiceDTO> services = platformServiceService.getActiveServices(user.merchantId());
+        Long effectiveMerchantId = merchantId != null ? merchantId : user.merchantId();
+        List<PlatformServiceDTO> services = platformServiceService.getActiveServices(effectiveMerchantId);
         return ResponseEntity.ok(services);
     }
 
@@ -78,16 +80,20 @@ public class MerchantPlatformServiceController {
     @GetMapping("/subscriptions")
     @Operation(summary = "获取我的订阅列表")
     public ResponseEntity<List<SubscriptionDTO>> getMySubscriptions(
+            @RequestParam(required = false) Long merchantId,
             @AuthenticationPrincipal AuthenticatedUser user) {
-        List<SubscriptionDTO> subscriptions = subscriptionService.getActiveSubscriptions(user.merchantId());
+        Long effectiveMerchantId = merchantId != null ? merchantId : user.merchantId();
+        List<SubscriptionDTO> subscriptions = subscriptionService.getActiveSubscriptions(effectiveMerchantId);
         return ResponseEntity.ok(subscriptions);
     }
 
     @GetMapping("/subscriptions/all")
     @Operation(summary = "获取全部订阅历史", description = "包括已取消和已过期的")
     public ResponseEntity<List<SubscriptionDTO>> getAllSubscriptions(
+            @RequestParam(required = false) Long merchantId,
             @AuthenticationPrincipal AuthenticatedUser user) {
-        List<SubscriptionDTO> subscriptions = subscriptionService.getMerchantSubscriptions(user.merchantId());
+        Long effectiveMerchantId = merchantId != null ? merchantId : user.merchantId();
+        List<SubscriptionDTO> subscriptions = subscriptionService.getMerchantSubscriptions(effectiveMerchantId);
         return ResponseEntity.ok(subscriptions);
     }
 
@@ -95,8 +101,10 @@ public class MerchantPlatformServiceController {
     @Operation(summary = "订阅服务")
     public ResponseEntity<SubscriptionDTO> subscribeService(
             @Valid @RequestBody SubscribeServiceRequest request,
+            @RequestParam(required = false) Long merchantId,
             @AuthenticationPrincipal AuthenticatedUser user) {
-        SubscriptionDTO subscription = subscriptionService.subscribeService(user.merchantId(), request);
+        Long effectiveMerchantId = merchantId != null ? merchantId : user.merchantId();
+        SubscriptionDTO subscription = subscriptionService.subscribeService(effectiveMerchantId, request);
         return ResponseEntity.ok(subscription);
     }
 
@@ -105,8 +113,10 @@ public class MerchantPlatformServiceController {
     public ResponseEntity<Void> cancelSubscription(
             @PathVariable Long subscriptionId,
             @RequestBody(required = false) CancelSubscriptionRequest request,
+            @RequestParam(required = false) Long merchantId,
             @AuthenticationPrincipal AuthenticatedUser user) {
-        subscriptionService.cancelSubscription(user.merchantId(), subscriptionId, request);
+        Long effectiveMerchantId = merchantId != null ? merchantId : user.merchantId();
+        subscriptionService.cancelSubscription(effectiveMerchantId, subscriptionId, request);
         return ResponseEntity.noContent().build();
     }
 }

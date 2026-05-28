@@ -4,22 +4,27 @@ export const settlementService = {
     // --- 统计数据 ---
 
     // 获取本月分成汇总（用于顶部卡片） - 调用commissions接口
-    getThisMonthSummary: async () => {
-        return await api.get('merchantCommission', '/summary/this-month');
+    getThisMonthSummary: async (merchantId) => {
+        const query = merchantId ? `?merchantId=${merchantId}` : '';
+        return await api.get('merchantCommission', `/summary/this-month${query}`);
     },
 
     // 获取今日分成汇总（可选） - 调用commissions接口
-    getTodaySummary: async () => {
-        return await api.get('merchantCommission', '/summary/today');
+    getTodaySummary: async (merchantId) => {
+        const query = merchantId ? `?merchantId=${merchantId}` : '';
+        return await api.get('merchantCommission', `/summary/today${query}`);
     },
 
     // --- 结算单管理 ---
 
     // 获取结算单列表（支持分页和状态筛选） - 调用settlements接口
-    getSettlements: async (page = 0, size = 10, status = null) => {
+    getSettlements: async (page = 0, size = 10, status = null, merchantId = null) => {
         let path = `?page=${page}&size=${size}`;
         if (status && status !== 'ALL') {
             path += `&status=${status}`;
+        }
+        if (merchantId) {
+            path += `&merchantId=${merchantId}`;
         }
         return await api.get('merchantSettlement', path);
     },

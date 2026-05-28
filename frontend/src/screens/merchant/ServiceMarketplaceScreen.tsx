@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, SafeAreaView, ActivityIndicator } from 'react-native';
 import { platformService } from '../../services/platformService';
 
-const ServiceMarketplaceScreen = () => {
+const ServiceMarketplaceScreen = ({ route }: any) => {
+    const merchantId = route?.params?.merchantId;
     const [services, setServices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => { loadData(); }, []);
+    useEffect(() => { loadData(); }, [merchantId]);
 
     const loadData = async () => {
         try {
-            const data = await platformService.getAvailableServices();
+            const data = await platformService.getAvailableServices(merchantId);
             setServices(Array.isArray(data) ? data : []);
         } catch (e) { console.error(e); } finally { setLoading(false); }
     };
@@ -22,7 +23,7 @@ const ServiceMarketplaceScreen = () => {
             {
                 text: '确认订阅', onPress: async () => {
                     try {
-                        await platformService.subscribe(item.id);
+                        await platformService.subscribe(item.id, merchantId);
                         Alert.alert('成功', '订阅成功');
                         loadData();
                     } catch (e: any) { Alert.alert('失败', e.message); }
