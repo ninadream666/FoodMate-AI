@@ -43,6 +43,30 @@ public class OrderService {
     private final UserServiceClient userServiceClient;
     private final RabbitTemplate rabbitTemplate;
     private final PlatformServiceClient platformServiceClient;
+    private final com.fooddelivery.orderservice.client.MerchantServiceClient merchantServiceClient;
+
+    /**
+     * 把订单的字符串 merchantId（external_id 或数字 id）转换为商家表的数字 id
+     * commission_records 表的 merchant_id 是 bigint，需要数字 id 才能写入
+     */
+    private Long resolveMerchantNumericId(String merchantId) {
+        if (merchantId == null || merchantId.isBlank()) return null;
+        try {
+            // 如果本身就是数字 id，直接返回
+            return Long.parseLong(merchantId);
+        } catch (NumberFormatException ignored) {
+            // 不是数字，调 merchant-service 查
+        }
+        try {
+            Map<String, Object> resp = merchantServiceClient.resolveMerchantId(merchantId);
+            if (resp != null && resp.get("id") != null) {
+                return Long.valueOf(resp.get("id").toString());
+            }
+        } catch (Exception e) {
+            log.warn("resolveMerchantNumericId 调用失败: merchantId={}, error={}", merchantId, e.getMessage());
+        }
+        return null;
+    }
 
     /**
      * 取消订单（用户侧）
@@ -357,14 +381,19 @@ public class OrderService {
 
         // 触发分成计算（异步调用，失败不影响支付流程）
         try {
-            Map<String, Object> commissionRequest = new HashMap<>();
-            commissionRequest.put("orderId", orderId);
-            commissionRequest.put("merchantId", order.getMerchantId());
-            commissionRequest.put("orderAmount", order.getTotalAmount());
+            Long merchantNumericId = resolveMerchantNumericId(order.getMerchantId());
+            if (merchantNumericId != null) {
+                Map<String, Object> commissionRequest = new HashMap<>();
+                commissionRequest.put("orderId", orderId);
+                commissionRequest.put("merchantId", merchantNumericId);
+                commissionRequest.put("orderAmount", order.getTotalAmount());
 
-            platformServiceClient.calculateCommission(commissionRequest);
-            log.info("已触发订单分成计算: orderId={}, merchantId={}, amount={}",
-                    orderId, order.getMerchantId(), order.getTotalAmount());
+                platformServiceClient.calculateCommission(commissionRequest);
+                log.info("已触发订单分成计算: orderId={}, merchantId={} (numeric={}), amount={}",
+                        orderId, order.getMerchantId(), merchantNumericId, order.getTotalAmount());
+            } else {
+                log.warn("无法解析商家ID，跳过分成计算: orderId={}, merchantId={}", orderId, order.getMerchantId());
+            }
         } catch (Exception e) {
             // 分成计算失败不影响支付流程，记录日志即可，定时任务会兜底
             log.warn("触发分成计算失败，将由定时任务处理: orderId={}, error={}", orderId, e.getMessage());
@@ -514,17 +543,20 @@ public class OrderService {
 
         log.info("订单状态更新: orderId={}, {} -> {}", orderId, currentStatus.getCode(), newStatus.getCode());
 
-        // 订单完成时，通知平台服务结算佣金（将佣金状态从PENDING变为SETTLED）
-        if (newStatus == OrderStatus.COMPLETED) {
+        // 订单完成或配送完成时，通知平台服务结算佣金
+        if (newStatus == OrderStatus.COMPLETED || newStatus == OrderStatus.DELIVERED) {
             try {
-                Map<String, Object> settlementData = new HashMap<>();
-                settlementData.put("orderId", orderId);
-                settlementData.put("merchantId", order.getMerchantId());
-                settlementData.put("orderAmount", order.getTotalAmount());
-                settlementData.put("action", "SETTLE");
+                Long merchantNumericId = resolveMerchantNumericId(order.getMerchantId());
+                if (merchantNumericId != null) {
+                    Map<String, Object> settlementData = new HashMap<>();
+                    settlementData.put("orderId", orderId);
+                    settlementData.put("merchantId", merchantNumericId);
+                    settlementData.put("orderAmount", order.getTotalAmount());
+                    settlementData.put("action", "SETTLE");
 
-                platformServiceClient.calculateCommission(settlementData);
-                log.info("已触发订单完成结算: orderId={}, merchantId={}", orderId, order.getMerchantId());
+                    platformServiceClient.calculateCommission(settlementData);
+                    log.info("已触发订单完成结算: orderId={}, merchantId={} (numeric={})", orderId, order.getMerchantId(), merchantNumericId);
+                }
             } catch (Exception e) {
                 log.warn("触发结算失败，将由定时任务处理: orderId={}, error={}", orderId, e.getMessage());
             }

@@ -21,4 +21,11 @@ public interface MerchantServiceClient {
      */
     @GetMapping("/{merchantId}/menu-items/public")
     List<MenuItemDto> getPublicMenu(@PathVariable("merchantId") String merchantId);
+
+    /**
+     * 通过 external_id 或数据库主键查询商家详情，返回包含数字 id 的对象
+     * 用于把订单的字符串 merchantId 转换为整数 id，以便佣金计算
+     */
+    @GetMapping("/{merchantId}/resolve-id")
+    java.util.Map<String, Object> resolveMerchantId(@PathVariable("merchantId") String merchantId);
 }
