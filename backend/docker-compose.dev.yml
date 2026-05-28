@@ -207,7 +207,7 @@ services:
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
-      - APP_BASE_URL=http://8.217.223.120/app-api/users
+      - APP_BASE_URL=http://8.217.223.120/app-api
     volumes:
       - user_avatars:/app/uploads/avatars
     depends_on:
