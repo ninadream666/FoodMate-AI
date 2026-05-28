@@ -11,7 +11,7 @@ import java.util.Map;
  * Platform Service Feign客户端
  * 用于调用平台服务的内部接口
  */
-@FeignClient(name = "platform-service", path = "/api/internal/commissions")
+@FeignClient(name = "platform-service", path = "/api/internal/commissions", url = "http://platform-service:8088")
 public interface PlatformServiceClient {
 
     /**
