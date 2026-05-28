@@ -34,6 +34,30 @@ public class MerchantController {
     private final MerchantRepository merchantRepository;
 
     /**
+     * 内部接口：通过 external_id 或数据库主键解析商家 ID
+     * GET /merchants/{merchantId}/resolve-id
+     * 返回 {id: 4, externalId: "B0FFGJAP9K", name: "..."}
+     */
+    @GetMapping("/{merchantId}/resolve-id")
+    public ResponseEntity<java.util.Map<String, Object>> resolveMerchantId(@org.springframework.web.bind.annotation.PathVariable String merchantId) {
+        java.util.Optional<Merchant> opt;
+        // 先按整数 ID 查，失败再按 external_id 查
+        try {
+            opt = merchantRepository.findById(Long.parseLong(merchantId));
+        } catch (NumberFormatException e) {
+            opt = merchantRepository.findByExternalId(merchantId);
+        }
+        if (opt.isEmpty()) {
+            opt = merchantRepository.findByExternalId(merchantId);
+        }
+        return opt.map(m -> ResponseEntity.ok(java.util.Map.<String, Object>of(
+                "id", m.getId(),
+                "externalId", m.getExternalId() != null ? m.getExternalId() : "",
+                "name", m.getName() != null ? m.getName() : ""
+        ))).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /**
      * 公开接口：获取商家列表（分页）
      * GET /merchants?page=0&size=10&sort=createdAt,desc
      */
