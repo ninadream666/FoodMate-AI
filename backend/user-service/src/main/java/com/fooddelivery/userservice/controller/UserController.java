@@ -30,7 +30,7 @@ public class UserController {
     @Value("${app.upload.dir:uploads/avatars}")
     private String uploadDir;
 
-    @Value("${app.base-url:http://127.0.0.1:8083}")
+    @Value("${APP_BASE_URL:${app.base-url:http://127.0.0.1:8083}}")
     private String baseUrl;
 
     // 获取我的完整信息
