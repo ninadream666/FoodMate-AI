@@ -47,7 +47,7 @@ const BrowseHistoryScreen = ({ navigation }: any) => {
                         onPress={() => navigation.navigate('RestaurantDetail', { restaurant: { id: item.merchantId } })}
                     >
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.name}>店铺 #{item.merchantId}</Text>
+                            <Text style={styles.name}>{item.merchantName || `店铺 #${item.merchantId}`}</Text>
                             <Text style={styles.time}>
                                 {item.timestamp ? new Date(item.timestamp).toLocaleString('zh-CN') : ''}
                             </Text>

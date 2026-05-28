@@ -51,7 +51,7 @@ const RestaurantDetailScreen = ({ route, navigation }: any) => {
 
     useEffect(() => {
         loadMenu();
-        profileService.recordHistory(id).catch(() => {});
+        profileService.recordHistory(id, restaurant?.name).catch(() => {});
         profileService.getFavorites().then((favs: any[]) => {
             if (Array.isArray(favs) && favs.includes(String(id))) setIsFavorite(true);
         }).catch(() => {});

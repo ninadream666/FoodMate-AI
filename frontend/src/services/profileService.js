@@ -47,8 +47,8 @@ export const profileService = {
     getHistory: async () => {
         return await api.get('profile', '/history');
     },
-    recordHistory: async (merchantId) => {
-        return await api.post('profile', '/history', { merchantId });
+    recordHistory: async (merchantId, merchantName) => {
+        return await api.post('profile', '/history', { merchantId, merchantName: merchantName || '' });
     },
     clearHistory: async () => {
         return await api.del('profile', '/history');
