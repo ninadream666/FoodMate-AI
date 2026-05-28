@@ -15,13 +15,18 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { merchantService } from '../../services/merchantService';
 
-const MenuManagementScreen = ({ navigation }: any) => {
+const MenuManagementScreen = ({ navigation, route }: any) => {
+    const routeMerchantId = route?.params?.merchantId;
     const [menuItems, setMenuItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [merchantId, setMerchantId] = useState<number | null>(null);
+    const [merchantId, setMerchantId] = useState<number | null>(routeMerchantId || null);
 
     useEffect(() => {
-        initializeMerchant();
+        if (routeMerchantId) {
+            loadMenu(routeMerchantId);
+        } else {
+            initializeMerchant();
+        }
     }, []);
 
     const initializeMerchant = async () => {

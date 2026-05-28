@@ -33,6 +33,7 @@ public class MerchantOrderController {
     @GetMapping("/{merchantId}/orders/pending")
     public ResponseEntity<?> getPendingOrders(
             @PathVariable Long merchantId,
+            @RequestParam(required = false, defaultValue = "false") boolean includeCompleted,
             Authentication authentication) {
 
         Long currentUserId = extractUserId(authentication);
@@ -43,10 +44,10 @@ public class MerchantOrderController {
         }
 
         Merchant merchant = merchantOpt.get();
-        log.info("商家用户 {} 查询店铺 {} (externalId={}) 的待处理订单", currentUserId, merchantId, merchant.getExternalId());
+        log.info("商家用户 {} 查询店铺 {} (externalId={}) 的订单, includeCompleted={}", currentUserId, merchantId, merchant.getExternalId(), includeCompleted);
 
         try {
-            return orderServiceClient.getPendingOrdersByMerchant(merchantId, merchant.getExternalId());
+            return orderServiceClient.getPendingOrdersByMerchant(merchantId, merchant.getExternalId(), includeCompleted);
         } catch (Exception e) {
             log.error("获取待处理订单失败：merchantId={}, error={}", merchantId, e.getMessage());
             return ResponseEntity.status(500)

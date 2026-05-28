@@ -79,5 +79,6 @@ public interface OrderServiceClient {
     @GetMapping("/merchant/{merchantId}/pending-orders")
     ResponseEntity<?> getPendingOrdersByMerchant(
             @PathVariable("merchantId") Long merchantId,
-            @RequestParam(value = "externalId", required = false) String externalId);
+            @RequestParam(value = "externalId", required = false) String externalId,
+            @RequestParam(value = "includeCompleted", required = false, defaultValue = "false") boolean includeCompleted);
 }

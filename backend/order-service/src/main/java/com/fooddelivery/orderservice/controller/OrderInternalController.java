@@ -171,7 +171,8 @@ public class OrderInternalController {
     @GetMapping("/merchant/{merchantId}/pending-orders")
     public ResponseEntity<?> getPendingOrdersByMerchant(
             @PathVariable String merchantId,
-            @RequestParam(required = false) String externalId) {
+            @RequestParam(required = false) String externalId,
+            @RequestParam(required = false, defaultValue = "false") boolean includeCompleted) {
 
         // 构建所有可能的merchantId（数据库主键 + 外部ID）
         List<String> merchantIds = new java.util.ArrayList<>();
@@ -180,8 +181,13 @@ public class OrderInternalController {
             merchantIds.add(externalId);
         }
 
-        List<OrderDetailDto> pendingOrders = orderService.getMerchantOrdersByMultipleIds(merchantIds,
-                List.of(OrderStatus.PAID, OrderStatus.CONFIRMED, OrderStatus.PREPARING, OrderStatus.READY));
+        // includeCompleted=true 时返回包括已完成、已配送、已取消的所有订单
+        List<OrderStatus> statuses = includeCompleted
+                ? List.of(OrderStatus.PAID, OrderStatus.CONFIRMED, OrderStatus.PREPARING,
+                          OrderStatus.READY, OrderStatus.DELIVERED, OrderStatus.COMPLETED, OrderStatus.CANCELLED)
+                : List.of(OrderStatus.PAID, OrderStatus.CONFIRMED, OrderStatus.PREPARING, OrderStatus.READY);
+
+        List<OrderDetailDto> pendingOrders = orderService.getMerchantOrdersByMultipleIds(merchantIds, statuses);
         return ResponseEntity.ok(Map.of(
                 "merchantId", merchantId,
                 "count", pendingOrders.size(),

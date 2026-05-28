@@ -7,8 +7,9 @@ export const merchantOrderService = {
     },
 
     // 获取商家待处理订单列表
-    getPendingOrders: async (merchantId) => {
-        return await api.get('merchants', `/${merchantId}/orders/pending`);
+    getPendingOrders: async (merchantId, includeCompleted = false) => {
+        const query = includeCompleted ? '?includeCompleted=true' : '';
+        return await api.get('merchants', `/${merchantId}/orders/pending${query}`);
     },
 
     // 商家接单

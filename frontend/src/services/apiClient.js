@@ -174,8 +174,6 @@ export const request = async (urlKey, endpoint, options = {}) => {
 
     const headers = {
         'Content-Type': 'application/json',
-        // 告知后端客户端支持gzip，配合Spring Boot compression使用
-        'Accept-Encoding': 'gzip, deflate',
         ...options.headers,
     };
 
@@ -217,7 +215,18 @@ export const request = async (urlKey, endpoint, options = {}) => {
                 }
 
                 const response = await axios(config);
-                const data = response.data;
+                let data = response.data;
+
+                // 兜底：如果响应是字符串（chunked 未解码等），尝试手动解析
+                if (typeof data === 'string') {
+                    try {
+                        // 去除 chunked transfer encoding 的长度前缀（如 "842\r\n{...}\r\n0\r\n\r\n"）
+                        const cleaned = data.replace(/^\s*[0-9a-fA-F]+\r\n/, '').replace(/\r\n0\r\n\r\n\s*$/, '').trim();
+                        data = JSON.parse(cleaned);
+                    } catch (parseErr) {
+                        if (DEBUG_MODE) console.warn('[API] 响应字符串解析失败:', parseErr);
+                    }
+                }
 
                 // 缓存成功的GET响应
                 if (canCache && useCache) {
