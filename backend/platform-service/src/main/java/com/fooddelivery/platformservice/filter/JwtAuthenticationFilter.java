@@ -39,13 +39,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     Long userId = jwtUtil.getUserId(token);
                     String role = jwtUtil.getRole(token);
 
-                    // 如果是商家角色，根据userId查询merchantId
+                    // 根据userId查询merchantId（不限角色，因为顾客也可能同时是商家）
                     Long merchantId = null;
-                    if ("merchant".equalsIgnoreCase(role)) {
+                    try {
                         merchantId = merchantQueryService.getMerchantIdByUserId(userId);
-                        if (merchantId == null) {
-                            log.warn("Merchant user {} has no associated merchant/store", userId);
-                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to query merchantId for user {}: {}", userId, e.getMessage());
                     }
 
                     // 创建认证对象
