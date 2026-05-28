@@ -9,7 +9,7 @@ const TABS = [
     { key: 'pending', label: '待接单', statuses: ['PAID'] },
     { key: 'cooking', label: '制作中', statuses: ['CONFIRMED', 'PREPARING'] },
     { key: 'ready', label: '待配送', statuses: ['READY'] },
-    { key: 'all', label: '全部', statuses: ['PAID', 'CONFIRMED', 'PREPARING', 'READY'] },
+    { key: 'all', label: '全部', statuses: ['PAID', 'CONFIRMED', 'PREPARING', 'READY', 'DELIVERED', 'COMPLETED', 'CANCELLED'] },
 ];
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -18,10 +18,13 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
     PREPARING: { label: '制作中', color: '#409eff' },
     READY: { label: '待配送', color: '#67c23a' },
     DELIVERED: { label: '已配送', color: '#909399' },
+    COMPLETED: { label: '已完成', color: '#909399' },
+    CANCELLED: { label: '已取消', color: '#f56c6c' },
 };
 
-const MerchantOrdersScreen = ({ navigation }: any) => {
-    const [merchantId, setMerchantId] = useState<number | null>(null);
+const MerchantOrdersScreen = ({ navigation, route }: any) => {
+    const routeMerchantId = route?.params?.merchantId;
+    const [merchantId, setMerchantId] = useState<number | null>(routeMerchantId || null);
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -30,7 +33,9 @@ const MerchantOrdersScreen = ({ navigation }: any) => {
     const timerRef = useRef<any>(null);
 
     useEffect(() => {
-        initMerchant();
+        if (!merchantId) {
+            initMerchant();
+        }
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
@@ -52,19 +57,21 @@ const MerchantOrdersScreen = ({ navigation }: any) => {
         if (merchantId) {
             fetchOrders();
             // 每30秒自动刷新
+            if (timerRef.current) clearInterval(timerRef.current);
             timerRef.current = setInterval(fetchOrders, 30000);
             return () => clearInterval(timerRef.current);
         }
-    }, [merchantId]);
+    }, [merchantId, activeTab]);
 
     const fetchOrders = async () => {
         if (!merchantId) return;
         try {
-            const res = await merchantOrderService.getPendingOrders(merchantId);
+            const includeCompleted = activeTab === 'all';
+            const res = await merchantOrderService.getPendingOrders(merchantId, includeCompleted);
             const list = res?.orders || res?.data?.orders || [];
             setOrders(Array.isArray(list) ? list : []);
-        } catch (e) {
-            console.error('获取订单失败', e);
+        } catch (e: any) {
+            console.error('获取订单失败', e?.message || e);
         } finally {
             setLoading(false);
             setRefreshing(false);

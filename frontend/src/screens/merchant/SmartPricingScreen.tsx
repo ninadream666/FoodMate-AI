@@ -16,12 +16,13 @@ import LinearGradient from 'react-native-linear-gradient';
 import { aiPricingService } from '../../services/aiPricingService';
 import { merchantService } from '../../services/merchantService';
 
-const SmartPricingScreen = ({ navigation }: any) => {
+const SmartPricingScreen = ({ navigation, route }: any) => {
+    const routeMerchantId = route?.params?.merchantId;
     const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'history'
     const [loading, setLoading] = useState(true);
     const [proposals, setProposals] = useState<any[]>([]);
     const [menuItemsMap, setMenuItemsMap] = useState<any>({});
-    const [merchantId, setMerchantId] = useState<number | null>(null);
+    const [merchantId, setMerchantId] = useState<number | null>(routeMerchantId || null);
 
     // 配置状态
     const [config, setConfig] = useState({
@@ -32,7 +33,9 @@ const SmartPricingScreen = ({ navigation }: any) => {
     const [thresholdText, setThresholdText] = useState(String(Math.round(config.autoApprovalThreshold * 100)));
 
     useEffect(() => {
-        initializeMerchant();
+        if (!routeMerchantId) {
+            initializeMerchant();
+        }
     }, []);
 
     useEffect(() => {

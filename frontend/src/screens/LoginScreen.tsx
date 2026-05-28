@@ -175,6 +175,8 @@ const LoginScreen = ({ navigation }: any) => {
                                             value={username}
                                             onChangeText={setUsername}
                                             autoCapitalize="none"
+                                            autoComplete="off"
+                                            importantForAutofill="no"
                                         />
                                     </View>
 
@@ -202,6 +204,8 @@ const LoginScreen = ({ navigation }: any) => {
                                             value={password}
                                             onChangeText={setPassword}
                                             secureTextEntry={!showPassword}
+                                            autoComplete="off"
+                                            importantForAutofill="no"
                                         />
                                         <TouchableOpacity
                                             style={styles.eyeBtn}

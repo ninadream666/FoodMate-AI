@@ -150,19 +150,19 @@ const MerchantDashboardScreen = ({ navigation }: any) => {
 
                 {/* 第一组功能列表 */}
                 <View style={styles.menuGroup}>
-                    <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('MerchantOrders')}>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('MerchantOrders', { merchantId: merchant?.id, merchantName: merchant?.name })}>
                         <Text style={styles.menuTitle}>订单管理</Text>
                         <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('SmartPricing')}>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('SmartPricing', { merchantId: merchant?.id, merchantName: merchant?.name })}>
                         <Text style={styles.menuTitle}>AI 智能定价</Text>
                         <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('MenuManagement')}>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('MenuManagement', { merchantId: merchant?.id, merchantName: merchant?.name })}>
                         <Text style={styles.menuTitle}>菜单管理</Text>
                         <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.menuItem, styles.menuItemLast]} onPress={() => navigation.navigate('RefundAudit')}>
+                    <TouchableOpacity style={[styles.menuItem, styles.menuItemLast]} onPress={() => navigation.navigate('RefundAudit', { merchantId: merchant?.id, merchantName: merchant?.name })}>
                         <Text style={styles.menuTitle}>退款审批</Text>
                         <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>
@@ -174,7 +174,7 @@ const MerchantDashboardScreen = ({ navigation }: any) => {
                         <Text style={styles.menuTitle}>店铺信息</Text>
                         <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('SettlementDashboard')}>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('SettlementDashboard', { merchantId: merchant?.id, merchantName: merchant?.name })}>
                         <Text style={styles.menuTitle}>财务结算</Text>
                         <Feather name="chevron-right" size={18} color={colors.textTertiary} />
                     </TouchableOpacity>

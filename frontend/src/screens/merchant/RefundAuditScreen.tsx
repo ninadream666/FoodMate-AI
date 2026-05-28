@@ -3,13 +3,18 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, SafeAreaView
 import { merchantOrderService } from '../../services/merchantOrderService';
 import { merchantService } from '../../services/merchantService';
 
-const RefundAuditScreen = () => {
+const RefundAuditScreen = ({ route }: any) => {
+    const routeMerchantId = route?.params?.merchantId;
     const [refunds, setRefunds] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [merchantId, setMerchantId] = useState<number | null>(null);
+    const [merchantId, setMerchantId] = useState<number | null>(routeMerchantId || null);
 
     useEffect(() => {
-        init();
+        if (routeMerchantId) {
+            loadRefunds(routeMerchantId);
+        } else {
+            init();
+        }
     }, []);
 
     const init = async () => {
